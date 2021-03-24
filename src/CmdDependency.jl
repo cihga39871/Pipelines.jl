@@ -45,6 +45,15 @@ function readall(cmd::Base.AbstractCmd)
     )
 end
 
+"""
+	check_dependency(p::CmdDependency) -> Bool
+
+Check `CmdDependency` by evaluating `\`\$(p.exec) \$(p.test_args)\``.
+
+If success, return `true`. 
+
+If fail, return `false`, or throw DependencyError when `p.exit_when_fail` set to `true`.
+"""
 function check_dependency(p::CmdDependency)
     out, err, success = readall(`$(p.exec) $(p.test_args)`)
 	has_dependency = true
@@ -74,7 +83,7 @@ function check_dependency(p::CmdDependency)
 	@label dependency_error
 	if p.exit_when_fail
 		error("DependencyError: invalid: $(p.exec)")
-	else
+    	else
 		@error "DependencyError: invalid: $(p.exec)"
 	end
 	return false
@@ -96,7 +105,11 @@ function Base.show(io::IO, p::CmdDependency)
 	show(io, p.exec)
 end
 
+"""
+	check_dependency_file(path::Union{AbstractString,Cmd}; exit_when_false=true) -> Bool
 
+Checke whether a file is exist. Return `::Bool`.
+"""
 function check_dependency_file(path::AbstractString; exit_when_false=true)
 	has_dependency = isfile(path)
 	if exit_when_false && !has_dependency
@@ -106,6 +119,12 @@ function check_dependency_file(path::AbstractString; exit_when_false=true)
 end
 check_dependency_file(path::Cmd; exit_when_false=true) = check_dependency_file(str(path); exit_when_false=exit_when_false)
 
+
+"""
+	check_dependency_dir(path::Union{AbstractString,Cmd}; exit_when_false=true) -> Bool
+
+Checke whether a file is exist. Return `::Bool`.
+"""
 function check_dependency_dir(path::AbstractString; exit_when_false=true)
 	has_dependency = isdir(path)
 	if exit_when_false && !has_dependency

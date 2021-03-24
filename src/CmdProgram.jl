@@ -118,6 +118,19 @@ end
 		dry_run::Bool=false
 	) -> (success::Bool, outputs::Dict{String})
 
+	run(
+		p::CmdProgram,
+		inputs::Dict{String},
+		outputs::Dict{String};
+		kwargs...
+	)
+
+	run(
+		p::CmdProgram,
+		inputs::Dict{String},
+		kwargs...
+	)
+
 Run Command Program (CmdProgram) using specified `inputs` and `outputs`.
 
 Return `(success::Bool, outputs::Dict{String})`
