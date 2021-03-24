@@ -14,6 +14,25 @@ mutable struct CmdProgram
 end
 
 """
+# Struct
+
+	mutable struct CmdProgram
+		name::String
+		id_file::String
+		info_before::String
+		info_after::String
+		cmd_dependencies::Vector{CmdDependency}
+		inputs::Vector{String}
+		validate_inputs::Function
+		prerequisites::Function
+		cmd::Base.AbstractCmd
+		infer_outputs::Function
+		outputs::Vector{String}
+		validate_outputs::Function
+	end
+
+# Methods
+
 	CmdProgram(;
 		name::String               = "Unnamed Command Program",
 		id_file::String            = "",
@@ -30,6 +49,8 @@ end
 	) -> CmdProgram
 
 Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs...).`
+
+# Arguments
 
 - `name::String`: Program name.
 
@@ -56,6 +77,29 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 - `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String, $ValidInputTypes}` whose keys are the same as `inputs`.
 
 - `validate_outputs::Function`: A function to validate outputs. It takes *one* argument `Dict{String, $ValidInputTypes}` whose keys are the same as `outputs`. If validation fail, throw error or return false.
+
+# Example
+
+	p = CmdProgram(
+		cmd_dependencies = [julia],
+		id_file = "id_file",
+		inputs = ["input", "input2"],
+		outputs = ["output"],
+		cmd = `echo input input2 output`
+	)
+
+	inputs = Dict(
+		"input" => `in1`,
+		"input2" => 2
+	)
+
+	outputs = Dict(
+		"output" => "out"
+	)
+
+	run(p, inputs, outputs;
+		touch_run_id_file = false
+	)
 """
 function CmdProgram(;
 	name::String               = "Unnamed Command Program",
@@ -170,6 +214,29 @@ Return `(success::Bool, outputs::Dict{String})`
 8. Validate `outputs`. (`p.validate_outputs(outputs)`)
 
 9. Success, touch run_id_file, and return true. (`touch_run_id_file::Bool`)
+
+# Example
+
+	p = CmdProgram(
+		cmd_dependencies = [julia],
+		id_file = "id_file",
+		inputs = ["input", "input2"],
+		outputs = ["output"],
+		cmd = `echo input input2 output`
+	)
+
+	inputs = Dict(
+		"input" => `in1`,
+		"input2" => 2
+	)
+
+	outputs = Dict(
+		"output" => "out"
+	)
+
+	run(p, inputs, outputs;
+		touch_run_id_file = false
+	)
 """
 function Base.run(
 	p::CmdProgram;

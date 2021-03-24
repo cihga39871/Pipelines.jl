@@ -1,24 +1,28 @@
-# Pipelines.jl Documentation
+# Pipelines.jl
 
 ```@meta
 CurrentModule = Pipelines
 ```
 
-```@contents
-Pages = [
-    "home.md",
-    "quick_start.md"
-]
-Depth = 3
+## Installation
+
+Pipelines.jl can be installed using the Julia package manager. From the Julia REPL, type ] to enter the Pkg REPL mode and run
+
+```julia
+pkg> add Pipelines
 ```
 
-## Functions
+To use the package, type:
 
-```@docs
-CmdDependency()
-check_dependency(::CmdDependency)
-check_dependency_dir(p)
-check_dependency_file(p)
-CmdProgram()
-run(::CmdProgram)
+```julia
+using Pipelines
+```
+
+## Quick Start
+
+## Table of Contents
+
+```@contents
+Pages = ["API.md"]
+Depth = 3
 ```

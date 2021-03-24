@@ -8,10 +8,59 @@ mutable struct CmdDependency
     exit_when_fail::Bool
 end
 
-function CmdDependency()
-	CmdDependency(``, ``, false, do_nothing, do_nothing, true)
-end
+"""
+# Struct
 
+	mutable struct CmdDependency
+		exec::Base.AbstractCmd
+		test_args::Base.AbstractCmd
+		validate_success::Bool
+		validate_stdout::Function
+		validate_stderr::Function
+		exit_when_fail::Bool
+	end
+
+# Methods
+
+	CmdDependency(;
+		exec::Base.AbstractCmd=``,
+		test_args::Base.AbstractCmd=``,
+		validate_success::Bool=false,
+		validate_stdout::Function=do_nothing,
+		validate_stderr::Function=do_nothing,
+		exit_when_fail::Bool=true
+	)
+
+Create Command Dependency (`CmdDependency`).
+
+# Arguments
+
+- `exec::AbstractCmd`: the command to call the dependency.
+
+- `test_args::AbstractCmd`: for testing purposes, the command to be appended to `exec`.
+
+- `validate_success::Bool`: when checking the dependency, whether to validate the exit code == 0.
+
+- `validate_stdout::Function`: a function takes standard out as `String` and return the validation result as `::Bool`.
+
+- `validate_stderr::Function`: a function takes standard error as `String` and return the validation result as `::Bool`.
+
+- `exit_when_fail::Bool`: if validation fails, whether to throw error and exit.
+
+# Example
+
+	julia = CmdDependency(
+		exec = Base.julia_cmd(),
+		test_args = `--version`,
+		validate_success = true,
+		validate_stdout = x -> occursin(r"^julia version", x),
+		validate_stderr = do_nothing,
+		exit_when_fail = true
+	)
+
+	check_dependency(julia)
+
+"""
 function CmdDependency(;
 	exec::Base.AbstractCmd=``,
 	test_args::Base.AbstractCmd=``,
