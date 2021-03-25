@@ -101,10 +101,10 @@ The explanation of arguments is in the next section.
    
 4. Check command dependencies (`CmdDependency`). 
    
-> Disable: `run(..., check_dependencies=false)`
+   > Disable: `run(..., check_dependencies=false)`
    >
    > Read **Command Dependency** portion for details.
-   
+
 5. Remove the run id file if exists.
 
 6. Validate inputs by invoking `p.validate_inputs(inputs)`.

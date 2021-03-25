@@ -4,8 +4,40 @@ Command Dependency (`CmdDependency`) is the external dependent program that can 
 
 ## Create
 
-```@docs
-CmdDependency()
+```julia
+CmdDependency(;
+    exec::Base.AbstractCmd=``,
+    test_args::Base.AbstractCmd=``,
+    validate_success::Bool=false,
+    validate_stdout::Function=do_nothing,
+    validate_stderr::Function=do_nothing,
+    exit_when_fail::Bool=true
+)
+```
+
+- `exec::AbstractCmd`: the command to call the dependency.
+
+- `test_args::AbstractCmd`: for testing purposes, the command to be appended to `exec`.
+
+- `validate_success::Bool`: when checking the dependency, whether to validate the exit code == 0.
+
+- `validate_stdout::Function`: a function takes standard out as `String` and return the validation result as `::Bool`.
+
+- `validate_stderr::Function`: a function takes standard error as `String` and return the validation result as `::Bool`.
+
+- `exit_when_fail::Bool`: if validation fails, whether to throw error and exit.
+
+### Example
+
+```julia
+julia = CmdDependency(
+    exec = `julia`,
+    test_args = `--version`,
+    validate_success = true,
+    validate_stdout = x -> occursin(r"^julia version", x),
+    validate_stderr = do_nothing,
+    exit_when_fail = true
+)
 ```
 
 ## Check
@@ -37,7 +69,7 @@ To call the dependency in command, we can use `exec(dep)` or `dep.exec`:
 ```julia
 prog = CmdProgram(
 	cmd_dependencies = [dep1, dep2],
-    cmd = `$(exec(dep1)) --args` & `$(dep2.exec) --args`
+	cmd = `$(exec(dep1)) --args` & `$(dep2.exec) --args`
 )
 ```
 
@@ -61,26 +93,26 @@ BOWTIE2 = CmdDependency(
 )
 
 program_bowtie2 = CmdProgram(
-    name = "Bowtie2 Mapping",
-    id_file = ".bowtie2",
-    cmd_dependencies = [BOWTIE2, SAMTOOLS],
-    
-    inputs = ["FASTQ", "REF"],
-    validate_inputs = inputs -> begin
-        check_dependency_file(inputs["FASTQ"]) && 
-        check_dependency_file(inputs["REF"])
-    end,
-    
-    outputs = ["BAM"],
+	name = "Bowtie2 Mapping",
+	id_file = ".bowtie2",
+	cmd_dependencies = [BOWTIE2, SAMTOOLS],
+
+	inputs = ["FASTQ", "REF"],
+	validate_inputs = inputs -> begin
+		check_dependency_file(inputs["FASTQ"]) && 
+	check_dependency_file(inputs["REF"])
+	end,
+
+	outputs = ["BAM"],
 	infer_outputs = inputs -> begin
-        Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
-    end,
-    
-    cmd = pipeline(`$(exec(BOWTIE2)) -x REF -q FASTQ`, `$(exec(SAMTOOLS)) sort -O bam -o BAM`),
-    
-    wrap_up = (inputs, outputs) -> begin
-        run(`$(exec(SAMTOOLS)) index $(outputs["BAM"])`)
-    end
+		Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
+	end,
+
+	cmd = pipeline(`$(exec(BOWTIE2)) -x REF -q FASTQ`, `$(exec(SAMTOOLS)) sort -O bam -o BAM`),
+
+	wrap_up = (inputs, outputs) -> begin
+		run(`$(exec(SAMTOOLS)) index $(outputs["BAM"])`)
+	end
 )
 ```
 

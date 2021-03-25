@@ -119,17 +119,7 @@ success, outputs = run(prog, inputs)
 outputs = infer_outputs(prog, inputs)
 ```
 
-
-
 ## Future development
 
 - Support running competitive tasks with **locks**.
 - Support running pure Julia Program.
-
-
-## Table of Contents
-
-```@contents
-Pages = ["command_program.md", "API.md"]
-Depth = 3
-```
