@@ -11,6 +11,7 @@ mutable struct CmdProgram
 	infer_outputs::Function
 	outputs::Vector{String}
 	validate_outputs::Function
+	wrap_up::Function
 end
 
 """
@@ -29,6 +30,7 @@ end
 		infer_outputs::Function
 		outputs::Vector{String}
 		validate_outputs::Function
+		wrap_up::Function
 	end
 
 # Methods
@@ -45,7 +47,8 @@ end
 		cmd::Base.AbstractCmd      = ``,
 		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
 		outputs::Vector{String}    = Vector{String}(),
-		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes}
+		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
+		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
 	) -> CmdProgram
 
 Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs...).`
@@ -62,21 +65,23 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: *keywords* (`Vector{String}`) in `cmd` that can be replaced when envoking `run(::CmdProgram, inputs::Dict{String, $ValidInputTypes}, outputs::Dict{String, $ValidInputTypes})`. See details below.
+- `inputs` and `outputs`: *keywords* (`Vector{String}`) in `cmd` that can be replaced when envoking `run(::CmdProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`. See details below.
 
   > `CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords are set in `inputs::Vector{String}` and `outputs::Vector{String}`.
 
-  > To run the program with replaced keywords, you need to use `run(::CmdProgram; inputs::Dict{String, $ValidInputTypes}, outputs::Dict{String, $ValidInputTypes})`. The data type is different.
+  > To run the program with replaced keywords, you need to use `run(::CmdProgram; inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`. The data type is different.
 
-- `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String, $ValidInputTypes}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
+- `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
 
-- `prerequisites`: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes *two* arguments `Dict{String, $ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
+- `prerequisites`: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
 
-- `cmd::AbstractCmd`: The main command template. In the template, keywords in `inputs::Vector{String}` and `outputs::Vector{String}` will be replaced when envoking `run(::CmdProgram, inputs::Dict{String, $ValidInputTypes}, outputs::Dict{String, $ValidInputTypes})`.
+- `cmd::AbstractCmd`: The main command template. In the template, keywords in `inputs::Vector{String}` and `outputs::Vector{String}` will be replaced when envoking `run(::CmdProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`.
 
-- `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String, $ValidInputTypes}` whose keys are the same as `inputs`.
+- `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`.
 
-- `validate_outputs::Function`: A function to validate outputs. It takes *one* argument `Dict{String, $ValidInputTypes}` whose keys are the same as `outputs`. If validation fail, throw error or return false.
+- `validate_outputs::Function`: A function to validate outputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `outputs`. If validation fail, throw error or return false.
+
+- `wrap_up::Function`: the last function to run. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
 
 # Example
 
@@ -113,7 +118,8 @@ function CmdProgram(;
 	cmd::Base.AbstractCmd      = ``,
 	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
 	outputs::Vector{String}    = Vector{String}(),
-	validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String}
+	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
+	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 )
 	CmdProgram(
 		name,
@@ -127,10 +133,16 @@ function CmdProgram(;
 		cmd,
 		infer_outputs,
 		outputs,
-		validate_outputs
+		validate_outputs,
+		wrap_up
 	)
 end
 
+"""
+	infer_outputs(p::CmdProgram, inputs::Dict{String})
+
+Infer the default outputs from `p::CmdProgram` and `inputs::Dict{String}`.
+"""
 function infer_outputs(p::CmdProgram, inputs::Dict{String})
 	p.infer_outputs(inputs)
 end
@@ -173,7 +185,7 @@ end
 		p::CmdProgram,
 		inputs::Dict{String},
 		kwargs...
-	)
+	)  # only usable when `p.infer_outputs` is defined.
 
 Run Command Program (CmdProgram) using specified `inputs` and `outputs`.
 
@@ -213,7 +225,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 8. Validate `outputs`. (`p.validate_outputs(outputs)`)
 
-9. Success, touch run_id_file, and return true. (`touch_run_id_file::Bool`)
+9. Success, touch run id file, and return true. (`touch_run_id_file::Bool`)
 
 # Example
 
@@ -334,6 +346,15 @@ function Base.run(
 		rethrow(e)
 		@error "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command). See error messages above." validation_function=p.validate_outputs command_template=p.cmd command_running=cmd run_id inputs outputs
 		error("ProgramOutputValidationError")
+		return false, outputs
+	end
+
+	try
+		isok(p.wrap_up(inputs, outputs)) || error("ProgramWrapUpError: $(p.name): the wrap_up function returns false.")
+	catch e
+		rethrow(e)
+		@error "ProgramWrapUpError: $(p.name): fail to run the wrap_up function. See error messages above." wrap_up=p.wrap_up command_template=p.cmd command_running=cmd run_id inputs outputs
+		error("ProgramWrapUpError")
 		return false, outputs
 	end
 

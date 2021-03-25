@@ -99,7 +99,7 @@ end
 
 Check `CmdDependency` by evaluating `\`\$(p.exec) \$(p.test_args)\``.
 
-If success, return `true`. 
+If success, return `true`.
 
 If fail, return `false`, or throw DependencyError when `p.exit_when_fail` set to `true`.
 """
@@ -157,7 +157,7 @@ end
 """
 	check_dependency_file(path::Union{AbstractString,Cmd}; exit_when_false=true) -> Bool
 
-Checke whether a file is exist. Return `::Bool`.
+Checke whether a file exists. Return `::Bool`.
 """
 function check_dependency_file(path::AbstractString; exit_when_false=true)
 	has_dependency = isfile(path)
@@ -172,7 +172,7 @@ check_dependency_file(path::Cmd; exit_when_false=true) = check_dependency_file(s
 """
 	check_dependency_dir(path::Union{AbstractString,Cmd}; exit_when_false=true) -> Bool
 
-Checke whether a file is exist. Return `::Bool`.
+Checke whether a directory exists. Return `::Bool`.
 """
 function check_dependency_dir(path::AbstractString; exit_when_false=true)
 	has_dependency = isdir(path)
@@ -182,3 +182,10 @@ function check_dependency_dir(path::AbstractString; exit_when_false=true)
 	has_dependency
 end
 check_dependency_dir(path::Cmd; exit_when_false=true) = check_dependency_file(str(path); exit_when_false=exit_when_false)
+
+"""
+	exec(p::CmdDependency) -> AbstractCmd
+
+Return the command to call the dependency.
+"""
+exec(p::CmdDependency) = p.exec

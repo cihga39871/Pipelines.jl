@@ -1,4 +1,4 @@
-# API - Pipelines.jl
+# API
 
 ## Command Dependency
 
@@ -14,4 +14,5 @@ check_dependency_file(path::AbstractString; exit_when_false=true)
 ```@docs
 CmdProgram()
 run(::CmdProgram)
+infer_outputs(::CmdProgram, ::Dict{String})
 ```
