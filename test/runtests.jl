@@ -72,3 +72,30 @@ cmd, run_id_file = run(p,
     dry_run=true
 )
 rm(run_id_file, force=true)
+
+program_bowtie2 = CmdProgram(
+	name = "Bowtie2 Mapping",
+	id_file = ".bowtie2",
+
+	inputs = ["FASTQ", "REF"],
+	validate_inputs = inputs -> begin
+		check_dependency_file(inputs["FASTQ"]) &&
+		check_dependency_file(inputs["REF"])
+	end,
+
+	prerequisites = (inputs, outputs) -> begin
+		mkpath(dirname(to_str(outputs["BAM"])))
+	end,
+
+	outputs = ["BAM"],
+	infer_outputs = inputs -> begin
+		Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
+	end,
+	validate_outputs = outputs -> begin
+		check_dependency_file(outputs["BAM"])
+	end,
+
+	cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),
+
+	wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
+)

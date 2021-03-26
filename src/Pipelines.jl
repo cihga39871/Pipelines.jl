@@ -4,10 +4,10 @@ using Logging, LoggingExtras, Dates
 using UUIDs
 
 include("utils.jl")
-export do_nothing,
-str, to_str,
-to_cmd,
-isok
+export do_nothing, isok,
+str, to_str, to_cmd,
+replaceext, removeext
+
 
 include("CmdDependency.jl")
 export CmdDependency,
