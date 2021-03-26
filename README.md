@@ -39,5 +39,5 @@ using Pipelines
 ## Documentation
 
 
-- [**STABLE**][https://cihga39871.github.io/Pipelines.jl/stable] &mdash; **documentation of the most recently tagged version.**
-- [**DEVEL**][https://cihga39871.github.io/Pipelines.jl/dev] &mdash; *documentation of the in-development version.*
+- [**STABLE**](https://cihga39871.github.io/Pipelines.jl/stable) &mdash; **documentation of the most recently tagged version.**
+- [**DEVEL**](https://cihga39871.github.io/Pipelines.jl/dev) &mdash; *documentation of the in-development version.*
