@@ -6,7 +6,7 @@ Building reusable programs and pipelines is easier than you have ever thought.
 
 | **Documentation**                                                               |
 |:-------------------------------------------------------------------------------:|
-| [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://cihga39871.github.io/Pipelines.jl/dev) |
+| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://cihga39871.github.io/Pipelines.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://cihga39871.github.io/Pipelines.jl/dev) |
 
 ## Package Features
 
@@ -38,4 +38,6 @@ using Pipelines
 
 ## Documentation
 
-- [**LATEST**](https://cihga39871.github.io/Pipelines.jl/dev) &mdash; *documentation of the latest version.*
+
+- [**STABLE**](https://cihga39871.github.io/Pipelines.jl/stable) &mdash; **documentation of the most recently tagged version.**
+- [**DEVEL**](https://cihga39871.github.io/Pipelines.jl/dev) &mdash; *documentation of the in-development version.*
