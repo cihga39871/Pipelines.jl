@@ -48,7 +48,7 @@ julia = CmdDependency(
 check_dependency(p::CmdDependency)
 ```
 
-Usually, it is not necessary because program builder will add necessary `CmdDependency` to `CmdProgram`, and dependency check will be done when running `CmdProgram` by default.
+Usually, it is not necessary when you specify `CmdDependency` in `CmdProgram` because dependency check will be done when running `CmdProgram` by default.
 
 ## Use with `CmdProgram`
 
@@ -75,7 +75,9 @@ prog = CmdProgram(
 
 ### An Example
 
-We use `samtools` and `bowtie2` as dependencies when building a mapping program.
+We use the same example in Command Program page.
+
+Adding `samtools` and `bowtie2` as the dependencies of the bowtie2 mapping program:
 
 ```julia
 SAMTOOLS = CmdDependency(
@@ -95,24 +97,28 @@ BOWTIE2 = CmdDependency(
 program_bowtie2 = CmdProgram(
 	name = "Bowtie2 Mapping",
 	id_file = ".bowtie2",
-	cmd_dependencies = [BOWTIE2, SAMTOOLS],
 
 	inputs = ["FASTQ", "REF"],
 	validate_inputs = inputs -> begin
-		check_dependency_file(inputs["FASTQ"]) && 
-	check_dependency_file(inputs["REF"])
+		check_dependency_file(inputs["FASTQ"]) &&
+		check_dependency_file(inputs["REF"])
+	end,
+
+	prerequisites = (inputs, outputs) -> begin
+		mkpath(dirname(to_str(outputs["BAM"])))
 	end,
 
 	outputs = ["BAM"],
 	infer_outputs = inputs -> begin
 		Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
 	end,
+	validate_outputs = outputs -> begin
+		check_dependency_file(outputs["BAM"])
+	end,
 
-	cmd = pipeline(`$(exec(BOWTIE2)) -x REF -q FASTQ`, `$(exec(SAMTOOLS)) sort -O bam -o BAM`),
+	cmd = pipeline(`$(BOWTIE2.exec) -x REF -q FASTQ`, `$(SAMTOOLS.exec) sort -O bam -o BAM`),
 
-	wrap_up = (inputs, outputs) -> begin
-		run(`$(exec(SAMTOOLS)) index $(outputs["BAM"])`)
-	end
+	wrap_up = (inputs, outputs) -> run(`$(SAMTOOLS.exec) index $(outputs["BAM"])`)
 )
 ```
 
@@ -120,6 +126,5 @@ To run the program, we can decide whether to check dependencies with `run(..., c
 
 ```julia
 inputs = Dict("FASTQ" => "a.fastq", "REF" => "ref.fasta")
-run(program_bowtie2, inputs; check_dependencies = true)
+success, outputs = run(program_bowtie2, inputs; check_dependencies = true)
 ```
-

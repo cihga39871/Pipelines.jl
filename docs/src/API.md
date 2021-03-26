@@ -1,5 +1,13 @@
 # API
 
+## Command Program
+
+```@docs
+CmdProgram()
+run(::CmdProgram)
+infer_outputs(::CmdProgram, ::Dict{String})
+```
+
 ## Command Dependency
 
 ```@docs
@@ -9,10 +17,12 @@ check_dependency_dir(path::AbstractString; exit_when_false=true)
 check_dependency_file(path::AbstractString; exit_when_false=true)
 ```
 
-## Command Program
+## Utils
 
 ```@docs
-CmdProgram()
-run(::CmdProgram)
-infer_outputs(::CmdProgram, ::Dict{String})
+to_str(::Cmd)
+to_cmd(::Cmd)
+split(::Cmd)
+replaceext(::String, ::AbstractString)
+removeext(::String)
 ```

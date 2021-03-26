@@ -66,15 +66,15 @@ run(echo, inputs)
     ```
 
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to to re-run a program:
-    
+
     ```julia
     # Method 1: stop checking finished program
     run(echo, inputs; skip_when_done = false)
-    
+
     # Method 2: delete the run_id_file before running again:
     cmd, run_id_file = run(echo, inputs; dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
-    
+
     # Method 3: Do not generate run_id_file when first running.
     run(echo, inputs; touch_run_id_file=false)
     ```
@@ -102,7 +102,7 @@ outputs = Dict("OUTPUT_FILE" => "out.txt")
 run(prog, inputs, outputs) # will return (success::Bool, outputs)
 ```
 
-It is inconvenient to specify outputs every time, so we provide a function in `CmdProgram` to generate default outputs from inputs.
+It is inconvenient to specify outputs every time, so we provide an argument (`infer_outputs::Function`) in `CmdProgram` to generate default outputs from inputs.
 
 ```julia
 prog = CmdProgram(
@@ -114,8 +114,11 @@ prog = CmdProgram(
     )
 )
 success, outputs = run(prog, inputs)
+```
 
-# We can also generate default outputs without running the program:
+We can also generate default outputs without running the program:
+
+```julia
 outputs = infer_outputs(prog, inputs)
 ```
 
