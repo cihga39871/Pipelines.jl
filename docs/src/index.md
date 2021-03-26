@@ -18,6 +18,8 @@ Building reusable programs and pipelines is easier than you have ever thought.
 
 - Supports dependency check.
 
+- Supports inputs, outputs validation, and so on.
+
 ## Installation
 
 Pipelines.jl can be installed using the Julia package manager. From the Julia REPL, type ] to enter the Pkg REPL mode and run

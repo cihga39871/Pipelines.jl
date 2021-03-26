@@ -17,5 +17,6 @@ makedocs(
 
 deploydocs(
     repo = "github.com/cihga39871/Pipelines.jl.git",
+    devbranch = "main"
 )
 

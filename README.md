@@ -18,6 +18,8 @@ Building reusable programs and pipelines is easier than you have ever thought.
 
 - Supports dependency check.
 
+- Supports inputs, outputs validation, and so on.
+
 ## Installation
 
 Pipelines.jl can be installed using the Julia package manager. From the Julia REPL, type ] to enter the Pkg REPL mode and run
@@ -36,5 +38,6 @@ using Pipelines
 
 ## Documentation
 
-- [**STABLE**][docs-stable-url] &mdash; **documentation of the most recently tagged version.**
-- [**DEVEL**][docs-dev-url] &mdash; *documentation of the in-development version.*
+
+- [**STABLE**][https://cihga39871.github.io/Pipelines.jl/stable] &mdash; **documentation of the most recently tagged version.**
+- [**DEVEL**][https://cihga39871.github.io/Pipelines.jl/dev] &mdash; *documentation of the in-development version.*
