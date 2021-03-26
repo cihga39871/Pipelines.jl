@@ -14,3 +14,8 @@ makedocs(
         "API.md"
     ]
 )
+
+deploydocs(
+    repo = "github.com/cihga39871/Pipelines.jl.git",
+)
+
