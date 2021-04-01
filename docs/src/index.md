@@ -6,7 +6,7 @@ CurrentModule = Pipelines
 
 *A lightweight Julia package for computational pipelines.*
 
-Building reusable programs and pipelines is easier than you have ever thought.
+Building reusable pipelines and workflows is easier than you have ever thought.
 
 ## Package Features
 
@@ -67,7 +67,7 @@ run(echo, inputs)
     run(echo, inputs)
     ```
 
-    This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to to re-run a program:
+    This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
 
     ```julia
     # Method 1: stop checking finished program
