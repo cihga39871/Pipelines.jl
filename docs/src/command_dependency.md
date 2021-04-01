@@ -98,6 +98,8 @@ program_bowtie2 = CmdProgram(
 	name = "Bowtie2 Mapping",
 	id_file = ".bowtie2",
 
+	cmd_dependencies = [SAMTOOLS, BOWTIE2],
+
 	inputs = ["FASTQ", "REF"],
 	validate_inputs = inputs -> begin
 		check_dependency_file(inputs["FASTQ"]) &&
