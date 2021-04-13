@@ -1,15 +1,29 @@
 # API
 
-## Command Program
+## Program
+```@docs
+Program
+```
 
+### Command Program
 ```@docs
 CmdProgram()
 run(::CmdProgram)
-infer_outputs(::CmdProgram, ::Dict{String})
+```
+
+### Julia Program
+```@docs
+JuliaProgram()
+run(::JuliaProgram)
+```
+
+### Common Methods
+```@docs
+infer_outputs(::Program, ::Dict{String})
+check_dependency(::Program)
 ```
 
 ## Command Dependency
-
 ```@docs
 CmdDependency()
 check_dependency(::CmdDependency)
@@ -18,7 +32,6 @@ check_dependency_file(path::AbstractString; exit_when_false=true)
 ```
 
 ## Utils
-
 ```@docs
 to_str(::Cmd)
 to_cmd(::Cmd)

@@ -2,6 +2,9 @@
 include("../src/Pipelines.jl")
 
 using .Pipelines
+using Test
+
+### cmd dependency
 
 julia = CmdDependency(
     exec = Base.julia_cmd(),
@@ -13,6 +16,10 @@ julia = CmdDependency(
 )
 
 check_dependency(julia)
+
+@test `$julia` == Base.julia_cmd()
+
+### cmd program
 
 p = CmdProgram(
     cmd_dependencies = [julia],
@@ -35,7 +42,7 @@ run(p,
     inputs = inputs,
     outputs = outputs,
     skip_when_done = false,
-    verbose = false,
+    verbose = true,
     touch_run_id_file = false
 )
 
@@ -98,4 +105,31 @@ program_bowtie2 = CmdProgram(
 	cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),
 
 	wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
+)
+
+
+### julia program
+
+p = JuliaProgram(
+	cmd_dependencies = [julia],
+	id_file = "id_file",
+	inputs = ["a", "b"],
+	outputs = ["c"],
+	main = (inputs, outputs) -> begin
+		println("inputs are ", inputs["a"], " and ", inputs["b"])
+		println("output is ", outputs["c"])
+	end
+)
+
+inputs = Dict(
+	"a" => `in1`,
+	"b" => 2
+)
+
+outputs = Dict(
+	"c" => "out"
+)
+
+run(p, inputs, outputs;
+	touch_run_id_file = false
 )

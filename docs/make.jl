@@ -9,6 +9,7 @@ makedocs(
         "Home" => "index.md",
         "Manual" => [
             "command_program.md",
+            "julia_program.md",
             "command_dependency.md",
         ],
         "API.md"
@@ -19,4 +20,3 @@ deploydocs(
     repo = "github.com/cihga39871/Pipelines.jl.git",
     devbranch = "main"
 )
-

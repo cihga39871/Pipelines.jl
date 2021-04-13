@@ -1,7 +1,7 @@
 
 mutable struct CmdDependency
-    exec::Base.AbstractCmd
-    test_args::Base.AbstractCmd
+    exec::Base.Cmd
+    test_args::Base.Cmd
 	validate_success::Bool
     validate_stdout::Function
     validate_stderr::Function
@@ -12,8 +12,8 @@ end
 # Struct
 
 	mutable struct CmdDependency
-		exec::Base.AbstractCmd
-		test_args::Base.AbstractCmd
+		exec::Base.Cmd
+		test_args::Base.Cmd
 		validate_success::Bool
 		validate_stdout::Function
 		validate_stderr::Function
@@ -23,8 +23,8 @@ end
 # Methods
 
 	CmdDependency(;
-		exec::Base.AbstractCmd=``,
-		test_args::Base.AbstractCmd=``,
+		exec::Base.Cmd=``,
+		test_args::Base.Cmd=``,
 		validate_success::Bool=false,
 		validate_stdout::Function=do_nothing,
 		validate_stderr::Function=do_nothing,
@@ -62,8 +62,8 @@ Create Command Dependency (`CmdDependency`).
 
 """
 function CmdDependency(;
-	exec::Base.AbstractCmd=``,
-	test_args::Base.AbstractCmd=``,
+	exec::Cmd=``,
+	test_args::Cmd=``,
 	validate_success::Bool=false,
 	validate_stdout::Function=do_nothing,
 	validate_stderr::Function=do_nothing,
@@ -104,7 +104,7 @@ If success, return `true`.
 If fail, return `false`, or throw DependencyError when `p.exit_when_fail` set to `true`.
 """
 function check_dependency(p::CmdDependency)
-    out, err, success = readall(`$(p.exec) $(p.test_args)`)
+    out, err, success = readall(`$p $(p.test_args)`)
 	has_dependency = true
 
 	if p.validate_success && !success
@@ -113,7 +113,7 @@ function check_dependency(p::CmdDependency)
 
 	try
 		res = p.validate_stdout(out)
-		res === false && error("DependencyError: invalid: $(p.exec): the `validate_stdout` function returns false.")
+		res === false && error("DependencyError: invalid: $p: the `validate_stdout` function returns false.")
 	catch e
 		rethrow(e)
 		@goto dependency_error
@@ -121,7 +121,7 @@ function check_dependency(p::CmdDependency)
 
 	try
 		res = p.validate_stderr(err)
-		res === false && error("DependencyError: invalid: $(p.exec): the `validate_stdout` function returns false.")
+		res === false && error("DependencyError: invalid: $p: the `validate_stdout` function returns false.")
 	catch e
 		rethrow(e)
 		@goto dependency_error
@@ -131,9 +131,9 @@ function check_dependency(p::CmdDependency)
 
 	@label dependency_error
 	if p.exit_when_fail
-		error("DependencyError: invalid: $(p.exec)")
-    	else
-		@error "DependencyError: invalid: $(p.exec)"
+		error("DependencyError: invalid: $p")
+	else
+		@error timestamp() * "DependencyError: invalid: $p"
 	end
 	return false
 end
@@ -153,6 +153,10 @@ end
 function Base.show(io::IO, p::CmdDependency)
 	show(io, p.exec)
 end
+
+# Interpolation in Cmd
+# It allows CmdDependency to be interpolated in `$p`.
+Base.arg_gen(p::CmdDependency) = Base.arg_gen(p.exec)
 
 """
 	check_dependency_file(path::Union{AbstractString,Cmd}; exit_when_false=true) -> Bool
@@ -182,10 +186,3 @@ function check_dependency_dir(path::AbstractString; exit_when_false=true)
 	has_dependency
 end
 check_dependency_dir(path::Cmd; exit_when_false=true) = check_dependency_file(str(path); exit_when_false=exit_when_false)
-
-"""
-	exec(p::CmdDependency) -> AbstractCmd
-
-Return the command to call the dependency.
-"""
-exec(p::CmdDependency) = p.exec

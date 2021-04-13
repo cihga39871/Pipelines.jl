@@ -2,7 +2,9 @@
 
 Please read the Quick Start section in Home page first.
 
-Pipelines are built with multiple `CmdProgram`s. A `CmdProgram` contains a command template, lists of dependencies/inputs/outputs, and predefined methods to prepare run-time environment, validate dependencies/inputs/outputs, and so on.
+Pipelines are built with multiple `Program`s. `Program` is the abstract type contains `CmdProgram` and `JuliaProgram`.
+
+A `CmdProgram` contains a command template, lists of dependencies/inputs/outputs, and predefined methods to prepare run-time environment, validate dependencies/inputs/outputs, and so on.
 
 
 ## An Example
@@ -163,7 +165,7 @@ program_bowtie2 = CmdProgram(
 
 ## Structure
 
-`CmdProgram` can be build with the method:
+`CmdProgram` can be built with this method:
 
 ```julia
 CmdProgram(;

@@ -64,12 +64,12 @@ prog = CmdProgram(
 )
 ```
 
-To call the dependency in command, we can use `exec(dep)` or `dep.exec`:
+To call the dependency in command, we can prepend a dollor sign (`$`):
 
 ```julia
 prog = CmdProgram(
 	cmd_dependencies = [dep1, dep2],
-	cmd = `$(exec(dep1)) --args` & `$(dep2.exec) --args`
+	cmd = `$dep1 --args` & `$dep2 --args`
 )
 ```
 
@@ -116,9 +116,9 @@ program_bowtie2 = CmdProgram(
 		check_dependency_file(outputs["BAM"])
 	end,
 
-	cmd = pipeline(`$(BOWTIE2.exec) -x REF -q FASTQ`, `$(SAMTOOLS.exec) sort -O bam -o BAM`),
+	cmd = pipeline(`$BOWTIE2 -x REF -q FASTQ`, `$SAMTOOLS sort -O bam -o BAM`),
 
-	wrap_up = (inputs, outputs) -> run(`$(SAMTOOLS.exec) index $(outputs["BAM"])`)
+	wrap_up = (inputs, outputs) -> run(`$SAMTOOLS index $(outputs["BAM"])`)
 )
 ```
 

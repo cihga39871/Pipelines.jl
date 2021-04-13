@@ -1,11 +1,8 @@
 
 
 # logging with dates
-const date_format = "yyyy-mm-dd HH:MM:SS"
-timestamp_logger(logger) = TransformerLogger(logger) do log
-    merge(log, (; message = "$(Dates.format(now(), date_format)) $(log.message)"))
-end
-ConsoleLogger(stdout, Logging.Debug) |> timestamp_logger |> global_logger
+# JL Documentation page rendering may not compatible with LogginExtras, so use timestamp instead.
+timestamp() = Dates.format(now(), "yyyy-mm-dd HH:MM:SS ")
 
 # UUID generation
 const UUID4 = uuid4(UUIDs.MersenneTwister(39871))

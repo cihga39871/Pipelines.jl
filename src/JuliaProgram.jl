@@ -1,4 +1,4 @@
-mutable struct CmdProgram <: Program
+mutable struct JuliaProgram <: Program
 	name::String
 	id_file::String
 	info_before::String
@@ -7,7 +7,7 @@ mutable struct CmdProgram <: Program
 	inputs::Vector{String}
 	validate_inputs::Function
 	prerequisites::Function
-    cmd::Base.AbstractCmd
+    main::Function
 	infer_outputs::Function
 	outputs::Vector{String}
 	validate_outputs::Function
@@ -17,7 +17,7 @@ end
 """
 # Struct
 
-	mutable struct CmdProgram
+	mutable struct JuliaProgram <: Program
 		name::String
 		id_file::String
 		info_before::String
@@ -26,7 +26,7 @@ end
 		inputs::Vector{String}
 		validate_inputs::Function
 		prerequisites::Function
-		cmd::Base.AbstractCmd
+		main::Function
 		infer_outputs::Function
 		outputs::Vector{String}
 		validate_outputs::Function
@@ -35,7 +35,7 @@ end
 
 # Methods
 
-	CmdProgram(;
+	JuliaProgram(;
 		name::String               = "Unnamed Command Program",
 		id_file::String            = "",
 		info_before::String        = "auto",
@@ -44,14 +44,14 @@ end
 		inputs::Vector{String}     = Vector{String}(),
 		validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
 		prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
-		cmd::Base.AbstractCmd      = ``,
+		main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
 		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
 		outputs::Vector{String}    = Vector{String}(),
 		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
 		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
-	) -> CmdProgram
+	) -> JuliaProgram
 
-Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs...).`
+Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs...).`
 
 # Arguments
 
@@ -65,17 +65,15 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: *keywords* (`Vector{String}`) in `cmd` that can be replaced when envoking `run(::CmdProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`. See details below.
+- `inputs` and `outputs`: *keys* (`Vector{String}`) of dicts which are required by `run(::JuliaProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`. See details below.
 
-  > `CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords are set in `inputs::Vector{String}` and `outputs::Vector{String}`.
-
-  > To run the program with replaced keywords, you need to use `run(::CmdProgram; inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`. The data type is different.
+  > `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be set in `inputs::Vector{String}` and `outputs::Vector{String}`.
 
 - `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
 
 - `prerequisites`: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
 
-- `cmd::AbstractCmd`: The main command template. In the template, keywords in `inputs::Vector{String}` and `outputs::Vector{String}` will be replaced when envoking `run(::CmdProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`.
+- `main::Function`: The main julia function. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
 
 - `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`.
 
@@ -85,12 +83,15 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 # Example
 
-	p = CmdProgram(
-		cmd_dependencies = [julia],
-		id_file = "id_file",
+	p = JuliaProgram(
+		id_file = "tmp_jlprog",
 		inputs = ["input", "input2"],
 		outputs = ["output"],
-		cmd = `echo input input2 output`
+		main = (inputs, outputs) -> println(
+			inputs["input"],
+			inputs["input2"],
+			outputs["output"]
+		)
 	)
 
 	inputs = Dict(
@@ -106,8 +107,8 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 		touch_run_id_file = false
 	)
 """
-function CmdProgram(;
-	name::String               = "Command Program",
+function JuliaProgram(;
+	name::String               = "Julia Program",
 	id_file::String            = "",
 	info_before::String        = "auto",
 	info_after::String         = "auto",
@@ -115,13 +116,13 @@ function CmdProgram(;
 	inputs::Vector{String}     = Vector{String}(),
 	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
 	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-	cmd::Base.AbstractCmd      = ``,
+	main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String},
 	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
 	outputs::Vector{String}    = Vector{String}(),
 	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
 	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 )
-	CmdProgram(
+	JuliaProgram(
 		name,
 		id_file,
 		info_before,
@@ -130,7 +131,7 @@ function CmdProgram(;
 		inputs,
 		validate_inputs,
 		prerequisites,
-		cmd,
+		main,
 		infer_outputs,
 		outputs,
 		validate_outputs,
@@ -140,7 +141,7 @@ end
 
 """
 	run(
-		p::CmdProgram;
+		p::JuliaProgram;
 		inputs::Dict{String}=Dict{String, Cmd}(),
 		outputs::Dict{String}=Dict{String, Cmd}(),
 		skip_when_done::Bool=true,
@@ -154,25 +155,25 @@ end
 	) -> (success::Bool, outputs::Dict{String})
 
 	run(
-		p::CmdProgram,
+		p::JuliaProgram,
 		inputs::Dict{String},
 		outputs::Dict{String};
 		kwargs...
 	)
 
 	run(
-		p::CmdProgram,
+		p::JuliaProgram,
 		inputs::Dict{String},
 		kwargs...
 	)  # only usable when `p.infer_outputs` is defined.
 
-Run Command Program (CmdProgram) using specified `inputs` and `outputs`.
+Run Julia Program (JuliaProgram) using specified `inputs` and `outputs`.
 
 Return `(success::Bool, outputs::Dict{String})`
 
-- `p::CmdProgram`: the command program template.
+- `p::JuliaProgram`: the command program template.
 
-- `inputs::Dict{String}` and `outputs::Dict{String}`: `p::CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are `Dict(keyword::String => replacement::$ValidInputTypes)`. The replacements do not have a length limit, unless a *keyword* refers to a filename (length == 1).
+- `inputs::Dict{String}` and `outputs::Dict{String}`: `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be the same as `p.inputs::Vector{String}` and `p.outputs::Vector{String}`.
 
 - `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 
@@ -184,7 +185,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `touch_run_id_file::Bool = true`: If `true`, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If `false`, the next time running the program, `skip_when_done=true` will not take effect.
 
-- `dry_run::Bool = false`: do not run the command, return `(command::AbstractCmd, run_id_file::String)`.
+- `dry_run::Bool = false`: do not run the command, return `(outputs::Dict{String}, run_id_file::String)`.
 
 ### Workflow
 
@@ -196,35 +197,36 @@ Return `(success::Bool, outputs::Dict{String})`
 
 4. Validate `inputs`. (`p.validate_inputs(inputs)`)
 
-5. Generate runnable command from `p` and `inputs/outputs`. (`stdout`, `stderr`, `append`)
+5. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
 
-6. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
+6. Run main function. (`p.main(inputs, outputs)`)
 
-7. Run command generated in #5.
+7. Validate `outputs`. (`p.validate_outputs(outputs)`)
 
-8. Validate `outputs`. (`p.validate_outputs(outputs)`)
+8. Wrap up. (`p.wrap_up(inputs, outputs)`)
 
-9. Wrap up. (`p.wrap_up(inputs, outputs)`)
-
-10. Success, touch run id file, and return true. (`touch_run_id_file::Bool`)
+9. Success, touch run id file, and return true. (`touch_run_id_file::Bool`)
 
 # Example
 
-	p = CmdProgram(
+	p = JuliaProgram(
 		cmd_dependencies = [julia],
 		id_file = "id_file",
-		inputs = ["input", "input2"],
-		outputs = ["output"],
-		cmd = `echo input input2 output`
+		inputs = ["a", "b"],
+		outputs = ["c"],
+		main = (inputs, outputs) -> begin
+			println("inputs are ", inputs["a"], " and ", inputs["b"])
+			println("output is ", outputs["c"])
+		end
 	)
 
 	inputs = Dict(
-		"input" => `in1`,
-		"input2" => 2
+		"a" => `in1`,
+		"b" => 2
 	)
 
 	outputs = Dict(
-		"output" => "out"
+		"c" => "out"
 	)
 
 	run(p, inputs, outputs;
@@ -232,7 +234,7 @@ Return `(success::Bool, outputs::Dict{String})`
 	)
 """
 function Base.run(
-	p::CmdProgram;
+	p::JuliaProgram;
 	inputs::Dict{String}=Dict{String, Cmd}(),
 	outputs::Dict{String}=Dict{String, Cmd}(),
 	skip_when_done::Bool=true,
@@ -257,15 +259,15 @@ function Base.run(
 
 	if verbose
 		if p.info_before == "auto" || p.info_before == ""
-			@info timestamp() * "Starting program: $(p.name)" command_template=p.cmd run_id inputs outputs
+			@info timestamp() * "Starting program: $(p.name)" run_id inputs outputs
 		else
-			@info timestamp() * p.info_before command_template=p.cmd run_id inputs outputs
+			@info timestamp() * p.info_before run_id inputs outputs
 		end
 	end
 
 	# skip when done
 	if skip_when_done && isfile(run_id_file) && isok(p.validate_outputs(outputs))
-		@warn timestamp() * "Skipping finished program: $(p.name)" command_template=p.cmd run_id inputs outputs
+		@warn timestamp() * "Skipping finished program: $(p.name)" run_id inputs outputs
 		return true, outputs
 	end
 
@@ -282,21 +284,15 @@ function Base.run(
 		isok(p.validate_inputs(inputs)) || error("ProgramInputValidationError: $(p.name): the prerequisites function returns false.")
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramInputValidationError: $(p.name): fail to validate inputs (before running the main command). See error messages above." validation_function=p.validate_inputs command_template=p.cmd run_id inputs outputs
+		@error timestamp() * "ProgramInputValidationError: $(p.name): fail to validate inputs (before running the main command). See error messages above." validation_function=p.validate_inputs run_id inputs outputs
 		error("ProgramInputValidationError")
 		return false, outputs
 	end
 
 	@label dry_run_start
-	# preparation: replace inputs and outputs in cmd, including redirecting files
-	cmd = prepare_cmd(p.cmd, inputs, outputs)
-	# redirecting to stdout/stderr if specified.
-	if !(isnothing(stdout) && isnothing(stderr))
-		cmd = pipeline(cmd, stdout=stdout, stderr=stderr, append=append)
-	end
 
 	if dry_run
-		return (cmd, run_id_file)
+		return (outputs, run_id_file)
 		# dry_run stops
 	end
 
@@ -305,17 +301,17 @@ function Base.run(
 		isok(p.prerequisites(inputs, outputs)) || error("ProgramPrerequisitesError: $(p.name): the prerequisites function returns false.")
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command). See error messages above." prerequisites=p.prerequisites command_template=p.cmd command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command). See error messages above." prerequisites=p.prerequisites run_id inputs outputs
 		error("ProgramPrerequisitesError")
 		return false, outputs
 	end
 
 	# run the main command
 	try
-		run(cmd)
+		isok(p.main(inputs, outputs)) || error("ProgramRunningError: $(p.name): the main function returns false.")
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." prerequisites=p.prerequisites command_template=p.cmd command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." prerequisites=p.prerequisites run_id inputs outputs
 		error("ProgramRunningError")
 		return false, outputs
 	end
@@ -325,7 +321,7 @@ function Base.run(
 		isok(p.validate_outputs(outputs)) || error("ProgramOutputValidationError: $(p.name): the validation function returns false.")
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command). See error messages above." validation_function=p.validate_outputs command_template=p.cmd command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command). See error messages above." validation_function=p.validate_outputs run_id inputs outputs
 		error("ProgramOutputValidationError")
 		return false, outputs
 	end
@@ -334,7 +330,7 @@ function Base.run(
 		isok(p.wrap_up(inputs, outputs)) || error("ProgramWrapUpError: $(p.name): the wrap_up function returns false.")
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function. See error messages above." wrap_up=p.wrap_up command_template=p.cmd command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function. See error messages above." wrap_up=p.wrap_up run_id inputs outputs
 		error("ProgramWrapUpError")
 		return false, outputs
 	end
@@ -344,61 +340,10 @@ function Base.run(
 
 	if verbose
 		if p.info_after == "auto" || p.info_after == ""
-			@info timestamp() * "Finishing program: $(p.name)" command_template=p.cmd command_running=cmd run_id inputs outputs
+			@info timestamp() * "Finishing program: $(p.name)" run_id inputs outputs
 		else
-			@info timestamp() * p.info_after command_template=p.cmd command_running=cmd run_id inputs outputs
+			@info timestamp() * p.info_after run_id inputs outputs
 		end
 	end
 	return true, outputs
-end
-
-function prepare_cmd(c::Cmd, inputs::Dict{String}, outputs::Dict{String})
-	cmd = deepcopy(c)
-	n = length(cmd.exec)
-	for i = n:-1:1
-		replacement = get(inputs, cmd.exec[i], nothing) |> to_cmd
-		if isnothing(replacement)
-			replacement = get(outputs, cmd.exec[i], nothing) |> to_cmd
-			if !isnothing(replacement)
-				splice!(cmd.exec, i, replacement)
-			end
-		else
-			splice!(cmd.exec, i, replacement)
-		end
-	end
-	cmd
-end
-
-function prepare_cmd(c::Base.CmdRedirect, inputs::Dict{String}, outputs::Dict{String})
-	Base.CmdRedirect(
-		prepare_cmd(c.cmd, inputs, outputs),
-		prepare_cmd(c.handle, inputs, outputs),
-		c.stream_no,
-		c.readable
-	)
-end
-function prepare_cmd(c::T, inputs::Dict{String}, outputs::Dict{String}) where T <: Union{Base.OrCmds, Base.ErrOrCmds, Base.AndCmds}
-	T(
-		prepare_cmd(c.a, inputs, outputs),
-		prepare_cmd(c.b, inputs, outputs)
-	)
-end
-function prepare_cmd(h::Base.FileRedirect, inputs::Dict{String}, outputs::Dict{String})
-	replacement = get(outputs, h.filename, nothing) |> to_cmd
-	if isnothing(replacement)
-		replacement = get(inputs, h.filename, nothing) |> to_cmd
-		if !isnothing(replacement)
-			@goto to_replace
-		end
-	else
-		@goto to_replace
-	end
-	return h  # nothing change
-
-	@label to_replace
-	if length(replacement.exec) == 1
-		return Base.FileRedirect(replacement.exec[1], h.append)
-	else
-		error("ProgramRedirectError: a key ($(h.filename)) in inputs or outputs found in redirecting filename, but the provided value contain multiple elements. Please only provide one element. For example, quote the filename when contain special characters.")
-	end
 end
