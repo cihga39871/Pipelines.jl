@@ -68,15 +68,15 @@ run(echo, inputs)
     ```
 
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
-
+    
     ```julia
     # Method 1: stop checking finished program
     run(echo, inputs; skip_when_done = false)
-
+    
     # Method 2: delete the run_id_file before running again:
     cmd, run_id_file = run(echo, inputs; dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
-
+    
     # Method 3: Do not generate run_id_file when first running.
     run(echo, inputs; touch_run_id_file=false)
     ```
@@ -133,6 +133,10 @@ Pipelines also defined `JuliaProgram` type for pure Julia functions. It is like 
 - Support running competitive tasks with **locks**.
 
 ## Change log
+
+### v0.2.1
+
+- Fix examples in docs.
 
 ### v0.2.0
 

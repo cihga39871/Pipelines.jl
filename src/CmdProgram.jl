@@ -172,7 +172,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `p::CmdProgram`: the command program template.
 
-- `inputs::Dict{String}` and `outputs::Dict{String}`: `p::CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are `Dict(keyword::String => replacement::$ValidInputTypes)`. The replacements do not have a length limit, unless a *keyword* refers to a filename (length == 1).
+- `inputs::Dict{String}` and `outputs::Dict{String}`: `p::CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are `Dict(keyword::String => replacement)`. The replacements do not have a length limit, unless a *keyword* refers to a filename (length == 1).
 
 - `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 

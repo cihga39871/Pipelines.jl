@@ -42,13 +42,13 @@ end
 		info_after::String         = "auto",
 		cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
 		inputs::Vector{String}     = Vector{String}(),
-		validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
-		prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
-		main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
-		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
+		validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
+		prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
+		main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
+		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
 		outputs::Vector{String}    = Vector{String}(),
-		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
-		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
+		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String},
+		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 	) -> JuliaProgram
 
 Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs...).`
@@ -65,51 +65,55 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: *keys* (`Vector{String}`) of dicts which are required by `run(::JuliaProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`. See details below.
+- `inputs` and `outputs`: *keys* (`Vector{String}`) of dicts which are required by `run(::JuliaProgram, inputs::Dict{String}, outputs::Dict{String})`. See details below.
 
   > `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be set in `inputs::Vector{String}` and `outputs::Vector{String}`.
 
   > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value is `Dict{String}` with proper keys.
 
-- `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
+- `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
 
-- `prerequisites`: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
+- `prerequisites`: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes *two* arguments `Dict{String}` whose keys are the same as `inputs` and `outputs`, respectively.
 
-- `main::Function`: The main julia function. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
+- `main::Function`: The main julia function. It takes *two* arguments `Dict{String}` whose keys are the same as `inputs` and `outputs`, respectively.
 
   > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value is `Dict{String}` with proper keys.
 
-- `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`.
+- `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String}` whose keys are the same as `inputs`.
 
-- `validate_outputs::Function`: A function to validate outputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `outputs`. If validation fail, throw error or return false.
+- `validate_outputs::Function`: A function to validate outputs. It takes *one* argument `Dict{String}` whose keys are the same as `outputs`. If validation fail, throw error or return false.
 
-- `wrap_up::Function`: the last function to run. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
+- `wrap_up::Function`: the last function to run. It takes *two* arguments `Dict{String}` whose keys are the same as `inputs` and `outputs`, respectively.
 
 # Example
 
 	p = JuliaProgram(
-		id_file = "tmp_jlprog",
-		inputs = ["input", "input2"],
-		outputs = ["output"],
-		main = (inputs, outputs) -> println(
-			inputs["input"],
-			inputs["input2"],
-			outputs["output"]
-		)
+		id_file = "id_file",
+		inputs = ["a", "b"],
+		outputs = ["c"],
+		main = (inputs, outputs) -> begin
+			a = inputs["a"]
+			b = inputs["b"]
+			println("inputs are ", a, " and ", b)
+			println("You can also use info in outputs: ", outputs["c"])
+	        println("The returned value will be assigned to a new outputs")
+
+	        return Dict{String,Any}("c" => b^2)
+		end
 	)
 
 	inputs = Dict(
-		"input" => `in1`,
-		"input2" => 2
+		"a" => `in1`,
+		"b" => 2
 	)
 
 	outputs = Dict(
-		"output" => "out"
+		"c" => "out"
 	)
 
-	run(p, inputs, outputs;
+	success, outputs = run(p, inputs, outputs;
 		touch_run_id_file = false
-	)
+	) # outputs will be refreshed
 """
 function JuliaProgram(;
 	name::String               = "Julia Program",
@@ -216,14 +220,16 @@ Return `(success::Bool, outputs::Dict{String})`
 # Example
 
 	p = JuliaProgram(
-		cmd_dependencies = [julia],
 		id_file = "id_file",
 		inputs = ["a", "b"],
 		outputs = ["c"],
 		main = (inputs, outputs) -> begin
-			println("inputs are ", inputs["a"], " and ", inputs["b"])
-			println("You can also use info in outputs:", outputs["c"])
+			a = inputs["a"]
+			b = inputs["b"]
+			println("inputs are ", a, " and ", b)
+			println("You can also use info in outputs: ", outputs["c"])
 	        println("The returned value will be assigned to a new outputs")
+
 	        return Dict{String,Any}("c" => b^2)
 		end
 	)
