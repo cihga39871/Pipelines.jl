@@ -9,10 +9,9 @@ Pipelines are built with multiple `Program`s. `Program` is the abstract type con
 `JuliaProgram` and `CmdProgram` are generally the same and remain most compatibility, except for the differences:
 
 - A `cp::CmdProgram` contains a command template (defined in `cp.cmd`), while a `jp::JuliaProgram` contains a main Julia function (defined in `jp.main`).
-
-- The main Julia function takes `inputs::Dict{String}` and `outputs::Dict{String}` as positional arguments. That means when we call `run(jp::JuliaProgram, ...)`, `j.main(inputs::Dict{String}, outputs::Dict{String})` will be evaluated.
-
-- When using dry run (`run(jp::JuliaProgram, dry_run=true)`), return `(outputs::Dict{String}, run_id_file::String)`
+- The main Julia function takes `inputs::Dict{String}` and `outputs::Dict{String}` as positional arguments. That means when we call `run(jp::JuliaProgram, ...)`, `jp.main(inputs::Dict{String}, outputs::Dict{String})` will be evaluated.
+- The returned value of the main function will be assigned to new `outputs`, ie. it is evaluated like this `outputs = jp.main(inputs, outputs)`. Please ensure the returned value is `Dict{String}` with proper keys.
+- When using dry run (`run(jp::JuliaProgram, dry_run=true)`), return `(fake_outputs::Dict{String}, run_id_file::String)`.
 
 ## Structure
 
@@ -76,7 +75,9 @@ p = JuliaProgram(
 	outputs = ["c"],
 	main = (inputs, outputs) -> begin
 		println("inputs are ", inputs["a"], " and ", inputs["b"])
-		println("output is ", outputs["c"])
+		println("You can also use info in outputs:", outputs["c"])
+        println("The returned value will be assigned to a new outputs")
+        return Dict{String,Any}("c" => b^2)
 	end
 )
 
@@ -89,7 +90,7 @@ outputs = Dict(
 	"c" => "out"
 )
 
-run(p, inputs, outputs;
+success, outputs = run(p, inputs, outputs;
 	touch_run_id_file = false
-)
+) # outputs will be refreshed
 ```

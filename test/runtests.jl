@@ -109,7 +109,6 @@ program_bowtie2 = CmdProgram(
 
 
 ### julia program
-
 p = JuliaProgram(
 	cmd_dependencies = [julia],
 	id_file = "id_file",
@@ -117,7 +116,9 @@ p = JuliaProgram(
 	outputs = ["c"],
 	main = (inputs, outputs) -> begin
 		println("inputs are ", inputs["a"], " and ", inputs["b"])
-		println("output is ", outputs["c"])
+		println("You can also use info in outputs:", outputs["c"])
+        println("The returned value will be assigned to a new outputs")
+        return Dict{String,Any}("c" => b^2)
 	end
 )
 
@@ -130,6 +131,6 @@ outputs = Dict(
 	"c" => "out"
 )
 
-run(p, inputs, outputs;
+success, outputs = run(p, inputs, outputs;
 	touch_run_id_file = false
-)
+) # outputs will be refreshed

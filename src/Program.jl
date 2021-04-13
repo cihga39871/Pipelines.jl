@@ -24,6 +24,9 @@ function check_keywords(p::Program, inputs::Dict{String}, outputs::Dict{String})
 	Set(p.inputs) == Set(keys(inputs)) || error("ProgramInputError: $(p.name): inputs provided and demanded not identical.")
 	Set(p.outputs) == Set(keys(outputs)) || error("ProgramOutputError: $(p.name): outputs provided and demanded not identical.")
 end
+function check_outputs_keywords(p::Program, outputs::Dict{String})
+	Set(p.outputs) == Set(keys(outputs)) || error("ProgramOutputError: $(p.name): outputs provided and demanded not identical.")
+end
 
 """
 	check_dependency(p::Program)

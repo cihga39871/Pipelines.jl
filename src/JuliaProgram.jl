@@ -69,11 +69,15 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
   > `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be set in `inputs::Vector{String}` and `outputs::Vector{String}`.
 
+  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value is `Dict{String}` with proper keys.
+
 - `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
 
 - `prerequisites`: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
 
 - `main::Function`: The main julia function. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
+
+  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value is `Dict{String}` with proper keys.
 
 - `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`.
 
@@ -175,6 +179,8 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `inputs::Dict{String}` and `outputs::Dict{String}`: `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be the same as `p.inputs::Vector{String}` and `p.outputs::Vector{String}`.
 
+  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value of `p.main` is `Dict{String}` with proper keys.
+
 - `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 
 - `check_dependencies::Bool = true`: check dependencies for `p` (`p.cmd_dependencies`).
@@ -185,7 +191,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `touch_run_id_file::Bool = true`: If `true`, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If `false`, the next time running the program, `skip_when_done=true` will not take effect.
 
-- `dry_run::Bool = false`: do not run the command, return `(outputs::Dict{String}, run_id_file::String)`.
+- `dry_run::Bool = false`: do not run the command, return `(fake_outputs::Dict{String}, run_id_file::String)`.
 
 ### Workflow
 
@@ -199,7 +205,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 5. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
 
-6. Run main function. (`p.main(inputs, outputs)`)
+6. Run main function and the returned value will be assigned to new `outputs`. (`outputs = p.main(inputs, outputs)`)
 
 7. Validate `outputs`. (`p.validate_outputs(outputs)`)
 
@@ -216,7 +222,9 @@ Return `(success::Bool, outputs::Dict{String})`
 		outputs = ["c"],
 		main = (inputs, outputs) -> begin
 			println("inputs are ", inputs["a"], " and ", inputs["b"])
-			println("output is ", outputs["c"])
+			println("You can also use info in outputs:", outputs["c"])
+	        println("The returned value will be assigned to a new outputs")
+	        return Dict{String,Any}("c" => b^2)
 		end
 	)
 
@@ -229,9 +237,9 @@ Return `(success::Bool, outputs::Dict{String})`
 		"c" => "out"
 	)
 
-	run(p, inputs, outputs;
+	success, outputs = run(p, inputs, outputs;
 		touch_run_id_file = false
-	)
+	) # outputs will be refreshed
 """
 function Base.run(
 	p::JuliaProgram;
@@ -307,14 +315,23 @@ function Base.run(
 	end
 
 	# run the main command
-	try
-		isok(p.main(inputs, outputs)) || error("ProgramRunningError: $(p.name): the main function returns false.")
+	outputs = try
+		p.main(inputs, outputs)
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." prerequisites=p.prerequisites run_id inputs outputs
+		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." run_id inputs outputs
 		error("ProgramRunningError")
 		return false, outputs
 	end
+
+	# check type of outputs
+	if !isa(outputs, Dict{String})
+		@error timestamp() * "ProgramMainReturnValueError: $(p.name): the returned value is not a Dict{String}" run_id inputs outputs
+		error("ProgramRunningError")
+		return false, outputs
+	end
+	# check keys in outputs::Dict{String}
+	check_outputs_keywords(p, outputs)
 
 	# confirmation: validate outputs
 	try
