@@ -254,7 +254,7 @@ The explanation of arguments is in the next section.
    >
    > a. `run(..., skip_when_down=true)` enables the functionality.
    >
-   > b. Run id file is generated. The prefix of run id file is set by `p.id_file`. After given inputs and outputs, a unique ID will be append to the prefix. You can use `run(..., touch_run_id_file=false)` to skip creating the run id file.
+   > b. Run id file is generated. The prefix of run id file is set by `p.id_file`. After given inputs and outputs, a unique ID will be appended to the prefix. You can use `run(..., touch_run_id_file=false)` to skip creating the run id file.
    >
    > c. `p.validate_outputs(outputs)` run successfully without returning `false`.
 

@@ -2,7 +2,7 @@
 
 *A lightweight Julia package for computational pipelines.*
 
-Building reusable programs and pipelines is easier than you have ever thought.
+Building reusable workflows and pipelines is easier than you have ever thought.
 
 | **Documentation**                                                               |
 |:-------------------------------------------------------------------------------:|
