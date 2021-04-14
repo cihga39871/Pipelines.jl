@@ -222,15 +222,15 @@ Return `(success::Bool, outputs::Dict{String})`
 	p = JuliaProgram(
 		id_file = "id_file",
 		inputs = ["a", "b"],
-		outputs = ["c"],
+		outputs = ["out"],
 		main = (inputs, outputs) -> begin
 			a = inputs["a"]
 			b = inputs["b"]
 			println("inputs are ", a, " and ", b)
-			println("You can also use info in outputs: ", outputs["c"])
-	        println("The returned value will be assigned to a new outputs")
+			println("You can also use info in outputs: ", outputs["out"])
 
-	        return Dict{String,Any}("c" => b^2)
+			println("The returned value will be assigned to a new outputs")
+			return Dict{String,Any}("out" => b^2)
 		end
 	)
 
@@ -240,7 +240,7 @@ Return `(success::Bool, outputs::Dict{String})`
 	)
 
 	outputs = Dict(
-		"c" => "out"
+		"out" => "will_be_replaced"
 	)
 
 	success, outputs = run(p, inputs, outputs;

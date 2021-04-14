@@ -10,7 +10,7 @@ Pipelines are built with multiple `Program`s. `Program` is the abstract type con
 
 | Diff                 | `cp :: CmdProgram`                                           | `jp :: JuliaProgram`                                         |
 | -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| Unique Field         | `cp`has a command template: `cp.cmd::AbstractCmd`            | `jp` has a main Julia function: `jp.main::Function`          |
+| Unique Field         | `cp` has a command template: `cp.cmd::AbstractCmd`            | `jp` has a main Julia function: `jp.main::Function`          |
 | Method to Run        | Replace keywords in `cp.cmd` with values in user defined `inputs` and `outputs::Dict{String}` | Simply evoke `jp.main(inputs, outputs)`                      |
 | **Returned Outputs** | `outputs ` **provided in** `run(...)` **do not change**      | `outputs` **is overwritten by the returned value of** `jp.main` |
 | Dry Run              | Return `(replaced_cmd::AbstractCmd, run_id_file::String)`    | Return `(fake_outputs::Dict{String}, run_id_file::String)`   |
@@ -73,15 +73,15 @@ run(
 p = JuliaProgram(
 	id_file = "id_file",
 	inputs = ["a", "b"],
-	outputs = ["c"],
+	outputs = ["out"],
 	main = (inputs, outputs) -> begin
 		a = inputs["a"]
 		b = inputs["b"]
 		println("inputs are ", a, " and ", b)
-		println("You can also use info in outputs: ", outputs["c"])
-        println("The returned value will be assigned to a new outputs")
+		println("You can also use info in outputs: ", outputs["out"])
 
-        return Dict{String,Any}("c" => b^2)
+		println("The returned value will be assigned to a new outputs")
+		return Dict{String,Any}("out" => b^2)
 	end
 )
 
@@ -91,7 +91,7 @@ inputs = Dict(
 )
 
 outputs = Dict(
-	"c" => "out"
+	"out" => "will_be_replaced"
 )
 
 success, outputs = run(p, inputs, outputs;

@@ -97,7 +97,9 @@ end
 """
 	check_dependency(p::CmdDependency) -> Bool
 
-Check `CmdDependency` by evaluating `\`\$(p.exec) \$(p.test_args)\``.
+Check `CmdDependency` by evaluating:
+
+	`\$(p.exec) \$(p.test_args)`
 
 If success, return `true`.
 

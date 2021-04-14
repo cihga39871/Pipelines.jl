@@ -211,7 +211,6 @@ Return `(success::Bool, outputs::Dict{String})`
 # Example
 
 	p = CmdProgram(
-		cmd_dependencies = [julia],
 		id_file = "id_file",
 		inputs = ["input", "input2"],
 		outputs = ["output"],
