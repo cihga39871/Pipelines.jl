@@ -115,10 +115,12 @@ p = JuliaProgram(
 	inputs = ["a", "b"],
 	outputs = ["c"],
 	main = (inputs, outputs) -> begin
-		println("inputs are ", inputs["a"], " and ", inputs["b"])
+		a = inputs["a"]
+		b = inputs["b"]
+		println("inputs are ", a, " and ", b)
 		println("You can also use info in outputs:", outputs["c"])
-        println("The returned value will be assigned to a new outputs")
-        return Dict{String,Any}("c" => b^2)
+		println("The returned value will be assigned to a new outputs")
+		return Dict{String,Any}("c" => b^2)
 	end
 )
 
