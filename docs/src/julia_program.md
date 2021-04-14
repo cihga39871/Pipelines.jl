@@ -9,10 +9,10 @@ Pipelines are built with multiple `Program`s. `Program` is the abstract type con
 `JuliaProgram` and `CmdProgram` are generally the same and remain most compatibility, except for the differences:
 
 | Diff                 | `cp :: CmdProgram`                                           | `jp :: JuliaProgram`                                         |
-| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| Unique Field         | `cp` has a command template: `cp.cmd::AbstractCmd`            | `jp` has a main Julia function: `jp.main::Function`          |
+| :------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+| Unique Field         | `cp` has a command template: `cp.cmd::AbstractCmd`           | `jp` has a main Julia function: `jp.main::Function`          |
 | Method to Run        | Replace keywords in `cp.cmd` with values in user defined `inputs` and `outputs::Dict{String}` | Simply evoke `jp.main(inputs, outputs)`                      |
-| **Returned Outputs** | `outputs ` **provided in** `run(...)` **do not change**      | `outputs` **is overwritten by the returned value of** `jp.main` |
+| **Returned Outputs** | `outputs ` **provided in** `run(...)` **does not change**    | `outputs` **is overwritten by the returned value of** `jp.main` |
 | Dry Run              | Return `(replaced_cmd::AbstractCmd, run_id_file::String)`    | Return `(fake_outputs::Dict{String}, run_id_file::String)`   |
 
 ## Structure
