@@ -37,6 +37,8 @@ JuliaProgram(;
 )
 ```
 
+## Run
+
 To run a `JuliaProgram`, the methods are the same as `CmdProgram`:
 
 ```julia
@@ -68,8 +70,16 @@ run(
 )  # only usable when `p.infer_outputs` is defined.
 ```
 
+!!! note "Compatibility with JobSchedulers.jl"
+
+    Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
+
+    `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`. See example below.
+
 ## Example
 ```julia
+using Pipelines
+
 p = JuliaProgram(
 	id_file = "id_file",
 	inputs = ["a", "b"],
@@ -97,4 +107,21 @@ outputs = Dict(
 success, outputs = run(p, inputs, outputs;
 	touch_run_id_file = false
 ) # outputs will be refreshed
+```
+
+### Compatibility with JobSchedulers.jl
+
+```julia
+using JobSchedulers
+
+scheduler_start()  # start job scheduler
+
+job = Job(p, inputs, outputs;
+	touch_run_id_file = false
+)  # create a Job object; same arguments as `run`
+
+submit!(job)  # submit job to queue
+
+result(job)  # get the returned result
+
 ```

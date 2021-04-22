@@ -2,7 +2,7 @@
 
 *A lightweight Julia package for computational pipelines.*
 
-Building reusable workflows and pipelines is easier than you have ever thought.
+Building reusable pipelines and workflows is easier than you have ever thought.
 
 | **Documentation**                                                               |
 |:-------------------------------------------------------------------------------:|
@@ -19,6 +19,8 @@ Building reusable workflows and pipelines is easier than you have ever thought.
 - Supports dependency check.
 
 - Supports inputs, outputs validation, and so on.
+
+- Supports program queuing and workload management with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl)
 
 ## Installation
 
