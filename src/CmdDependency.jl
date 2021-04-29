@@ -132,10 +132,13 @@ function check_dependency(p::CmdDependency)
 	return true
 
 	@label dependency_error
+    @error timestamp() * "DependencyError: invalid: $p" CHECK_ARGS=p.test_args
+	println(stderr, "Dependency check stdout:")
+	println(stderr, out)
+	println(stderr, "Dependency check stderr:")
+	println(stderr, err)
 	if p.exit_when_fail
 		error("DependencyError: invalid: $p")
-	else
-		@error timestamp() * "DependencyError: invalid: $p"
 	end
 	return false
 end
