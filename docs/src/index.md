@@ -20,14 +20,14 @@ Building reusable pipelines and workflows is easier than you have ever thought.
 
 - Supports inputs, outputs validation, and so on.
 
+- Supports program queuing and workload management with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl)
+
 ## Installation
 
 Pipelines.jl can be installed using the Julia package manager. From the Julia REPL, type ] to enter the Pkg REPL mode and run
 
 ```julia
 pkg> add Pipelines
-# If it fails, use
-pkg> add https://github.com/cihga39871/Pipelines.jl.git
 ```
 
 To use the package, type
@@ -38,9 +38,11 @@ using Pipelines
 
 ## Quick Start
 
-Pipelines are built with multiple `CmdProgram`s. A `CmdProgram` contains a command template and name lists of inputs/outputs. The names of inputs/outputs will be replaced by real values when executing the program.
+Pipelines are built with multiple `Program`s. `Program` is the abstract type of `CmdProgram` and `JuliaProgram`.
 
-Let's set up a simple program to print values using `echo`:
+A `CmdProgram` contains a command template and name lists of inputs/outputs. The names of inputs/outputs will be replaced by real values when executing the program.
+
+Let's set up a simple `CmdProgram` to print values using `echo`:
 
 ```julia
 using Pipelines
@@ -128,21 +130,29 @@ outputs = infer_outputs(prog, inputs)
 
 Pipelines also defined `JuliaProgram` type for pure Julia functions. It is like `CmdProgram` and remain most compatibility. More details are in the Julia Program, Manual Page.
 
+### Compatibility with JobSchedulers.jl
+
+Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
+
+`run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
+
 ## Future Development
 
 - Support running competitive tasks with **locks**.
 
 ## Change log
 
-### v0.2.1
+v0.2.2
+
+- Support JobSchedulers.jl.
+
+v0.2.1
 
 - Fix examples in docs.
 
-### v0.2.0
+v0.2.0
 
-#### CmdDependency
-
-- Better interpolation in `Cmd`.
+- CmdDependency: Better interpolation in `Cmd`.
 
   ```julia
   dep::CmdDepencendy
@@ -155,8 +165,6 @@ Pipelines also defined `JuliaProgram` type for pure Julia functions. It is like 
   # now
   `$dep --args`
   ```
-
-#### Program
 
 - New `JuliaProgram` for pure Julia implementation.
 

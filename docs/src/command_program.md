@@ -187,6 +187,8 @@ CmdProgram(;
 
 In this way, all preparation and post-evaluation can be wrapped in a single `CmdProgram`. It is easy to maintain and use.
 
+## Run
+
 To run a `CmdProgram`, use one of the following methods:
 
 ```julia
@@ -217,6 +219,12 @@ run(
 	kwargs...
 )  # only usable when `p.infer_outputs` is defined.
 ```
+
+!!! note "Compatibility with JobSchedulers.jl"
+
+    Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
+
+    `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
 
 The explanation of arguments is in the next section.
 
