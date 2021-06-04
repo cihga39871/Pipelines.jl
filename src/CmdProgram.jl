@@ -19,26 +19,6 @@ mutable struct CmdProgram <: Program
 end
 
 """
-# Struct
-
-	mutable struct CmdProgram
-		name::String
-		id_file::String
-		info_before::String
-		info_after::String
-		cmd_dependencies::Vector{CmdDependency}
-		inputs::Vector{String}
-		validate_inputs::Function
-		prerequisites::Function
-		cmd::Base.AbstractCmd
-		infer_outputs::Function
-		outputs::Vector{String}
-		validate_outputs::Function
-		wrap_up::Function
-	end
-
-# Methods
-
 	CmdProgram(;
 		name::String               = "Unnamed Command Program",
 		id_file::String            = "",
@@ -137,12 +117,14 @@ function CmdProgram(;
 		info_after,
 		cmd_dependencies,
 		inputs,
+		input_types,
 		default_inputs,
 		validate_inputs,
 		prerequisites,
 		cmd,
 		infer_outputs,
 		outputs,
+		output_types
 		default_outputs,
 		validate_outputs,
 		wrap_up
