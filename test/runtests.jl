@@ -4,6 +4,19 @@ include("../src/Pipelines.jl")
 using .Pipelines
 using Test
 
+### util
+@test parse_default_element("x") == ("x", Any, nothing)
+@test parse_default_element("x" => Int) == ("x", Int, nothing)
+@test parse_default_element("x" => 5) == ("x", Any, 5)
+@test parse_default_element("x" => 5 => Int) == ("x", Int, 5)
+@test parse_default_element("x" => Int => 5) == ("x", Int, 5)
+@test parse_default_element("x" => Int => DataType) == ("x", DataType, Int)
+@test parse_default_element("x" => DataType => Int) == ("x", DataType, Int)
+
+@test_throws ErrorException parse_default_element("x" => Int => "5")
+@test_throws ErrorException parse_default_element("x" => "5" => Int)
+@test_throws ErrorException parse_default_element(5)
+
 ### cmd dependency
 
 julia = CmdDependency(

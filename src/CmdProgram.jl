@@ -5,11 +5,15 @@ mutable struct CmdProgram <: Program
 	info_after::String
     cmd_dependencies::Vector{CmdDependency}
 	inputs::Vector{String}
+	input_types::Vector{DataType}
+	default_inputs::Vector{String}
 	validate_inputs::Function
 	prerequisites::Function
     cmd::Base.AbstractCmd
 	infer_outputs::Function
 	outputs::Vector{String}
+	output_types::Vector{DataType}
+	default_outputs::Vector{String}
 	validate_outputs::Function
 	wrap_up::Function
 end
@@ -113,14 +117,19 @@ function CmdProgram(;
 	info_after::String         = "auto",
 	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
 	inputs::Vector{String}     = Vector{String}(),
+    # default_inputs::Vector{String} = Vector{String}(),
 	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
 	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
 	cmd::Base.AbstractCmd      = ``,
 	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
 	outputs::Vector{String}    = Vector{String}(),
+	# default_outputs::Vector{String} = Vector{String}(),
 	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
 	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 )
+	inputs, default_inputs = parse_default(inputs)
+	outputs, default_outputs = parse_default(outputs)
+
 	CmdProgram(
 		name,
 		id_file,
@@ -128,11 +137,13 @@ function CmdProgram(;
 		info_after,
 		cmd_dependencies,
 		inputs,
+		default_inputs,
 		validate_inputs,
 		prerequisites,
 		cmd,
 		infer_outputs,
 		outputs,
+		default_outputs,
 		validate_outputs,
 		wrap_up
 	)
