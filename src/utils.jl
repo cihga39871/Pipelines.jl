@@ -19,17 +19,17 @@ isok(x) = true  # default is true
 
 ## parse default inputs/outputs
 """
-    parse_default(vec)
+    parse_default(v)
 
 Parsing `inputs` and `outputs` when creating `Program` objects.
 
 Return `xxputs::Vector{String}, xxput_types::Vector{DataType}, default_xxputs::Vector`.
 
-## Valid `vec` element types
+## Valid `v` element types
 
 - `name::String`: no default value.
 
-- `name::String => value`: set default value, except `value` is `nothing` or `DataType`.
+- `name::String => value`: set default value, except `value` is `nothing` (default value not set).
 
 - `name::String => value_type::DataType`: no default value, but value type.
 
@@ -37,11 +37,30 @@ Return `xxputs::Vector{String}, xxput_types::Vector{DataType}, default_xxputs::V
 
 - `name::String => value_type::DataType => value`: set default value and value type.
 """
-function parse_default(vec::Vector{String})
-    xxput_types = DataType[Any for i = 1:length(vec)]
-    default_xxputs = Nothing[nothing for i = 1:length(vec)]
-    return vec, xxput_types, default_xxputs
+function parse_default(v::Vector{String})
+    xxput_types = DataType[Any for i = 1:length(v)]
+    default_xxputs = Nothing[nothing for i = 1:length(v)]
+    return v, xxput_types, default_xxputs
 end
+
+function parse_default(v::Vector)
+    n = length(v)
+    xxputs = Vector{String}(undef, n)
+    xxput_types = Vector{DataType}(undef, n)
+    default_xxputs = Vector{Any}(undef, n)
+    for (i, ele) in enumerate(v)
+        name, type, default = parse_default_element(ele)
+        xxputs[i] = name
+        xxput_types[i] = type
+        default_xxputs[i] = default
+    end
+    return xxputs, xxput_types, default_xxputs
+end
+
+parse_default(s::String) = parse_default([s])
+parse_default(p::Pair) = parse_default([p])
+parse_default(s::T) where {T<:AbstractString} = parse_default([str(s)])
+
 
 function parse_default_element(ele::String)
     return ele, Any, nothing
@@ -75,12 +94,19 @@ function parse_default_element(ele::Pair{String,Pair{DataType,DataType}})
     end
 end
 
+parse_default_element(ele::T) where {T<:AbstractString} = parse_default_element(str(ele))
+function parse_default_element(ele::Pair{T,Y}) where {T<:AbstractString, Y}
+    parse_default_element(str(ele.first) => ele.second)
+end
+
 function parse_default_element(ele::Any)
     throw(ErrorException("DataTypeError: $ele is not valid for a Program argument."))
 end
 function check_data_type(value, data_type::DataType)
     isa(value, data_type) || throw(ErrorException("DataTypeError: $value is not a $data_type type."))
 end
+
+
 ## String/Cmd conversion
 """
     to_str(x) -> String

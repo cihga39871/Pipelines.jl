@@ -5,17 +5,39 @@ using .Pipelines
 using Test
 
 ### util
-@test parse_default_element("x") == ("x", Any, nothing)
-@test parse_default_element("x" => Int) == ("x", Int, nothing)
-@test parse_default_element("x" => 5) == ("x", Any, 5)
-@test parse_default_element("x" => 5 => Int) == ("x", Int, 5)
-@test parse_default_element("x" => Int => 5) == ("x", Int, 5)
-@test parse_default_element("x" => Int => DataType) == ("x", DataType, Int)
-@test parse_default_element("x" => DataType => Int) == ("x", DataType, Int)
+@test Pipelines.parse_default_element("x") == ("x", Any, nothing)
+@test Pipelines.parse_default_element("x" => Int) == ("x", Int, nothing)
+@test Pipelines.parse_default_element("x" => 5) == ("x", Any, 5)
+@test Pipelines.parse_default_element("x" => 5 => Int) == ("x", Int, 5)
+@test Pipelines.parse_default_element("x" => Int => 5) == ("x", Int, 5)
+@test Pipelines.parse_default_element("x" => Int => DataType) == ("x", DataType, Int)
+@test Pipelines.parse_default_element("x" => DataType => Int) == ("x", DataType, Int)
 
-@test_throws ErrorException parse_default_element("x" => Int => "5")
-@test_throws ErrorException parse_default_element("x" => "5" => Int)
-@test_throws ErrorException parse_default_element(5)
+@test_throws ErrorException Pipelines.parse_default_element("x" => Int => "5")
+@test_throws ErrorException Pipelines.parse_default_element("x" => "5" => Int)
+@test_throws ErrorException Pipelines.parse_default_element(5)
+
+v = ["A", "B" => Int, "C" => 9.0 => Float64]
+@test Pipelines.parse_default(v) == (["A", "B", "C"], DataType[Any, Int64, Float64], Any[nothing, nothing, 9.0])
+
+## keyword interpolation
+allputs = Dict(
+    "A" => 123,
+    "B" => "<A>",
+    "C" => "<B><A>"
+)
+@test Pipelines.keyword_interpolation(allputs) == Dict(
+    "A" => 123,
+    "B" => "123",
+    "C" => "123123"
+)
+
+allputs = Dict(
+    "A" => 123,
+    "B" => "<C>",
+    "C" => "<B><A>"
+)
+@test_throws ErrorException Pipelines.keyword_interpolation(allputs)
 
 ### cmd dependency
 
@@ -37,9 +59,16 @@ check_dependency(julia)
 p = CmdProgram(
     cmd_dependencies = [julia],
     id_file = "id_file",
-    inputs = ["input", "input2"],
-    outputs = ["output"],
-    cmd = `echo input input2 output`
+    inputs = [
+        "input", 
+        "input2" => Int,
+        "optional_arg" => 5,
+        "optional_arg2" => 0.5 => Number
+    ],
+    outputs = [
+        "output" => "<input>.output"
+    ],
+    cmd = `echo input input2 optional_arg optional_arg2 output`
 )
 
 inputs = Dict(
