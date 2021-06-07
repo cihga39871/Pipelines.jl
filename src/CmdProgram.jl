@@ -19,6 +19,8 @@ mutable struct CmdProgram <: Program
 end
 
 """
+	CmdProgram <: Program
+
 	CmdProgram(;
 		name::String               = "Unnamed Command Program",
 		id_file::String            = "",
@@ -49,18 +51,17 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: `Vector{keyword::String [=> default_value] [=> data_type]}`.  
+- `inputs` and `outputs`: `Vector`, and the elements in the following format: (1) `keyword::String` (2) `keyword::String => data_type` (3) `keyword::String => default_value` (4) `keyword::String => default_value => data_type`.
 
-  `keyword` is an argument name. 
-  
-  `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keyword, but need to quote using '<>', such as `"<arg>.txt"`
-  
+  `keyword` is an argument name.
+
+  `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
+
   `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
-  
+
   *HOW DOES THIS WORK?*
 
   > `CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords are set in `inputs` and `outputs`.
-
   > `keyword`s will be replaced before running the program. Users need to provide a dictionary of `keyword::String => value` in `run(::Program, inputs::Dict{String}, outputs::Dict{String})`.
 
 - `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
@@ -80,7 +81,7 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 	p = CmdProgram(
 		id_file = "id_file",
 		inputs = [
-			"input", 
+			"input",
 			"input2" => Int,
 			"optional_arg" => 5,
 			"optional_arg2" => 0.5 => Number
@@ -146,8 +147,8 @@ end
 """
 	run(
 		p::CmdProgram;
-		inputs::Dict{String}=Dict{String, Cmd}(),
-		outputs::Dict{String}=Dict{String, Cmd}(),
+		inputs::Dict{String}=Dict{String}(),
+		outputs::Dict{String}=Dict{String}(),
 		skip_when_done::Bool=true,
 		check_dependencies::Bool=true,
 		stdout=nothing,
@@ -237,8 +238,8 @@ Return `(success::Bool, outputs::Dict{String})`
 """
 function Base.run(
 	p::CmdProgram;
-	inputs::Dict{String}=Dict{String, Cmd}(),
-	outputs::Dict{String}=Dict{String, Cmd}(),
+	inputs::Dict{String}=Dict{String, Any}(),
+	outputs::Dict{String}=Dict{String, Any}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
 	stdout=nothing,

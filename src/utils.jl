@@ -74,6 +74,20 @@ function parse_default_element(ele::Pair{String,T}) where T
     return ele.first, Any, ele.second
 end
 
+function parse_default_element(ele::Pair{String,Any})
+    # Any is inherited from parse_default(v::Vector{Pair{String,Any}})
+    # The following code specify the detailed type, to avoid error like:
+    # inputs = [
+	# 	"a" => 10.6,
+	# 	"b" => 5 => Int
+	# ]::Vector{Pair{String,Any}
+    parse_default_element(ele.first => ele.second)
+end
+function parse_default_element(ele::Pair)
+	check_data_type(ele.first, AbstractString)
+    parse_default_element(string(ele.first) => ele.second)
+end
+
 function parse_default_element(ele::Pair{String,Pair{T,DataType}}) where T
     check_data_type(ele.second.first, ele.second.second)
     return ele.first, ele.second.second, ele.second.first

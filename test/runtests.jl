@@ -60,7 +60,7 @@ p = CmdProgram(
     cmd_dependencies = [julia],
     id_file = "id_file",
     inputs = [
-        "input", 
+        "input",
         "input2" => Int,
         "optional_arg" => 5,
         "optional_arg2" => 0.5 => Number
@@ -152,16 +152,21 @@ program_bowtie2 = CmdProgram(
 
 ### julia program
 p = JuliaProgram(
-	cmd_dependencies = [julia],
 	id_file = "id_file",
-	inputs = ["a", "b"],
-	outputs = ["c"],
+	inputs = [
+		"a",
+		"b" => Int
+	],
+	outputs = [
+		"c" => "<a>.<b>"
+	],
 	main = (inputs, outputs) -> begin
 		a = inputs["a"]
 		b = inputs["b"]
 		println("inputs are ", a, " and ", b)
-		println("You can also use info in outputs:", outputs["c"])
+		println("You can also use info in outputs: ", outputs["c"])
 		println("The returned value will be assigned to a new outputs")
+
 		return Dict{String,Any}("c" => b^2)
 	end
 )
@@ -178,3 +183,32 @@ outputs = Dict(
 success, outputs = run(p, inputs, outputs;
 	touch_run_id_file = false
 ) # outputs will be refreshed
+
+success, outputs = run(p, inputs;
+	touch_run_id_file = false
+) # outputs will be refreshed
+
+### run program without inputs outputs
+p = JuliaProgram(
+	id_file = "id_file",
+	inputs = [
+		"a" => 10.6,
+		"b" =>  5 => Int
+	],
+	outputs = [
+		"c" => "<a>.<b>"
+	],
+	main = (inputs, outputs) -> begin
+		a = inputs["a"]
+		b = inputs["b"]
+		println("inputs are ", a, " and ", b)
+		println("You can also use info in outputs: ", outputs["c"])
+		println("The returned value will be assigned to a new outputs")
+
+		return Dict{String,Any}("c" => b^2)
+	end
+)
+success, outputs = run(p;
+	touch_run_id_file = false
+) # outputs will be refreshed
+inputs, outputs = Pipelines.xxputs_completion_and_check(p, Dict{String, Any}(), Dict{String, Any}())

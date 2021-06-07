@@ -50,6 +50,7 @@ end
 complete missing keywords in `inputs` and `outputs`.
 """
 function inputs_completion(p::Program, inputs::Dict{String})
+	value_type = fieldtypes(eltype(inputs))[2]  # value type of inputs
 	for (i, keyword) in enumerate(p.inputs)
 		if haskey(inputs, keyword)
 			# check types
@@ -59,8 +60,11 @@ function inputs_completion(p::Program, inputs::Dict{String})
 			default = p.default_inputs[i]
 			if isnothing(default)
 				# no default
-				throw(ErrorException("ArgumentError: Program ($(p.name)) requires $keyword, but it is not provided."))
+				throw(ErrorException("ArgumentError: Program '$(p.name)' requires '$keyword' in inputs, but it is not provided."))
 			else
+				if !(default isa value_type)
+					inputs = convert(Dict{String,Any}, inputs)
+				end  # it is ok to replace in for-loop
 				inputs[keyword] = default
 			end
 		end
@@ -68,6 +72,7 @@ function inputs_completion(p::Program, inputs::Dict{String})
 	inputs
 end
 function outputs_completion(p::Program, outputs::Dict{String})
+	value_type = fieldtypes(eltype(outputs))[2]  # value type of outputs
 	for (i, keyword) in enumerate(p.outputs)
 		if haskey(outputs, keyword)
 			# check types
@@ -77,8 +82,11 @@ function outputs_completion(p::Program, outputs::Dict{String})
 			default = p.default_outputs[i]
 			if isnothing(default)
 				# no default
-				throw(ErrorException("ArgumentError: Program '$(p.name)' requires $keyword, but it is not provided."))
+				throw(ErrorException("ArgumentError: Program '$(p.name)' requires $keyword in outputs, but it is not provided."))
 			else
+				if !(default isa value_type)
+					outputs = convert(Dict{String,Any}, outputs)
+				end  # it is ok to replace in for-loop
 				outputs[keyword] = default
 			end
 		end
@@ -125,7 +133,7 @@ function keyword_interpolation(allputs::Dict{String}, key::String, n_recursion::
 	allputs
 end
 
-function find_keywords(value::T) where T<: AbstractString
+function find_keywords(value::T) where T <: AbstractString
 	m = eachmatch(r"<([^<>]+)>", value)
 	String[i.captures[1] for i in m]
 end
