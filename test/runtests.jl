@@ -12,6 +12,7 @@ using Test
 @test Pipelines.parse_default_element("x" => Int => 5) == ("x", Int, 5)
 @test Pipelines.parse_default_element("x" => Int => DataType) == ("x", DataType, Int)
 @test Pipelines.parse_default_element("x" => DataType => Int) == ("x", DataType, Int)
+@test Pipelines.parse_default_element( :b => (5.0 => Int)) == ("b", Int, 5)
 
 @test_throws ErrorException Pipelines.parse_default_element("x" => Int => "5")
 @test_throws ErrorException Pipelines.parse_default_element("x" => "5" => Int)
@@ -19,6 +20,12 @@ using Test
 
 v = ["A", "B" => Int, "C" => 9.0 => Float64]
 @test Pipelines.parse_default(v) == (["A", "B", "C"], DataType[Any, Int64, Float64], Any[nothing, nothing, 9.0])
+
+v = ["A", :B => Int, "C" => 9.0 => Float64]
+@test Pipelines.parse_default(v) == (["A", "B", "C"], DataType[Any, Int64, Float64], Any[nothing, nothing, 9.0])
+
+v = ["A", :B => Int => 5.0, "C" => 9.0 => Float64]
+@test Pipelines.parse_default(v) == (["A", "B", "C"], DataType[Any, Int64, Float64], Any[nothing, 5, 9.0])
 
 ## keyword interpolation
 allputs = Dict(
@@ -99,7 +106,7 @@ run(p,
 p_nooutput = CmdProgram(
     cmd_dependencies = [julia],
     id_file = "id_file",
-    inputs = ["input", "input2"],
+    inputs = ["input", "input2", "optional_arg", "optional_arg2"],
     cmd = `echo input input2`
 )
 
@@ -113,7 +120,7 @@ run(p_nooutput,
 cmd, run_id_file = run(p,
     inputs = Dict(
         "input" => `in1`,
-        "input2" => `in2`
+        "input2" => 5.0
     ),
     outputs = Dict(
         "output" => `out`
@@ -195,20 +202,51 @@ p = JuliaProgram(
 		"a" => 10.6,
 		"b" =>  5 => Int
 	],
-	outputs = [
-		"c" => "<a>.<b>"
-	],
+	outputs = "c" => "<a>.<b>",
 	main = (inputs, outputs) -> begin
-		a = inputs["a"]
-		b = inputs["b"]
-		println("inputs are ", a, " and ", b)
-		println("You can also use info in outputs: ", outputs["c"])
-		println("The returned value will be assigned to a new outputs")
-
-		return Dict{String,Any}("c" => b^2)
+		return Dict{String,Any}("c" => inputs["b"]^2)
 	end
 )
 success, outputs = run(p;
 	touch_run_id_file = false
-) # outputs will be refreshed
+)
 inputs, outputs = Pipelines.xxputs_completion_and_check(p, Dict{String, Any}(), Dict{String, Any}())
+
+p = JuliaProgram(
+	id_file = "id_file",
+	inputs = [
+		"a" => 10.6 => Float64,
+		"b" =>  5 => Int
+	],
+	outputs = "c" => "<a>.<b>",
+	main = (inputs, outputs) -> begin
+		return Dict{String,Any}("c" => inputs["b"]^2)
+	end
+)
+success, outputs = run(p;
+	touch_run_id_file = false
+)
+success, outputs = run(p,
+	inputs = Dict(
+		"a" => 10.6,
+		"b" =>  2.0
+	),
+	touch_run_id_file = false
+)
+
+success, outputs = run(p,
+	inputs = :a => 8,
+	touch_run_id_file = false
+)
+
+p = JuliaProgram(
+	id_file = "id_file",
+	inputs = [
+		:a => 10.6 => Float64,
+		:b =>  5 => Int
+	],
+	outputs = "c" => "<a>.<b>",
+	main = (inputs, outputs) -> begin
+		return Dict{String,Any}("c" => inputs["b"]^2)
+	end
+)

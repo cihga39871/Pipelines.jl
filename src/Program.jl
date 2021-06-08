@@ -54,7 +54,11 @@ function inputs_completion(p::Program, inputs::Dict{String})
 	for (i, keyword) in enumerate(p.inputs)
 		if haskey(inputs, keyword)
 			# check types
-			check_data_type(inputs[keyword], p.input_types[i])
+			value = convert_data_type(inputs[keyword], p.input_types[i])
+			if !(value isa value_type)
+				inputs = convert(Dict{String,Any}, inputs)
+			end  # it is ok to replace in for-loop
+			inputs[keyword] = value
 		else
 			# not provided, check default
 			default = p.default_inputs[i]
@@ -76,7 +80,11 @@ function outputs_completion(p::Program, outputs::Dict{String})
 	for (i, keyword) in enumerate(p.outputs)
 		if haskey(outputs, keyword)
 			# check types
-			check_data_type(outputs[keyword], p.output_types[i])
+			value = convert_data_type(outputs[keyword], p.output_types[i])
+			if !(value isa value_type)
+				outputs = convert(Dict{String,Any}, outputs)
+			end  # it is ok to replace in for-loop
+			outputs[keyword] = value
 		else
 			# not provided, check default
 			default = p.default_outputs[i]
@@ -173,20 +181,14 @@ function xxputs_completion_and_check(p::Program, inputs::Dict{String}, outputs::
 	inputs, outputs = keyword_interpolation(inputs, outputs)
 end
 
-function Base.run(p::Program, inputs::Dict{String}, outputs::Dict{String}; kwarg...)
+function xxputs_completion_and_check(p::Program, inputs, outputs)
+	xxputs_completion_and_check(p, to_xxput_dict(inputs), to_xxput_dict(outputs))
+end
+
+function Base.run(p::Program, inputs, outputs; kwarg...)
 	run(p; inputs=inputs, outputs=outputs, kwarg...)
 end
 
-function Base.run(p::Program, inputs::Dict{String}; kwarg...)
+function Base.run(p::Program, inputs; kwarg...)
 	run(p; inputs=inputs, kwarg...)
-	# if p.infer_outputs === do_nothing
-	# 	if isempty(p.outputs)
-	# 		run(p; inputs=inputs, kwarg...)
-	# 	else
-	# 		error("Cannot run Program '$(p.name)' without specifying outputs because it requires outputs but does not have a pre-defined `p.infer_outputs` function.")
-	# 	end
-	# else
-	# 	outputs = infer_outputs(p, inputs)
-	# 	run(p; inputs=inputs, outputs=outputs, kwarg...)
-	# end
 end

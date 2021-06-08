@@ -25,4 +25,6 @@ export CmdProgram
 include("JuliaProgram.jl")
 export JuliaProgram
 
+include("pretty_print.jl")
+
 end # module

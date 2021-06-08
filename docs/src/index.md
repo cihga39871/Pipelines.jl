@@ -70,15 +70,15 @@ run(echo, inputs)
     ```
 
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
-    
+
     ```julia
     # Method 1: stop checking finished program
     run(echo, inputs; skip_when_done = false)
-    
+
     # Method 2: delete the run_id_file before running again:
     cmd, run_id_file = run(echo, inputs; dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
-    
+
     # Method 3: Do not generate run_id_file when first running.
     run(echo, inputs; touch_run_id_file=false)
     ```
@@ -141,6 +141,66 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 - Support running competitive tasks with **locks**.
 
 ## Change log
+
+v0.3.0
+
+- Building Program: Support type assertion and default arguments of `inputs` and `outputs`, such as `arg => 5`, `arg => Int`, `arg => 5 => Int`, `arg => Int => 5`.
+
+- `Program` and `run(::Program)` no longer require `inputs` and `outputs` to be `Vector` or `Dict`. They can be both `Vector` or `Dict`, or even an element of `Vector` or `Dict`, as long as they can be converted. Eg:
+
+    ```julia
+    p = CmdProgram(
+        cmd_dependencies = [julia],
+        id_file = "id_file",
+        inputs = [
+            "input",
+            "input2" => Int,
+            "optional_arg" => 5,
+            "optional_arg2" => 0.5 => Number
+        ],
+        outputs = "output" => "<input>.output"
+        ,
+        cmd = `echo input input2 optional_arg optional_arg2 output`
+    )
+
+    inputs = Dict(
+        "input" => `in1`,
+        "input2" => 2
+    )
+
+    outputs = [
+        "output" => "out"
+    ]
+
+    run(p, inputs, outputs,
+        skip_when_done = false,
+        verbose = true,
+        touch_run_id_file = false
+    )
+    ```
+
+- Pretty print of `Program`. Eg:
+
+    ```julia
+    julia> p
+    CmdProgram:
+      name             → Command Program
+      id_file          → id_file
+      info_before      → auto
+      info_after       → auto
+      cmd_dependencies → CmdDependency[`/usr/software/julia-1.4.2/bin/julia -Cnative -J/usr/software/julia-1.4.2/lib/julia/sys.so -O3 -g1`]
+      inputs           → "input"         :: Any    (required)
+                         "input2"        :: Int64  (required)
+                         "optional_arg"  :: Any    (default: 5)
+                         "optional_arg2" :: Number (default: 0.5)
+      validate_inputs  → do_nothing
+      prerequisites    → do_nothing
+      cmd              → `echo input input2 optional_arg optional_arg2 output`
+      infer_outputs    → do_nothing
+      outputs          → "output" :: Any (default: <input>.output)
+      validate_outputs → do_nothing
+      wrap_up          → do_nothing
+    ```
 
 v0.2.2
 

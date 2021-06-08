@@ -51,9 +51,9 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: `Vector`, and the elements in the following format: (1) `keyword::String` (2) `keyword::String => data_type` (3) `keyword::String => default_value` (4) `keyword::String => default_value => data_type`.
+- `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
 
-  `keyword` is an argument name.
+  `keyword` is an argument name, can be `String` or `Symbol`.
 
   `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
 
@@ -86,9 +86,9 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 			"optional_arg" => 5,
 			"optional_arg2" => 0.5 => Number
 		],
-		outputs = [
+		outputs =
 			"output" => "<input>.output"
-		],
+		,
 		cmd = `echo input input2 optional_arg optional_arg2 output`
 	)
 
@@ -147,8 +147,8 @@ end
 """
 	run(
 		p::CmdProgram;
-		inputs::Dict{String}=Dict{String}(),
-		outputs::Dict{String}=Dict{String}(),
+		inputs=Dict{String}(),
+		outputs=Dict{String}(),
 		skip_when_done::Bool=true,
 		check_dependencies::Bool=true,
 		stdout=nothing,
@@ -159,18 +159,10 @@ end
 		dry_run::Bool=false
 	) -> (success::Bool, outputs::Dict{String})
 
-	run(
-		p::CmdProgram,
-		inputs::Dict{String},
-		outputs::Dict{String};
-		kwargs...
-	)
+	run(p::CmdProgram, inputs, outputs; kwargs...)
 
-	run(
-		p::CmdProgram,
-		inputs::Dict{String},
-		kwargs...
-	)  # only usable when `p.infer_outputs` is defined.
+	run(p::CmdProgram, inputs; kwargs...)
+	)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 
 Run Command Program (CmdProgram) using specified `inputs` and `outputs`.
 
@@ -179,6 +171,8 @@ Return `(success::Bool, outputs::Dict{String})`
 - `p::CmdProgram`: the command program template.
 
 - `inputs::Dict{String}` and `outputs::Dict{String}`: `p::CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are `Dict(keyword::String => replacement)`. The replacements do not have a length limit, unless a *keyword* refers to a filename (length == 1).
+
+  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.  
 
 - `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 
@@ -238,8 +232,8 @@ Return `(success::Bool, outputs::Dict{String})`
 """
 function Base.run(
 	p::CmdProgram;
-	inputs::Dict{String}=Dict{String, Any}(),
-	outputs::Dict{String}=Dict{String, Any}(),
+	inputs=Dict{String, Any}(),
+	outputs=Dict{String, Any}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
 	stdout=nothing,

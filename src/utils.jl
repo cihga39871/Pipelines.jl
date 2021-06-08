@@ -18,6 +18,10 @@ isok(x::AbstractString) = occursin(r"y(es)?|ok?|t(rue)?|^1$"i, x)
 isok(x) = true  # default is true
 
 ## parse default inputs/outputs
+function throw_invalid_xxputs(any)
+	throw(ErrorException("DataTypeError: Elements of inputs and outputs can only be one of `name::Union{String,Symbol}`, `name => default_value`, `name => data_type`, `name => default_value => data_type`, `name => data_type => default_value`. Invalid value: $any"))
+end
+
 """
     parse_default(v)
 
@@ -58,67 +62,89 @@ function parse_default(v::Vector)
 end
 
 parse_default(s::String) = parse_default([s])
+parse_default(s::AbstractString) = parse_default([str(s)])
 parse_default(p::Pair) = parse_default([p])
-parse_default(s::T) where {T<:AbstractString} = parse_default([str(s)])
-
+parse_default(d::Dict) = parse_default([p for p in d])
+parse_default(s::Symbol) = parse_default([str(s)])
+parse_default(any) = throw_invalid_xxputs(any)
 
 function parse_default_element(ele::String)
     return ele, Any, nothing
 end
-
-function parse_default_element(ele::Pair{String,DataType})
-    return ele.first, ele.second, nothing
+function parse_default_element(ele::AbstractString)
+    return str(ele), Any, nothing
 end
-
-function parse_default_element(ele::Pair{String,T}) where T
-    return ele.first, Any, ele.second
-end
-
-function parse_default_element(ele::Pair{String,Any})
-    # Any is inherited from parse_default(v::Vector{Pair{String,Any}})
-    # The following code specify the detailed type, to avoid error like:
-    # inputs = [
-	# 	"a" => 10.6,
-	# 	"b" => 5 => Int
-	# ]::Vector{Pair{String,Any}
-    parse_default_element(ele.first => ele.second)
+function parse_default_element(ele::Symbol)
+    return str(ele), Any, nothing
 end
 function parse_default_element(ele::Pair)
-	check_data_type(ele.first, AbstractString)
-    parse_default_element(string(ele.first) => ele.second)
+	if ele.first isa AbstractString || ele.first isa Symbol
+	    name = str(ele.first)
+		data_type, value = parse_arg_info(ele.second)
+		name, data_type, value
+	else
+		throw_invalid_xxputs(ele)
+	end
+end
+parse_default_element(any) = throw_invalid_xxputs(any)
+
+function parse_arg_info(data_type::DataType)
+	data_type, nothing
+end
+function parse_arg_info(p::Pair)
+	parse_arg_info_pair(p.first, p.second)
+end
+function parse_arg_info(value)
+	Any, value
+end
+function parse_arg_info_pair(a::DataType, b::DataType)
+	if a isa b
+		b, a
+	elseif b isa a
+		a, b
+	else
+		throw(ErrorException("DataTypeError: $(a) and $(b) are not inclusive."))
+	end
+end
+parse_arg_info_pair(a, b::DataType) = b, convert_data_type(a, b)
+parse_arg_info_pair(a::DataType, b) = a, convert_data_type(b, a)
+
+
+function convert_data_type(value, data_type::DataType)
+	if isa(value, data_type)
+		return value
+	else
+		try
+			convert(data_type, value)
+		catch
+			throw(ErrorException("DataTypeError: cannot convert $value to $data_type."))
+		end
+	end
 end
 
-function parse_default_element(ele::Pair{String,Pair{T,DataType}}) where T
-    check_data_type(ele.second.first, ele.second.second)
-    return ele.first, ele.second.second, ele.second.first
+## convert inputs/outputs to Dict{String} in `run(p, inputs, outputs)`
+function to_xxput_dict(p::Pair{String, V}) where V
+	Dict(p.first => p.second)
 end
-
-function parse_default_element(ele::Pair{String,Pair{DataType,T}}) where T
-    check_data_type(ele.second.second, ele.second.first)
-    return ele.first, ele.second.first, ele.second.second
+function to_xxput_dict(p::Pair)
+	Dict(str(p.first) => p.second)
 end
-
-function parse_default_element(ele::Pair{String,Pair{DataType,DataType}})
-    if isa(ele.second.first, ele.second.second)
-        return ele.first, ele.second.second, ele.second.first
-    elseif isa(ele.second.second, ele.second.first)
-        return ele.first, ele.second.first, ele.second.second
-    else
-        throw(ErrorException("DataTypeError: $(ele.second.first) and $(ele.second.second) are not inclusive."))
-    end
+function to_xxput_dict(v::Vector{V}) where V <: Pair
+	res = Dict{String,Any}()
+	for p in v
+		res[str(p.first)] = p.second
+	end
+	res
 end
-
-parse_default_element(ele::T) where {T<:AbstractString} = parse_default_element(str(ele))
-function parse_default_element(ele::Pair{T,Y}) where {T<:AbstractString, Y}
-    parse_default_element(str(ele.first) => ele.second)
+function to_xxput_dict(d::Dict)
+	res = Dict{String,Any}()
+	for p in v
+		res[str(p.first)] = p.second
+	end
+	res
 end
-
-function parse_default_element(ele::Any)
-    throw(ErrorException("DataTypeError: $ele is not valid for a Program argument."))
-end
-function check_data_type(value, data_type::DataType)
-    isa(value, data_type) || throw(ErrorException("DataTypeError: $value is not a $data_type type."))
-end
+to_xxput_dict(d::Dict{String}) = d
+to_xxput_dict(any) = throw(ErrorException("DataTypeError: cannot run Program: invalid inputs or outputs"))
 
 
 ## String/Cmd conversion

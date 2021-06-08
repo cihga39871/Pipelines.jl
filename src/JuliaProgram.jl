@@ -51,9 +51,9 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: `Vector`, and the elements in the following format: (1) `keyword::String` (2) `keyword::String => data_type` (3) `keyword::String => default_value` (4) `keyword::String => default_value => data_type`.
+- `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
 
-  `keyword` is an argument name.
+  `keyword` is an argument name, can be `String` or `Symbol`.
 
   `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
 
@@ -86,9 +86,9 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 			"a",
 			"b" => Int
 		],
-		outputs = [
+		outputs =
 			"c" => "<a>.<b>"
-		],
+		,
 		main = (inputs, outputs) -> begin
 			a = inputs["a"]
 			b = inputs["b"]
@@ -155,8 +155,8 @@ end
 """
 	run(
 		p::JuliaProgram;
-		inputs::Dict{String}=Dict{String}(),
-		outputs::Dict{String}=Dict{String}(),
+		inputs=Dict{String}(),
+		outputs=Dict{String}(),
 		skip_when_done::Bool=true,
 		check_dependencies::Bool=true,
 		stdout=nothing,
@@ -167,18 +167,10 @@ end
 		dry_run::Bool=false
 	) -> (success::Bool, outputs::Dict{String})
 
-	run(
-		p::JuliaProgram,
-		inputs::Dict{String},
-		outputs::Dict{String};
-		kwargs...
-	)
+	run(p::JuliaProgram, inputs, outputs; kwargs...)
 
-	run(
-		p::JuliaProgram,
-		inputs::Dict{String},
-		kwargs...
-	)  # only usable when `p.infer_outputs` is defined.
+	run(p::JuliaProgram, inputs; kwargs...)
+	)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 
 Run Julia Program (JuliaProgram) using specified `inputs` and `outputs`.
 
@@ -188,7 +180,8 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `inputs::Dict{String}` and `outputs::Dict{String}`: `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be the same as `p.inputs::Vector{String}` and `p.outputs::Vector{String}`.
 
-  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value of `p.main` is `Dict{String}` with proper keys.
+  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.  
+  > *Caution:* the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value of `p.main` is `Dict{String}` with proper keys.
 
 - `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 
@@ -254,8 +247,8 @@ Return `(success::Bool, outputs::Dict{String})`
 """
 function Base.run(
 	p::JuliaProgram;
-	inputs::Dict{String}=Dict{String, Any}(),
-	outputs::Dict{String}=Dict{String, Any}(),
+	inputs=Dict{String, Any}(),
+	outputs=Dict{String, Any}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
 	stdout=nothing,
