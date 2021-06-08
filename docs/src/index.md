@@ -48,37 +48,44 @@ Let's set up a simple `CmdProgram` to print values using `echo`:
 using Pipelines
 
 echo = CmdProgram(
-    inputs = ["INPUT1", "INPUT2"],
-    cmd = `echo INPUT1 INPUT2`   
+    inputs = [
+        "REQUIRED",               # no default value; any data type.
+        "TYPED" => String,        # no default value; String type only.
+        "OPTIONAL" => 4,          # default value is 5; any data type.
+        "FULL" => String => "abc" # default value is abc; String type only.
+    ],
+    cmd = `echo REQUIRED TYPED OPTIONAL FULL`   
 )
 ```
 
-Running the program is just like running other `Cmd`,  but here we need to specify inputs by using `Dict{String}`.
+Running the program is just like running other `Cmd`,  but here we need to specify inputs by using `Dict{String => value}` (`Vector{String => value}` is also supported.)
 
 ```julia
 inputs = Dict(
-    "INPUT1" => "Hello,",
-    "INPUT2" => `Pipeline.jl`
+    "REQUIRED" => "Pipelines.jl",
+    "TYPED" => "is",
+    "FULL" => "everyone!"
 )
 run(echo, inputs)
 ```
 
 !!! note "Program will not run twice by default!"
     If you run a program with the same inputs again, the program will just return the same result, display a warning message without running the command twice.
+
     ```julia
     run(echo, inputs)
     ```
 
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
-    
+
     ```julia
     # Method 1: stop checking finished program
     run(echo, inputs; skip_when_done = false)
-    
+
     # Method 2: delete the run_id_file before running again:
     cmd, run_id_file = run(echo, inputs; dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
-    
+
     # Method 3: Do not generate run_id_file when first running.
     run(echo, inputs; touch_run_id_file=false)
     ```
@@ -92,7 +99,7 @@ The following program prints values simultaneously, sort them, and save to a fil
 ```julia
 prog = CmdProgram(
     inputs = ["INPUT1", "INPUT2", "INPUT3"],
-    outputs = ["OUTPUT_FILE"],
+    outputs = "OUTPUT_FILE",
     cmd = pipeline(`echo INPUT1 INPUT2` & `echo INPUT3`, `sort`, "OUTPUT_FILE")
 )
 
@@ -101,23 +108,58 @@ inputs = Dict(
     "INPUT2" => `Pipeline.jl`,
     "INPUT3" => 39871
 )
-outputs = Dict("OUTPUT_FILE" => "out.txt")
+outputs = "OUTPUT_FILE" => "out.txt" # save output to file
 
 run(prog, inputs, outputs) # will return (success::Bool, outputs)
+
+run(`cat out.txt`) # print the content of out.txt
+# 39871
+# Hello, Pipeline.jl
 ```
 
-It is inconvenient to specify outputs every time, so we provide an argument (`infer_outputs::Function`) in `CmdProgram` to generate default outputs from inputs.
+### Default values
+
+Default values and data types can be set for keywords of `inputs` and `outputs` in this way:
 
 ```julia
+echo = CmdProgram(
+    inputs = [
+        "REQUIRED",                     # no default value; any data type.
+        "TYPED" => String,              # no default value; String type only.
+        "OPTIONAL" => 4,                # default value is 5; any data type.
+        "FULL1" => String => "abc"      # default value is abc; String type only.
+        "FULL2" => "abc" => String      # default value is abc; String type only.
+        "INTERPOLATED" => "<FULL1>.xyz" # default value is value of FULL1 * ".xyz".
+    ],
+    cmd = `echo REQUIRED TYPED OPTIONAL FULL`   
+)
+```
+
+#### Interpolation of default values
+
+If the default value is a `String`, it can be interpolated by using `<keyword>`, such as `"<FULL1>.xyz"` in the example.
+
+#### Generate outputs using Function
+
+> This step is prior to adding default values of outputs, and string interpolation using `<>`.
+
+We also provide a method (`infer_outputs::Function`) in `CmdProgram` to generate complex `outputs::Dict{String}` from `inputs::Dict{String}`. The type used in the function is restricted to `Dict{String}`
+
+```julia
+using Dates
+
 prog = CmdProgram(
-    inputs = ["INPUT1", "INPUT2", "INPUT3"],
-    outputs = ["OUTPUT_FILE"],
-    cmd = pipeline(`echo INPUT1 INPUT2` & `echo INPUT3`, `sort`, "OUTPUT_FILE"),
+    inputs = [
+        "INPUT1" => Int,
+        "INPUT2" => Int => 3
+    ],
+    outputs = "OUTPUT_FILE",
+    cmd = pipeline(`echo INPUT1 INPUT2`, `sort`, "OUTPUT_FILE"),
     infer_outputs = inputs -> Dict(
-    	"OUTPUT_FILE" => inputs["INPUT1"] * ".txt"
+    	"OUTPUT_FILE" => string(now(), "__", inputs["INPUT1"], ".txt")
     )
 )
-success, outputs = run(prog, inputs)
+success, outputs = run(prog, "INPUT1" => 5)
 ```
 
 We can also generate default outputs without running the program:
@@ -141,6 +183,66 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 - Support running competitive tasks with **locks**.
 
 ## Change log
+
+v0.3.0
+
+- Building Program: Support type assertion and default arguments of `inputs` and `outputs`, such as `"arg" => 5`, `"arg" => Int`, `"arg" => 5 => Int`, `"arg" => Int => 5`.
+
+- `Program` and `run(::Program)` no longer require `inputs` and `outputs` to be `Vector` or `Dict`. They can be both `Vector` or `Dict`, or even an element of `Vector` or `Dict`, as long as they can be converted. Eg:
+
+  ```julia
+  p = CmdProgram(
+      cmd_dependencies = [julia],
+      id_file = "id_file",
+      inputs = [
+          "input",
+          "input2" => Int,
+          "optional_arg" => 5,
+          "optional_arg2" => 0.5 => Number
+      ],
+      outputs = "output" => "<input>.output"
+      ,
+      cmd = `echo input input2 optional_arg optional_arg2 output`
+  )
+
+  inputs = Dict(
+      "input" => `in1`,
+      "input2" => 2
+  )
+
+  outputs = [
+      "output" => "out"
+  ]
+
+  run(p, inputs, outputs,
+      skip_when_done = false,
+      verbose = true,
+      touch_run_id_file = false
+  )
+  ```
+
+- Pretty print of `Program`. Eg:
+
+  ```julia
+  julia> p
+  CmdProgram:
+    name             → Command Program
+    id_file          → id_file
+    info_before      → auto
+    info_after       → auto
+    cmd_dependencies → CmdDependency[`/usr/software/julia-1.4.2/bin/julia -Cnative -J/usr/software/julia-1.4.2/lib/julia/sys.so -O3 -g1`]
+    inputs           → "input"         :: Any    (required)
+                       "input2"        :: Int64  (required)
+                       "optional_arg"  :: Any    (default: 5)
+                       "optional_arg2" :: Number (default: 0.5)
+    validate_inputs  → do_nothing
+    prerequisites    → do_nothing
+    cmd              → `echo input input2 optional_arg optional_arg2 output`
+    infer_outputs    → do_nothing
+    outputs          → "output" :: Any (default: <input>.output)
+    validate_outputs → do_nothing
+    wrap_up          → do_nothing
+  ```
 
 v0.2.2
 

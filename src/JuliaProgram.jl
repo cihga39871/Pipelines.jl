@@ -5,35 +5,21 @@ mutable struct JuliaProgram <: Program
 	info_after::String
     cmd_dependencies::Vector{CmdDependency}
 	inputs::Vector{String}
+	input_types::Vector{DataType}
+	default_inputs::Vector
 	validate_inputs::Function
 	prerequisites::Function
     main::Function
 	infer_outputs::Function
 	outputs::Vector{String}
+	output_types::Vector{DataType}
+	default_outputs::Vector
 	validate_outputs::Function
 	wrap_up::Function
 end
 
 """
-# Struct
-
-	mutable struct JuliaProgram <: Program
-		name::String
-		id_file::String
-		info_before::String
-		info_after::String
-		cmd_dependencies::Vector{CmdDependency}
-		inputs::Vector{String}
-		validate_inputs::Function
-		prerequisites::Function
-		main::Function
-		infer_outputs::Function
-		outputs::Vector{String}
-		validate_outputs::Function
-		wrap_up::Function
-	end
-
-# Methods
+	JuliaProgram <: Program
 
 	JuliaProgram(;
 		name::String               = "Unnamed Command Program",
@@ -41,12 +27,12 @@ end
 		info_before::String        = "auto",
 		info_after::String         = "auto",
 		cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-		inputs::Vector{String}     = Vector{String}(),
+		inputs                     = Vector{String}(),
 		validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
 		prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
 		main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
 		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-		outputs::Vector{String}    = Vector{String}(),
+		outputs                    = Vector{String}(),
 		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String},
 		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 	) -> JuliaProgram
@@ -65,10 +51,17 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: *keys* (`Vector{String}`) of dicts which are required by `run(::JuliaProgram, inputs::Dict{String}, outputs::Dict{String})`. See details below.
+- `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
+
+  `keyword` is an argument name, can be `String` or `Symbol`.
+
+  `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
+
+  `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
+
+  *HOW DOES THIS WORK?*
 
   > `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be set in `inputs::Vector{String}` and `outputs::Vector{String}`.
-
   > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value is `Dict{String}` with proper keys.
 
 - `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
@@ -89,8 +82,13 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
 	p = JuliaProgram(
 		id_file = "id_file",
-		inputs = ["a", "b"],
-		outputs = ["c"],
+		inputs = [
+			"a",
+			"b" => Int
+		],
+		outputs =
+			"c" => "<a>.<b>"
+		,
 		main = (inputs, outputs) -> begin
 			a = inputs["a"]
 			b = inputs["b"]
@@ -121,15 +119,18 @@ function JuliaProgram(;
 	info_before::String        = "auto",
 	info_after::String         = "auto",
 	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-	inputs::Vector{String}     = Vector{String}(),
+	inputs                     = Vector{String}(),
 	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
 	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
 	main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String},
 	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-	outputs::Vector{String}    = Vector{String}(),
+	outputs                    = Vector{String}(),
 	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
 	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 )
+	inputs, input_types, default_inputs = parse_default(inputs)
+	outputs, output_types, default_outputs = parse_default(outputs)
+
 	JuliaProgram(
 		name,
 		id_file,
@@ -137,11 +138,15 @@ function JuliaProgram(;
 		info_after,
 		cmd_dependencies,
 		inputs,
+		input_types,
+		default_inputs,
 		validate_inputs,
 		prerequisites,
 		main,
 		infer_outputs,
 		outputs,
+		output_types,
+		default_outputs,
 		validate_outputs,
 		wrap_up
 	)
@@ -150,8 +155,8 @@ end
 """
 	run(
 		p::JuliaProgram;
-		inputs::Dict{String}=Dict{String, Cmd}(),
-		outputs::Dict{String}=Dict{String, Cmd}(),
+		inputs=Dict{String}(),
+		outputs=Dict{String}(),
 		skip_when_done::Bool=true,
 		check_dependencies::Bool=true,
 		stdout=nothing,
@@ -162,18 +167,10 @@ end
 		dry_run::Bool=false
 	) -> (success::Bool, outputs::Dict{String})
 
-	run(
-		p::JuliaProgram,
-		inputs::Dict{String},
-		outputs::Dict{String};
-		kwargs...
-	)
+	run(p::JuliaProgram, inputs, outputs; kwargs...)
 
-	run(
-		p::JuliaProgram,
-		inputs::Dict{String},
-		kwargs...
-	)  # only usable when `p.infer_outputs` is defined.
+	run(p::JuliaProgram, inputs; kwargs...)
+	)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 
 Run Julia Program (JuliaProgram) using specified `inputs` and `outputs`.
 
@@ -183,7 +180,8 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `inputs::Dict{String}` and `outputs::Dict{String}`: `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be the same as `p.inputs::Vector{String}` and `p.outputs::Vector{String}`.
 
-  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value of `p.main` is `Dict{String}` with proper keys.
+  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.  
+  > *Caution:* the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value of `p.main` is `Dict{String}` with proper keys.
 
 - `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 
@@ -249,8 +247,8 @@ Return `(success::Bool, outputs::Dict{String})`
 """
 function Base.run(
 	p::JuliaProgram;
-	inputs::Dict{String}=Dict{String, Cmd}(),
-	outputs::Dict{String}=Dict{String, Cmd}(),
+	inputs=Dict{String, Any}(),
+	outputs=Dict{String, Any}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
 	stdout=nothing,
@@ -260,8 +258,9 @@ function Base.run(
 	touch_run_id_file::Bool=true,
 	dry_run::Bool=false
 )
-	# check keyword consistency (keys in inputs and outputs compatible with the function)
-	check_keywords(p, inputs, outputs)
+	# input/output completion
+	inputs, outputs = xxputs_completion_and_check(p, inputs, outputs)
+
 	# run id based on inputs and outputs
 	run_id = generate_run_uuid(inputs, outputs)
 	run_id_file = p.id_file * "." * string(run_id)

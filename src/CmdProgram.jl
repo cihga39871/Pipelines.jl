@@ -5,48 +5,34 @@ mutable struct CmdProgram <: Program
 	info_after::String
     cmd_dependencies::Vector{CmdDependency}
 	inputs::Vector{String}
+	input_types::Vector{DataType}
+	default_inputs::Vector
 	validate_inputs::Function
 	prerequisites::Function
     cmd::Base.AbstractCmd
 	infer_outputs::Function
 	outputs::Vector{String}
+	output_types::Vector{DataType}
+	default_outputs::Vector
 	validate_outputs::Function
 	wrap_up::Function
 end
 
 """
-# Struct
-
-	mutable struct CmdProgram
-		name::String
-		id_file::String
-		info_before::String
-		info_after::String
-		cmd_dependencies::Vector{CmdDependency}
-		inputs::Vector{String}
-		validate_inputs::Function
-		prerequisites::Function
-		cmd::Base.AbstractCmd
-		infer_outputs::Function
-		outputs::Vector{String}
-		validate_outputs::Function
-		wrap_up::Function
-	end
-
-# Methods
+	CmdProgram <: Program
 
 	CmdProgram(;
-		name::String               = "Unnamed Command Program",
+		name::String               = "Command Program",
 		id_file::String            = "",
 		info_before::String        = "auto",
 		info_after::String         = "auto",
 		cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-		inputs::Vector{String}     = Vector{String}(),
+		inputs                     = Vector{String}(),
 		validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
 		prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
 		cmd::Base.AbstractCmd      = ``,
 		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
-		outputs::Vector{String}    = Vector{String}(),
+		outputs                    = Vector{String}(),
 		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
 		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
 	) -> CmdProgram
@@ -65,11 +51,18 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: *keywords* (`Vector{String}`) in `cmd` that can be replaced when envoking `run(::CmdProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`. See details below.
+- `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
 
-  > `CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords are set in `inputs::Vector{String}` and `outputs::Vector{String}`.
+  `keyword` is an argument name, can be `String` or `Symbol`.
 
-  > To run the program with replaced keywords, you need to use `run(::CmdProgram; inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`. The data type is different.
+  `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
+
+  `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
+
+  *HOW DOES THIS WORK?*
+
+  > `CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords are set in `inputs` and `outputs`.
+  > `keyword`s will be replaced before running the program. Users need to provide a dictionary of `keyword::String => value` in `run(::Program, inputs::Dict{String}, outputs::Dict{String})`.
 
 - `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
 
@@ -86,11 +79,17 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 # Example
 
 	p = CmdProgram(
-		cmd_dependencies = [julia],
 		id_file = "id_file",
-		inputs = ["input", "input2"],
-		outputs = ["output"],
-		cmd = `echo input input2 output`
+		inputs = [
+			"input",
+			"input2" => Int,
+			"optional_arg" => 5,
+			"optional_arg2" => 0.5 => Number
+		],
+		outputs =
+			"output" => "<input>.output"
+		,
+		cmd = `echo input input2 optional_arg optional_arg2 output`
 	)
 
 	inputs = Dict(
@@ -112,15 +111,18 @@ function CmdProgram(;
 	info_before::String        = "auto",
 	info_after::String         = "auto",
 	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-	inputs::Vector{String}     = Vector{String}(),
+	inputs                     = Vector{String}(),
 	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
 	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
 	cmd::Base.AbstractCmd      = ``,
 	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-	outputs::Vector{String}    = Vector{String}(),
+	outputs                    = Vector{String}(),
 	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
 	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 )
+	inputs, input_types, default_inputs = parse_default(inputs)
+	outputs, output_types, default_outputs = parse_default(outputs)
+
 	CmdProgram(
 		name,
 		id_file,
@@ -128,11 +130,15 @@ function CmdProgram(;
 		info_after,
 		cmd_dependencies,
 		inputs,
+		input_types,
+		default_inputs,
 		validate_inputs,
 		prerequisites,
 		cmd,
 		infer_outputs,
 		outputs,
+		output_types,
+		default_outputs,
 		validate_outputs,
 		wrap_up
 	)
@@ -141,8 +147,8 @@ end
 """
 	run(
 		p::CmdProgram;
-		inputs::Dict{String}=Dict{String, Cmd}(),
-		outputs::Dict{String}=Dict{String, Cmd}(),
+		inputs=Dict{String}(),
+		outputs=Dict{String}(),
 		skip_when_done::Bool=true,
 		check_dependencies::Bool=true,
 		stdout=nothing,
@@ -153,18 +159,10 @@ end
 		dry_run::Bool=false
 	) -> (success::Bool, outputs::Dict{String})
 
-	run(
-		p::CmdProgram,
-		inputs::Dict{String},
-		outputs::Dict{String};
-		kwargs...
-	)
+	run(p::CmdProgram, inputs, outputs; kwargs...)
 
-	run(
-		p::CmdProgram,
-		inputs::Dict{String},
-		kwargs...
-	)  # only usable when `p.infer_outputs` is defined.
+	run(p::CmdProgram, inputs; kwargs...)
+	)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 
 Run Command Program (CmdProgram) using specified `inputs` and `outputs`.
 
@@ -173,6 +171,8 @@ Return `(success::Bool, outputs::Dict{String})`
 - `p::CmdProgram`: the command program template.
 
 - `inputs::Dict{String}` and `outputs::Dict{String}`: `p::CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are `Dict(keyword::String => replacement)`. The replacements do not have a length limit, unless a *keyword* refers to a filename (length == 1).
+
+  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
 
 - `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 
@@ -232,8 +232,8 @@ Return `(success::Bool, outputs::Dict{String})`
 """
 function Base.run(
 	p::CmdProgram;
-	inputs::Dict{String}=Dict{String, Cmd}(),
-	outputs::Dict{String}=Dict{String, Cmd}(),
+	inputs=Dict{String, Any}(),
+	outputs=Dict{String, Any}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
 	stdout=nothing,
@@ -243,8 +243,9 @@ function Base.run(
 	touch_run_id_file::Bool=true,
 	dry_run::Bool=false
 )
-	# check keyword consistency (keys in inputs and outputs compatible with the function)
-	check_keywords(p, inputs, outputs)
+	# input/output completion
+	inputs, outputs = xxputs_completion_and_check(p, inputs, outputs)
+
 	# run id based on inputs and outputs
 	run_id = generate_run_uuid(inputs, outputs)
 	run_id_file = p.id_file * "." * string(run_id)

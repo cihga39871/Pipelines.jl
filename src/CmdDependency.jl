@@ -143,21 +143,6 @@ function check_dependency(p::CmdDependency)
 	return false
 end
 
-function Base.display(p::CmdDependency)
-	print("CmdDependency\n  exec            :")
-	display(p.exec)
-	print("  test_args       :")
-	display(p.test_args)
-	println("  validate_success: $(p.validate_success)\n  validate_stdout : $(p.validate_stdout)\n  validate_stderr : $(p.validate_stderr)\n  exit_when_fail  : $(p.exit_when_fail)")
-end
-
-function Base.print(io::IO, p::CmdDependency)
-	print(io, p.exec)
-end
-
-function Base.show(io::IO, p::CmdDependency)
-	show(io, p.exec)
-end
 
 # Interpolation in Cmd
 # It allows CmdDependency to be interpolated in `$p`.
