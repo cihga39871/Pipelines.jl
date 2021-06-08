@@ -40,8 +40,11 @@ Code in CmdProgram:
 ```julia
 program_bowtie2 = CmdProgram(
 	...,
-	inputs = ["FASTQ", "REF"],
-	outputs = ["BAM"],
+	inputs = [
+        "FASTQ" => String, 
+        "REF" => "human_genome_hg38.fa" => String
+    ],
+	outputs = "BAM",
 	cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`)
 )
 ```
@@ -59,7 +62,7 @@ We can set a default method to generate `outputs::Dict{String}` from inputs, whi
 ```julia
 program_bowtie2 = CmdProgram(
 	...,
-	outputs = ["BAM"],
+	outputs = "BAM",
 	infer_outputs = inputs -> begin
 		Dict("BAM" => to_str(inputs["FASTQ"]) * ".bam")
 	end,
@@ -67,11 +70,23 @@ program_bowtie2 = CmdProgram(
 )
 ```
 
+Or, the following does the same job:
+
+```julia
+program_bowtie2 = CmdProgram(
+	...,
+	outputs = "BAM" => "<FASTQ>.bam" => String,
+	...
+)
+```
+
+
+
 !!! note "to_str(x) and to_cmd(x)"
     `to_str` converts most types to `String`, and `to_cmd` to `Cmd`. They are tailored for parsing `inputs["x"]` and `outputs["x"]`.
 
     User-defined `inputs, outputs::Dict{String}` only confine the key type (`String`), does not confine the value type because of flexibility. When writing functions using inputs/outputs, we should consider this. It can be a Number, a Cmd, a String, and even a Vector. Pipeline.jl provides `to_str` and `to_cmd` to elegantly convert those types to `String` or `Cmd` as you wish.
-
+    
     Other conversions are also available, such as `replaceext` (replace extension) and `removeext` (remove extension). More details are in API/Utils page.
 
 
@@ -82,7 +97,10 @@ To make the code robust, we can check whether the inputs exists by using `valida
 ```julia
 program_bowtie2 = CmdProgram(
 	...,
-	inputs = ["FASTQ", "REF"],
+	inputs = [
+        "FASTQ" => String, 
+        "REF" => "human_genome_hg38.fa" => String
+    ],
 	validate_inputs = inputs -> begin
 		check_dependency_file(inputs["FASTQ"]) &&
 		check_dependency_file(inputs["REF"])
@@ -111,7 +129,7 @@ After running the main command, we can validate outputs by using `validate_outpu
 ```julia
 program_bowtie2 = CmdProgram(
 	...,
-	outputs = ["BAM"],
+	outputs = "BAM",
 	validate_outputs = outputs -> begin
 		check_dependency_file(outputs["BAM"])
 	end,
@@ -139,7 +157,10 @@ program_bowtie2 = CmdProgram(
 	name = "Bowtie2 Mapping",
 	id_file = ".bowtie2",
 
-	inputs = ["FASTQ", "REF"],
+	inputs = [
+        "FASTQ" => String, 
+        "REF" => "human_genome_hg38.fa" => String
+    ],
 	validate_inputs = inputs -> begin
 		check_dependency_file(inputs["FASTQ"]) &&
 		check_dependency_file(inputs["REF"])
@@ -168,20 +189,22 @@ program_bowtie2 = CmdProgram(
 `CmdProgram` can be built with this method:
 
 ```julia
+CmdProgram <: Program
+
 CmdProgram(;
-	name::String               = "Unnamed Command Program",
-	id_file::String            = "",
-	info_before::String        = "auto",
-	info_after::String         = "auto",
-	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-	inputs::Vector{String}     = Vector{String}(),
-	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
-	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-	cmd::Base.AbstractCmd      = ``,
-	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-	outputs::Vector{String}    = Vector{String}(),
-	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String},
-	wrap_up::Function          = do_nothing   # positional arguments: inputs, outputs::Dict{String}
+    name::String               = "Command Program",
+    id_file::String            = "",
+    info_before::String        = "auto",
+    info_after::String         = "auto",
+    cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
+    inputs                     = Vector{String}(),
+    validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
+    prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
+    cmd::Base.AbstractCmd      = ``,
+    infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
+    outputs                    = Vector{String}(),
+    validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
+    wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
 ) -> CmdProgram
 ```
 
@@ -194,8 +217,8 @@ To run a `CmdProgram`, use one of the following methods:
 ```julia
 run(
 	p::CmdProgram;
-	inputs::Dict{String}=Dict{String, Cmd}(),
-	outputs::Dict{String}=Dict{String, Cmd}(),
+	inputs=Dict{String}(),
+	outputs=Dict{String}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
 	stdout=nothing,
@@ -206,24 +229,16 @@ run(
 	dry_run::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
 
-run(
-	p::CmdProgram,
-	inputs::Dict{String},
-	outputs::Dict{String};
-	kwargs...
-)
+run(p::CmdProgram, inputs, outputs; kwargs...)
 
-run(
-	p::CmdProgram,
-	inputs::Dict{String},
-	kwargs...
-)  # only usable when `p.infer_outputs` is defined.
+run(p::CmdProgram, inputs; kwargs...)
+)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 ```
 
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-
+    
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
 
 The explanation of arguments is in the next section.

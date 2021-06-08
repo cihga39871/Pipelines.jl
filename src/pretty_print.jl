@@ -58,6 +58,10 @@ end
 
 function display_xxputs(max_bype::Int, xxputs::Vector{String}, xxput_types::Vector{DataType}, default_xxputs::Vector)
 	n = length(xxputs)
+	if n == 0
+		println("<empty>")
+		return
+	end
 	max_bype_xxputs = maximum(length, xxputs)
 	max_bype_xxput_types = maximum(length, map(string, xxput_types))
 	for i in 1:n
@@ -70,4 +74,5 @@ function display_xxputs(max_bype::Int, xxputs::Vector{String}, xxput_types::Vect
 			isnothing(default) ? "(required)" : "(default: $default)"
 		)
 	end
+	return
 end

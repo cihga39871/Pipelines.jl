@@ -22,7 +22,7 @@ end
 	CmdProgram <: Program
 
 	CmdProgram(;
-		name::String               = "Unnamed Command Program",
+		name::String               = "Command Program",
 		id_file::String            = "",
 		info_before::String        = "auto",
 		info_after::String         = "auto",
@@ -172,7 +172,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `inputs::Dict{String}` and `outputs::Dict{String}`: `p::CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are `Dict(keyword::String => replacement)`. The replacements do not have a length limit, unless a *keyword* refers to a filename (length == 1).
 
-  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.  
+  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
 
 - `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 

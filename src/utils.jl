@@ -144,7 +144,7 @@ function to_xxput_dict(d::Dict)
 	res
 end
 to_xxput_dict(d::Dict{String}) = d
-to_xxput_dict(any) = throw(ErrorException("DataTypeError: cannot run Program: invalid inputs or outputs"))
+to_xxput_dict(any) = throw(ErrorException("DataTypeError: cannot run Program: cannot convert to Dict{String}: inputs, outputs, or returned value of infer_outputs(inputs)"))
 
 
 ## String/Cmd conversion

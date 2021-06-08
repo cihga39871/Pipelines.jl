@@ -169,7 +169,7 @@ function xxputs_completion_and_check(p::Program, inputs::Dict{String}, outputs::
 		# do nothing to outputs
 	else
 		if isempty(outputs) && p.infer_outputs !== do_nothing
-			outputs = p.infer_outputs(inputs)
+			outputs = to_xxput_dict(p.infer_outputs(inputs))
 		end
 		outputs = outputs_completion(p::Program, outputs::Dict{String})
 	end

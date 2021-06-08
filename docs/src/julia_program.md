@@ -11,7 +11,7 @@ Pipelines are built with multiple `Program`s. `Program` is the abstract type con
 | Diff                 | `cp :: CmdProgram`                                           | `jp :: JuliaProgram`                                         |
 | :------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
 | Unique Field         | `cp` has a command template: `cp.cmd::AbstractCmd`           | `jp` has a main Julia function: `jp.main::Function`          |
-| Method to Run        | Replace keywords in `cp.cmd` with values in user defined `inputs` and `outputs::Dict{String}` | Simply evoke `jp.main(inputs, outputs)`                      |
+| Method to Run        | Replace keywords in `cp.cmd` with values in user defined `inputs` and `outputs::Dict{String}` | Simply evoke `jp.main(inputs, outputs::Dict{String})`        |
 | **Returned Outputs** | `outputs ` **provided in** `run(...)` **does not change**    | `outputs` **is overwritten by the returned value of** `jp.main` |
 | Dry Run              | Return `(replaced_cmd::AbstractCmd, run_id_file::String)`    | Return `(fake_outputs::Dict{String}, run_id_file::String)`   |
 
@@ -20,21 +20,23 @@ Pipelines are built with multiple `Program`s. `Program` is the abstract type con
 `JuliaProgram` can be built with this method:
 
 ```julia
+JuliaProgram <: Program
+
 JuliaProgram(;
-	name::String               = "Julia Program",
+	name::String               = "Unnamed Command Program",
 	id_file::String            = "",
 	info_before::String        = "auto",
 	info_after::String         = "auto",
 	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-	inputs::Vector{String}     = Vector{String}(),
+	inputs                     = Vector{String}(),
 	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
 	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-	main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String},
+	main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
 	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-	outputs::Vector{String}    = Vector{String}(),
-	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
+	outputs                    = Vector{String}(),
+	validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String},
 	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
-)
+) -> JuliaProgram
 ```
 
 ## Run
@@ -44,8 +46,8 @@ To run a `JuliaProgram`, the methods are the same as `CmdProgram`:
 ```julia
 run(
 	p::JuliaProgram;
-	inputs::Dict{String}=Dict{String, Cmd}(),
-	outputs::Dict{String}=Dict{String, Cmd}(),
+	inputs=Dict{String}(),
+	outputs=Dict{String}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
 	stdout=nothing,
@@ -56,24 +58,16 @@ run(
 	dry_run::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
 
-run(
-	p::JuliaProgram,
-	inputs::Dict{String},
-	outputs::Dict{String};
-	kwargs...
-)
+run(p::JuliaProgram, inputs, outputs; kwargs...)
 
-run(
-	p::JuliaProgram,
-	inputs::Dict{String},
-	kwargs...
-)  # only usable when `p.infer_outputs` is defined.
+run(p::JuliaProgram, inputs; kwargs...)
+)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 ```
 
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-
+    
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`. See example below.
 
 ## Example
