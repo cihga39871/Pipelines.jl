@@ -20,7 +20,8 @@ export Program,
 infer_outputs
 
 include("CmdProgram.jl")
-export CmdProgram
+export CmdProgram,
+prepare_cmd
 
 include("JuliaProgram.jl")
 export JuliaProgram

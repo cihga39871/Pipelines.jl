@@ -165,6 +165,7 @@ Convert `x` to `String`.
 str(x::Cmd) = string(x)[2:end-1]
 str(::Nothing) = ""
 str(x::Vector) = join(str.(x), "_")
+str(x::Regex) = x.pattern
 str(any) = string(any)
 to_str = str
 
@@ -181,6 +182,7 @@ to_cmd(v::Vector{String}) = Cmd(v)
 to_cmd(v::Vector{T}) where T = Cmd(str.(v))
 to_cmd(::Nothing) = nothing
 to_cmd(i::Number) = Cmd([str(i)])
+to_cmd(any) = Cmd([str(any)])
 
 ValidInputTypes = Union{Cmd, AbstractString, Vector, Number}
 

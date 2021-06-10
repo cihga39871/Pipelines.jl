@@ -289,7 +289,7 @@ function Base.run(
 
 	@label dry_run_start
 	# preparation: replace inputs and outputs in cmd, including redirecting files
-	cmd = prepare_cmd(p.cmd, inputs, outputs)
+	cmd = prepare_cmd(p, inputs, outputs)
 	# redirecting to stdout/stderr if specified.
 	if !(isnothing(stdout) && isnothing(stderr))
 		cmd = pipeline(cmd, stdout=stdout, stderr=stderr, append=append)
@@ -401,4 +401,17 @@ function prepare_cmd(h::Base.FileRedirect, inputs::Dict{String}, outputs::Dict{S
 	else
 		error("ProgramRedirectError: a key ($(h.filename)) in inputs or outputs found in redirecting filename, but the provided value contain multiple elements. Please only provide one element. For example, quote the filename when contain special characters.")
 	end
+end
+
+"""
+	prepare_cmd(p::CmdProgram, inputs, outputs)
+
+Prepare the runable command. Keywords in CmdProgram will be given to values of inputs/outputs.
+"""
+function prepare_cmd(p::CmdProgram, inputs::Dict{String}, outputs::Dict{String})
+	prepare_cmd(p.cmd, inputs, outputs)
+end
+
+function prepare_cmd(p::CmdProgram, inputs, outputs)
+	prepare_cmd(p.cmd, to_xxput_dict(inputs), to_xxput_dict(outputs))
 end
