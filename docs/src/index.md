@@ -184,6 +184,14 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 
 ## Change log
 
+v0.3.2
+
+- `CmdDependency`: do not check when `test_args` are empty.
+
+v0.3.1
+
+- `to_cmd` and `to_str`: support argument `::Regex` or `::Any`.
+
 v0.3.0
 
 - Building Program: Support type assertion and default arguments of `inputs` and `outputs`, such as `"arg" => 5`, `"arg" => Int`, `"arg" => 5 => Int`, `"arg" => Int => 5`.

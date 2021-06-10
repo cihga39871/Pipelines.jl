@@ -106,6 +106,10 @@ If success, return `true`.
 If fail, return `false`, or throw DependencyError when `p.exit_when_fail` set to `true`.
 """
 function check_dependency(p::CmdDependency)
+	if isempty(p.test_args)
+		@warn "Cannot check dependency for test_args not set: $p"
+		return true
+	end
     out, err, success = readall(`$p $(p.test_args)`)
 	has_dependency = true
 
