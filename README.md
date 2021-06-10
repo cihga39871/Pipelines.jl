@@ -28,8 +28,6 @@ Pipelines.jl can be installed using the Julia package manager. From the Julia RE
 
 ```julia
 pkg> add Pipelines
-# If it fails, use
-pkg> add https://github.com/cihga39871/Pipelines.jl.git
 ```
 
 To use the package, type
