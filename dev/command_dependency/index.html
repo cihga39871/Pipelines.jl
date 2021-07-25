@@ -17,51 +17,51 @@
 dep2 = CmdDependency(...)
 
 prog = CmdProgram(
-	cmd_dependencies = [dep1, dep2],
+    cmd_dependencies = [dep1, dep2],
     ...
 )</code></pre><p>To call the dependency in command, we can prepend a dollor sign (<code>$</code>):</p><pre><code class="language-julia">prog = CmdProgram(
-	cmd_dependencies = [dep1, dep2],
-	cmd = `$dep1 --args` &amp; `$dep2 --args`
+    cmd_dependencies = [dep1, dep2],
+    cmd = `$dep1 --args` &amp; `$dep2 --args`
 )</code></pre><h3 id="An-Example"><a class="docs-heading-anchor" href="#An-Example">An Example</a><a id="An-Example-1"></a><a class="docs-heading-anchor-permalink" href="#An-Example" title="Permalink"></a></h3><p>We use the same example in Command Program page.</p><p>Adding <code>samtools</code> and <code>bowtie2</code> as the dependencies of the bowtie2 mapping program:</p><pre><code class="language-julia">SAMTOOLS = CmdDependency(
-	exec = `samtools`,
-	test_args = `--version`,
-	validate_success = true,
-	validate_stdout = x -&gt; occursin(r&quot;^samtools \d+&quot;, x)
+    exec = `samtools`,
+    test_args = `--version`,
+    validate_success = true,
+    validate_stdout = x -&gt; occursin(r&quot;^samtools \d+&quot;, x)
 )
 
 BOWTIE2 = CmdDependency(
-	exec = `bowtie2`,
-	test_args = `--version`,
-	validate_success = true,
-	validate_stdout = x -&gt; occursin(r&quot;bowtie2-align-s version \d+&quot;, x)
+    exec = `bowtie2`,
+    test_args = `--version`,
+    validate_success = true,
+    validate_stdout = x -&gt; occursin(r&quot;bowtie2-align-s version \d+&quot;, x)
 )
 
 program_bowtie2 = CmdProgram(
-	name = &quot;Bowtie2 Mapping&quot;,
-	id_file = &quot;.bowtie2&quot;,
+    name = &quot;Bowtie2 Mapping&quot;,
+    id_file = &quot;.bowtie2&quot;,
 
-	cmd_dependencies = [SAMTOOLS, BOWTIE2],
+    cmd_dependencies = [SAMTOOLS, BOWTIE2],
 
-	inputs = [&quot;FASTQ&quot;, &quot;REF&quot;],
-	validate_inputs = inputs -&gt; begin
-		check_dependency_file(inputs[&quot;FASTQ&quot;]) &amp;&amp;
-		check_dependency_file(inputs[&quot;REF&quot;])
-	end,
+    inputs = [&quot;FASTQ&quot;, &quot;REF&quot;],
+    validate_inputs = inputs -&gt; begin
+        check_dependency_file(inputs[&quot;FASTQ&quot;]) &amp;&amp;
+        check_dependency_file(inputs[&quot;REF&quot;])
+    end,
 
-	prerequisites = (inputs, outputs) -&gt; begin
-		mkpath(dirname(to_str(outputs[&quot;BAM&quot;])))
-	end,
+    prerequisites = (inputs, outputs) -&gt; begin
+        mkpath(dirname(to_str(outputs[&quot;BAM&quot;])))
+    end,
 
-	outputs = [&quot;BAM&quot;],
-	infer_outputs = inputs -&gt; begin
-		Dict(&quot;BAM&quot; =&gt; str(inputs[&quot;FASTQ&quot;]) * &quot;.bam&quot;)
-	end,
-	validate_outputs = outputs -&gt; begin
-		check_dependency_file(outputs[&quot;BAM&quot;])
-	end,
+    outputs = [&quot;BAM&quot;],
+    infer_outputs = inputs -&gt; begin
+        Dict(&quot;BAM&quot; =&gt; str(inputs[&quot;FASTQ&quot;]) * &quot;.bam&quot;)
+    end,
+    validate_outputs = outputs -&gt; begin
+        check_dependency_file(outputs[&quot;BAM&quot;])
+    end,
 
-	cmd = pipeline(`$BOWTIE2 -x REF -q FASTQ`, `$SAMTOOLS sort -O bam -o BAM`),
+    cmd = pipeline(`$BOWTIE2 -x REF -q FASTQ`, `$SAMTOOLS sort -O bam -o BAM`),
 
-	wrap_up = (inputs, outputs) -&gt; run(`$SAMTOOLS index $(outputs[&quot;BAM&quot;])`)
+    wrap_up = (inputs, outputs) -&gt; run(`$SAMTOOLS index $(outputs[&quot;BAM&quot;])`)
 )</code></pre><p>To run the program, we can decide whether to check dependencies with <code>run(..., check_dependencies=true)</code>:</p><pre><code class="language-julia">inputs = Dict(&quot;FASTQ&quot; =&gt; &quot;a.fastq&quot;, &quot;REF&quot; =&gt; &quot;ref.fasta&quot;)
-success, outputs = run(program_bowtie2, inputs; check_dependencies = true)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../julia_program/">« Julia Program</a><a class="docs-footer-nextpage" href="../API/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 10 June 2021 18:12">Thursday 10 June 2021</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+success, outputs = run(program_bowtie2, inputs; check_dependencies = true)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../julia_program/">« Julia Program</a><a class="docs-footer-nextpage" href="../API/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 25 July 2021 21:20">Sunday 25 July 2021</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
