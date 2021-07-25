@@ -59,7 +59,7 @@ dep1 = CmdDependency(...)
 dep2 = CmdDependency(...)
 
 prog = CmdProgram(
-	cmd_dependencies = [dep1, dep2],
+    cmd_dependencies = [dep1, dep2],
     ...
 )
 ```
@@ -68,8 +68,8 @@ To call the dependency in command, we can prepend a dollor sign (`$`):
 
 ```julia
 prog = CmdProgram(
-	cmd_dependencies = [dep1, dep2],
-	cmd = `$dep1 --args` & `$dep2 --args`
+    cmd_dependencies = [dep1, dep2],
+    cmd = `$dep1 --args` & `$dep2 --args`
 )
 ```
 
@@ -81,46 +81,46 @@ Adding `samtools` and `bowtie2` as the dependencies of the bowtie2 mapping progr
 
 ```julia
 SAMTOOLS = CmdDependency(
-	exec = `samtools`,
-	test_args = `--version`,
-	validate_success = true,
-	validate_stdout = x -> occursin(r"^samtools \d+", x)
+    exec = `samtools`,
+    test_args = `--version`,
+    validate_success = true,
+    validate_stdout = x -> occursin(r"^samtools \d+", x)
 )
 
 BOWTIE2 = CmdDependency(
-	exec = `bowtie2`,
-	test_args = `--version`,
-	validate_success = true,
-	validate_stdout = x -> occursin(r"bowtie2-align-s version \d+", x)
+    exec = `bowtie2`,
+    test_args = `--version`,
+    validate_success = true,
+    validate_stdout = x -> occursin(r"bowtie2-align-s version \d+", x)
 )
 
 program_bowtie2 = CmdProgram(
-	name = "Bowtie2 Mapping",
-	id_file = ".bowtie2",
+    name = "Bowtie2 Mapping",
+    id_file = ".bowtie2",
 
-	cmd_dependencies = [SAMTOOLS, BOWTIE2],
+    cmd_dependencies = [SAMTOOLS, BOWTIE2],
 
-	inputs = ["FASTQ", "REF"],
-	validate_inputs = inputs -> begin
-		check_dependency_file(inputs["FASTQ"]) &&
-		check_dependency_file(inputs["REF"])
-	end,
+    inputs = ["FASTQ", "REF"],
+    validate_inputs = inputs -> begin
+        check_dependency_file(inputs["FASTQ"]) &&
+        check_dependency_file(inputs["REF"])
+    end,
 
-	prerequisites = (inputs, outputs) -> begin
-		mkpath(dirname(to_str(outputs["BAM"])))
-	end,
+    prerequisites = (inputs, outputs) -> begin
+        mkpath(dirname(to_str(outputs["BAM"])))
+    end,
 
-	outputs = ["BAM"],
-	infer_outputs = inputs -> begin
-		Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
-	end,
-	validate_outputs = outputs -> begin
-		check_dependency_file(outputs["BAM"])
-	end,
+    outputs = ["BAM"],
+    infer_outputs = inputs -> begin
+        Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
+    end,
+    validate_outputs = outputs -> begin
+        check_dependency_file(outputs["BAM"])
+    end,
 
-	cmd = pipeline(`$BOWTIE2 -x REF -q FASTQ`, `$SAMTOOLS sort -O bam -o BAM`),
+    cmd = pipeline(`$BOWTIE2 -x REF -q FASTQ`, `$SAMTOOLS sort -O bam -o BAM`),
 
-	wrap_up = (inputs, outputs) -> run(`$SAMTOOLS index $(outputs["BAM"])`)
+    wrap_up = (inputs, outputs) -> run(`$SAMTOOLS index $(outputs["BAM"])`)
 )
 ```
 

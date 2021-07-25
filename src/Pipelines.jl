@@ -2,6 +2,7 @@ module Pipelines
 
 using Dates
 using UUIDs
+using Logging
 
 include("utils.jl")
 export do_nothing, isok,
@@ -27,5 +28,8 @@ include("JuliaProgram.jl")
 export JuliaProgram
 
 include("pretty_print.jl")
+
+# binding documentations
+@doc (@doc _run) run
 
 end # module

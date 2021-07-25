@@ -16,10 +16,10 @@ The example is a **robust** Bowtie2 mapping program. It shows every functionalit
 ### Define the Name
 ```julia
 program_bowtie2 = CmdProgram(
-	name = "Bowtie2 Mapping",# The name of CmdProgram
-	id_file = ".bowtie2"     # When job completed, a file ".bowtie2.xxxxxx" will
-	                         # be created to indicate the job is finished to
-							 # avoid re-run.
+    name = "Bowtie2 Mapping",# The name of CmdProgram
+    id_file = ".bowtie2"     # When job completed, a file ".bowtie2.xxxxxx" will
+                             # be created to indicate the job is finished to
+                             # avoid re-run.
 )
 ```
 
@@ -39,13 +39,13 @@ Code in CmdProgram:
 
 ```julia
 program_bowtie2 = CmdProgram(
-	...,
-	inputs = [
-        "FASTQ" => String, 
+    ...,
+    inputs = [
+        "FASTQ" => String,
         "REF" => "human_genome_hg38.fa" => String
     ],
-	outputs = "BAM",
-	cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`)
+    outputs = "BAM",
+    cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`)
 )
 ```
 
@@ -61,12 +61,12 @@ We can set a default method to generate `outputs::Dict{String}` from inputs, whi
 
 ```julia
 program_bowtie2 = CmdProgram(
-	...,
-	outputs = "BAM",
-	infer_outputs = inputs -> begin
-		Dict("BAM" => to_str(inputs["FASTQ"]) * ".bam")
-	end,
-	...
+    ...,
+    outputs = "BAM",
+    infer_outputs = inputs -> begin
+        Dict("BAM" => to_str(inputs["FASTQ"]) * ".bam")
+    end,
+    ...
 )
 ```
 
@@ -74,9 +74,9 @@ Or, the following does the same job:
 
 ```julia
 program_bowtie2 = CmdProgram(
-	...,
-	outputs = "BAM" => "<FASTQ>.bam" => String,
-	...
+    ...,
+    outputs = "BAM" => "<FASTQ>.bam" => String,
+    ...
 )
 ```
 
@@ -86,7 +86,7 @@ program_bowtie2 = CmdProgram(
     `to_str` converts most types to `String`, and `to_cmd` to `Cmd`. They are tailored for parsing `inputs["x"]` and `outputs["x"]`.
 
     User-defined `inputs, outputs::Dict{String}` only confine the key type (`String`), does not confine the value type because of flexibility. When writing functions using inputs/outputs, we should consider this. It can be a Number, a Cmd, a String, and even a Vector. Pipeline.jl provides `to_str` and `to_cmd` to elegantly convert those types to `String` or `Cmd` as you wish.
-    
+
     Other conversions are also available, such as `replaceext` (replace extension) and `removeext` (remove extension). More details are in API/Utils page.
 
 
@@ -96,16 +96,16 @@ To make the code robust, we can check whether the inputs exists by using `valida
 
 ```julia
 program_bowtie2 = CmdProgram(
-	...,
-	inputs = [
-        "FASTQ" => String, 
+    ...,
+    inputs = [
+        "FASTQ" => String,
         "REF" => "human_genome_hg38.fa" => String
     ],
-	validate_inputs = inputs -> begin
-		check_dependency_file(inputs["FASTQ"]) &&
-		check_dependency_file(inputs["REF"])
-	end,
-	...
+    validate_inputs = inputs -> begin
+        check_dependency_file(inputs["FASTQ"]) &&
+        check_dependency_file(inputs["REF"])
+    end,
+    ...
 )
 ```
 
@@ -115,10 +115,10 @@ We also need to prepare something (`prerequisites`) before running the main comm
 
 ```julia
 program_bowtie2 = CmdProgram(
-	...,
-	prerequisites = (inputs, outputs) -> begin
-		mkpath(dirname(to_str(outputs["BAM"])))
-	end
+    ...,
+    prerequisites = (inputs, outputs) -> begin
+        mkpath(dirname(to_str(outputs["BAM"])))
+    end
 )
 ```
 
@@ -128,12 +128,12 @@ After running the main command, we can validate outputs by using `validate_outpu
 
 ```julia
 program_bowtie2 = CmdProgram(
-	...,
-	outputs = "BAM",
-	validate_outputs = outputs -> begin
-		check_dependency_file(outputs["BAM"])
-	end,
-	...
+    ...,
+    outputs = "BAM",
+    validate_outputs = outputs -> begin
+        check_dependency_file(outputs["BAM"])
+    end,
+    ...
 )
 ```
 
@@ -143,8 +143,8 @@ After validating outputs, we may also do something to wrap up, such as removing 
 
 ```julia
 program_bowtie2 = CmdProgram(
-	...,
-	wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
+    ...,
+    wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
 )
 ```
 
@@ -154,33 +154,33 @@ All in all, the final program is like this:
 
 ```julia
 program_bowtie2 = CmdProgram(
-	name = "Bowtie2 Mapping",
-	id_file = ".bowtie2",
+    name = "Bowtie2 Mapping",
+    id_file = ".bowtie2",
 
-	inputs = [
-        "FASTQ" => String, 
+    inputs = [
+        "FASTQ" => String,
         "REF" => "human_genome_hg38.fa" => String
     ],
-	validate_inputs = inputs -> begin
-		check_dependency_file(inputs["FASTQ"]) &&
-		check_dependency_file(inputs["REF"])
-	end,
+    validate_inputs = inputs -> begin
+        check_dependency_file(inputs["FASTQ"]) &&
+        check_dependency_file(inputs["REF"])
+    end,
 
-	prerequisites = (inputs, outputs) -> begin
-		mkpath(dirname(to_str(outputs["BAM"])))
-	end,
+    prerequisites = (inputs, outputs) -> begin
+        mkpath(dirname(to_str(outputs["BAM"])))
+    end,
 
-	outputs = ["BAM"],
-	infer_outputs = inputs -> begin
-		Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
-	end,
-	validate_outputs = outputs -> begin
-		check_dependency_file(outputs["BAM"])
-	end,
+    outputs = ["BAM"],
+    infer_outputs = inputs -> begin
+        Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
+    end,
+    validate_outputs = outputs -> begin
+        check_dependency_file(outputs["BAM"])
+    end,
 
-	cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),
+    cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),
 
-	wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
+    wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
 )
 ```
 
@@ -216,17 +216,19 @@ To run a `CmdProgram`, use one of the following methods:
 
 ```julia
 run(
-	p::CmdProgram;
-	inputs=Dict{String}(),
-	outputs=Dict{String}(),
-	skip_when_done::Bool=true,
-	check_dependencies::Bool=true,
-	stdout=nothing,
-	stderr=nothing,
-	append::Bool=false,
-	verbose::Bool=true,
-	touch_run_id_file::Bool=true,
-	dry_run::Bool=false
+    p::CmdProgram;
+    inputs=Dict{String}(),
+    outputs=Dict{String}(),
+    dir::AbstractString="",
+    check_dependencies::Bool=true,
+    skip_when_done::Bool=true,
+    touch_run_id_file::Bool=true,
+    verbose::Bool=true,
+    dry_run::Bool=false,
+    stdout=nothing,
+    stderr=nothing,
+    stdlog=nothing,
+    append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
 
 run(p::CmdProgram, inputs, outputs; kwargs...)
@@ -238,14 +240,16 @@ run(p::CmdProgram, inputs; kwargs...)
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-    
+
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
 
 The explanation of arguments is in the next section.
 
 ## Workflow
 
-1. **Check keywords consistency:** Inputs/outputs keywords should be consistent in both `p::CmdProgram` and `run(p; inputs, outputs)`.
+1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
+
+2. **Check keywords consistency:** Inputs/outputs keywords should be consistent in both `p::CmdProgram` and `run(p; inputs, outputs)`.
 
    > For example, if inputs and outputs in `p::CmdProgram` is defined this way
    >
@@ -265,13 +269,13 @@ The explanation of arguments is in the next section.
    > )
    > ```
 
-2. Print info about starting program.
+3. Print info about starting program.
 
    > The content can set by `p.info_before::String`.
    >
    > Disable: `run(..., verbose=false)`
 
-3. Check whether the program ran successfully before. If so, return `(true, outputs::Dict{String})` without running it.
+4. Check whether the program ran successfully before. If so, return `(true, outputs::Dict{String})` without running it.
 
    > **How does the program know it ran before?**
    >
@@ -281,41 +285,41 @@ The explanation of arguments is in the next section.
    >
    > c. `p.validate_outputs(outputs)` run successfully without returning `false`.
 
-4. Check command dependencies (`CmdDependency`).
+5. Check command dependencies (`CmdDependency`).
 
    > Disable: `run(..., check_dependencies=false)`
    >
    > Read **Command Dependency** portion for details.
 
-5. Remove the run id file if exists.
+6. Remove the run id file if exists.
 
-6. Validate inputs by invoking `p.validate_inputs(inputs)`.
+7. Validate inputs by invoking `p.validate_inputs(inputs)`.
 
-7. Preparing the main command.
+8. Preparing the main command.
 
    > If you specify `run(...; stdout=something, stderr=something, append::Bool)`, the command (`cmd`) will be wrapped with `pipeline(cmd; stdout=something, stderr=something, append::Bool)`. If `cmd` has its own file redirection, the outer wrapper may not work as you expect.
 
-8. Meet prerequisites by invoking `p.prerequisites(inputs, outputs)`.
+9. Meet prerequisites by invoking `p.prerequisites(inputs, outputs)`.
 
    > It is the last function before running the main command.  For example, you can create a directory if  the main command cannot create itself.
 
-9. Run the main command.
+10. Run the main command.
 
-10. Validate outputs by invoking `p.validate_outputs(outputs)`.
+11. Validate outputs by invoking `p.validate_outputs(outputs)`.
 
-11. Run the wrap up function by invoking `p.wrap_up(inputs, outputs)`
+12. Run the wrap up function by invoking `p.wrap_up(inputs, outputs)`
 
     > It is the last function to do after-command jobs. For example, you can delete intermediate files if necessary.
 
-12. Create run id file if `run(..., touch_run_id_file=true)`. Read Step 3 for details.
+13. Create run id file if `run(..., touch_run_id_file=true)`. Read Step 3 for details.
 
-13. Print info about finishing program.
+14. Print info about finishing program.
 
     > The content can set by `p.info_after::String`.
     >
     > Disable: `run(..., verbose=false)`
 
-14. Return `(success::Bool, outputs{String})`
+15. Return `(success::Bool, outputs{String})`
 
 !!! note "Dry Run"
     `run(..., dry_run=true)` will return `(mature_command::AbstractCmd, run_id_file::String)` instead.

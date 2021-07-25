@@ -153,18 +153,22 @@ function JuliaProgram(;
 end
 
 """
+------------
+
 	run(
 		p::JuliaProgram;
 		inputs=Dict{String}(),
 		outputs=Dict{String}(),
-		skip_when_done::Bool=true,
+		dir::AbstractString="",
 		check_dependencies::Bool=true,
+		skip_when_done::Bool=true,
+		touch_run_id_file::Bool=true,
+		verbose::Bool=true,
+		dry_run::Bool=false,
 		stdout=nothing,
 		stderr=nothing,
-		append::Bool=false,
-		verbose::Bool=true,
-		touch_run_id_file::Bool=true,
-		dry_run::Bool=false
+		stdlog=nothing,
+		append::Bool=false
 	) -> (success::Bool, outputs::Dict{String})
 
 	run(p::JuliaProgram, inputs, outputs; kwargs...)
@@ -180,40 +184,44 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `inputs::Dict{String}` and `outputs::Dict{String}`: `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be the same as `p.inputs::Vector{String}` and `p.outputs::Vector{String}`.
 
-  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.  
+  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
   > *Caution:* the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value of `p.main` is `Dict{String}` with proper keys.
 
-- `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
+- `dir::AbstractString = ""`: working directory to run the program.
 
 - `check_dependencies::Bool = true`: check dependencies for `p` (`p.cmd_dependencies`).
 
-- `stdout`, `stderr` and `append`: Redirect the program output to files, the same behavior as `pipeline(cmd; stdout=stdout, stderr=stderr, append=append)`. Caution: use after checking whether the original command has redirection.
-
-- `verbose::Bool = true`: If `true`, print info and error messages. If `false`, print error messages only.
+- `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 
 - `touch_run_id_file::Bool = true`: If `true`, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If `false`, the next time running the program, `skip_when_done=true` will not take effect.
 
+- `verbose::Bool = true`: If `true`, print info and error messages. If `false`, print error messages only.
+
 - `dry_run::Bool = false`: do not run the command, return `(fake_outputs::Dict{String}, run_id_file::String)`.
+
+- `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If the original function (`p.main`) has redirection, arguments defined here might not be effective for it.
 
 ### Workflow
 
-1. Validate compatibility between `p` and `inputs/outputs`.
+1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
 
-2. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs(outputs)`)
+2. Validate compatibility between `p` and `inputs/outputs`.
 
-3. Check command dependencies. (`check_dependencies`, `p.cmd_dependencies`)
+3. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs(outputs)`)
 
-4. Validate `inputs`. (`p.validate_inputs(inputs)`)
+4. Check command dependencies. (`check_dependencies`, `p.cmd_dependencies`)
 
-5. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
+5. Validate `inputs`. (`p.validate_inputs(inputs)`)
 
-6. Run main function and the returned value will be assigned to new `outputs`. (`outputs = p.main(inputs, outputs)`)
+6. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
 
-7. Validate `outputs`. (`p.validate_outputs(outputs)`)
+7. Run main function and ***the returned value will be assigned to new `outputs`***. (`outputs = p.main(inputs, outputs)`)
 
-8. Wrap up. (`p.wrap_up(inputs, outputs)`)
+8. Validate `outputs`. (`p.validate_outputs(outputs)`)
 
-9. Success, touch run id file, and return true. (`touch_run_id_file::Bool`)
+9. Wrap up. (`p.wrap_up(inputs, outputs)`)
+
+10. Success, touch run id file, and return `(success::Bool, outputs::Dict{String})`. (`touch_run_id_file::Bool`)
 
 # Example
 
@@ -245,15 +253,12 @@ Return `(success::Bool, outputs::Dict{String})`
 		touch_run_id_file = false
 	) # outputs will be refreshed
 """
-function Base.run(
+function _run(
 	p::JuliaProgram;
 	inputs=Dict{String, Any}(),
 	outputs=Dict{String, Any}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
-	stdout=nothing,
-	stderr=nothing,
-	append::Bool=false,
 	verbose::Bool=true,
 	touch_run_id_file::Bool=true,
 	dry_run::Bool=false

@@ -195,6 +195,7 @@ success, outputs = run(p, inputs;
 	touch_run_id_file = false
 ) # outputs will be refreshed
 
+
 ### run program without inputs outputs
 p = JuliaProgram(
 	id_file = "id_file",
@@ -239,6 +240,9 @@ success, outputs = run(p,
 	touch_run_id_file = false
 )
 
+### testing dir, stdout/err/log
+
+## julia program
 p = JuliaProgram(
 	id_file = "id_file",
 	inputs = [
@@ -247,6 +251,46 @@ p = JuliaProgram(
 	],
 	outputs = "c" => "<a>.<b>",
 	main = (inputs, outputs) -> begin
+		println(stdout, "stdout> ", inputs["a"])
+		println(stderr, "stderr> ", inputs["b"])
+		@info outputs
 		return Dict{String,Any}("c" => inputs["b"]^2)
 	end
 )
+
+tmp = mktempdir()
+cd(tmp)
+working_dir = mktempdir()
+run(p, touch_run_id_file=false, stdout="out.txt", stdlog="log.txt")
+
+@test read("out.txt", String) == "stdout> 10.6\n"
+@test length(read("log.txt", String)) > 600
+
+run(p, "a" => 6.6, touch_run_id_file=false, stderr = "err.txt", dir=working_dir)
+
+# redirect files at working dir
+@test !isfile("err.txt")
+@test isfile(joinpath(working_dir, "err.txt"))
+@test length(read(joinpath(working_dir, "err.txt"), String)) > 600
+
+## cmd program
+p = CmdProgram(
+	id_file = "id_file",
+	inputs = [
+		:a => 10.6 => Float64,
+		:b =>  5 => Int
+	],
+	outputs = "c" => "<a>.<b>",
+	cmd = `echo this is stdout a b` & pipeline(`julia -e '@info "this is stderr"'`)
+)
+
+run(p, touch_run_id_file=false, stdout="out.txt", stderr="err.txt", stdlog="log.txt")
+
+@test read("out.txt", String) == "this is stdout 10.6 5\n"
+@test read("err.txt", String) == "[ Info: this is stderr\n"
+@test !occursin("[ Info: this is stderr", read("log.txt", String))
+
+# clean up
+cd(homedir())
+rm(tmp, recursive=true)
+rm(working_dir, recursive=true)

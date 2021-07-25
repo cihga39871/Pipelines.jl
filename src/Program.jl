@@ -192,3 +192,19 @@ end
 function Base.run(p::Program, inputs; kwarg...)
 	run(p; inputs=inputs, kwarg...)
 end
+
+function Base.run(p::Program;
+	dir::AbstractString = "",
+	stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false,
+	kwarg...
+)
+	dir_backup = pwd()
+	dir == "" || cd(dir) # go to working directory
+
+	res = redirect_to_files(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
+		_run(p; kwarg...)
+	end
+
+	dir == "" || cd(dir_backup)
+	res
+end

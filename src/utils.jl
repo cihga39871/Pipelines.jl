@@ -222,3 +222,72 @@ If the last component of a path contains a dot, leave everything before the dot 
 """
 removeext(path::String) = splitext(path)[1]
 removeext(path) = removeext(to_str(path))
+
+
+## redirecting
+Base.open(::Nothing, mode) = nothing
+Base.close(::Nothing) = nothing
+Base.SimpleLogger(::Nothing) = nothing
+Base.with_logger(f::Function, ::Nothing) = f()
+
+Base.redirect_stdout(f::Function, ::Nothing) = f()
+Base.redirect_stderr(f::Function, ::Nothing) = f()
+Base.redirect_stdout(f::Function, ::Nothing) = f()
+
+"""
+	redirect_to_files(f::Function, outfile; mode="a+")
+	redirect_to_files(f::Function, outfile, errfile; mode="a+")
+	redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
+
+Redirect outputs of function `f` to file(s).
+
+- `xxxfile`: File path (`AbstractString`) or `nothing`. `nothing` means no redirect. Files can be the same.
+- `mode`: same as `open(..., mode)`.
+"""
+function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
+	out = open(outfile, mode)
+	err = errfile == outfile ? out : open(errfile, mode)
+	log = logfile == outfile ? out : logfile == errfile ? err : open(logfile, mode)
+	res = redirect_stdout(out) do
+		redirect_stderr(err) do
+			logger = SimpleLogger(log)
+			with_logger(logger) do
+				f()
+			end
+		end
+	end
+	close(out)
+	close(err)
+	close(log)
+	res
+end
+
+function redirect_to_files(f::Function, outfile, errfile; mode="a+")
+	out = open(outfile, mode)
+	err = errfile == outfile ? out : open(errfile, mode)
+	res = redirect_stdout(out) do
+		redirect_stderr(err) do
+			logger = SimpleLogger(err)
+			with_logger(logger) do
+				f()
+			end
+		end
+	end
+	close(out)
+	close(err)
+	res
+end
+
+function redirect_to_files(f::Function, redirectfile; mode="a+")
+	out = open(redirectfile, mode)
+	res = redirect_stdout(out) do
+		redirect_stderr(out) do
+			logger = SimpleLogger(out)
+			with_logger(logger) do
+				f()
+			end
+		end
+	end
+	close(out)
+	res
+end

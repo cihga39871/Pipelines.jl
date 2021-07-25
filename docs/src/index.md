@@ -156,7 +156,7 @@ prog = CmdProgram(
     outputs = "OUTPUT_FILE",
     cmd = pipeline(`echo INPUT1 INPUT2`, `sort`, "OUTPUT_FILE"),
     infer_outputs = inputs -> Dict(
-    	"OUTPUT_FILE" => string(now(), "__", inputs["INPUT1"], ".txt")
+        "OUTPUT_FILE" => string(now(), "__", inputs["INPUT1"], ".txt")
     )
 )
 success, outputs = run(prog, "INPUT1" => 5)
@@ -184,19 +184,27 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 
 ## Change log
 
+v0.4.0
+
+- Feature: `run(p::Program, ...)` supports running at a specified directory (`dir`). Run ID files will also create at that directory.
+
+- Feature: `run(p::Program, ...)` supports redirecting `stdout`, `stderr` and `stdlog` (Julia log output, such as `@info`, `@warn`, `@error`).
+
+- Fix: `CmdProgram` supports commands such as `pipeline(cmd, stdout=stderr)`, which redirect stdout to stderr now because `prepare_cmd(h::Base.TTY, inputs, outputs)` method is added.
+
 v0.3.2
 
-- `CmdDependency`: do not check when `test_args` are empty.
+- Fix: `CmdDependency`: do not check when `test_args` are empty.
 
 v0.3.1
 
-- `to_cmd` and `to_str`: support argument `::Regex` or `::Any`.
+- Feature: `to_cmd` and `to_str`: support argument `::Regex` or `::Any`.
 
 v0.3.0
 
-- Building Program: Support type assertion and default arguments of `inputs` and `outputs`, such as `"arg" => 5`, `"arg" => Int`, `"arg" => 5 => Int`, `"arg" => Int => 5`.
+- Feature: Building Program: Support type assertion and default arguments of `inputs` and `outputs`, such as `"arg" => 5`, `"arg" => Int`, `"arg" => 5 => Int`, `"arg" => Int => 5`.
 
-- `Program` and `run(::Program)` no longer require `inputs` and `outputs` to be `Vector` or `Dict`. They can be both `Vector` or `Dict`, or even an element of `Vector` or `Dict`, as long as they can be converted. Eg:
+- Feature: `Program` and `run(::Program)` no longer require `inputs` and `outputs` to be `Vector` or `Dict`. They can be both `Vector` or `Dict`, or even an element of `Vector` or `Dict`, as long as they can be converted. Eg:
 
   ```julia
   p = CmdProgram(
@@ -229,7 +237,7 @@ v0.3.0
   )
   ```
 
-- Pretty print of `Program`. Eg:
+- Feature: Pretty print of `Program`. Eg:
 
   ```julia
   julia> p

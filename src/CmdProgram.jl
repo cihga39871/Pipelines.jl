@@ -149,14 +149,16 @@ end
 		p::CmdProgram;
 		inputs=Dict{String}(),
 		outputs=Dict{String}(),
-		skip_when_done::Bool=true,
+		dir::AbstractString="",
 		check_dependencies::Bool=true,
+		skip_when_done::Bool=true,
+		touch_run_id_file::Bool=true,
+		verbose::Bool=true,
+		dry_run::Bool=false,
 		stdout=nothing,
 		stderr=nothing,
-		append::Bool=false,
-		verbose::Bool=true,
-		touch_run_id_file::Bool=true,
-		dry_run::Bool=false
+		stdlog=nothing,
+		append::Bool=false
 	) -> (success::Bool, outputs::Dict{String})
 
 	run(p::CmdProgram, inputs, outputs; kwargs...)
@@ -174,39 +176,43 @@ Return `(success::Bool, outputs::Dict{String})`
 
   > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
 
-- `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
+- `dir::AbstractString = ""`: working directory to run the program.
 
 - `check_dependencies::Bool = true`: check dependencies for `p` (`p.cmd_dependencies`).
 
-- `stdout`, `stderr` and `append`: Redirect the program output to files, the same behavior as `pipeline(cmd; stdout=stdout, stderr=stderr, append=append)`. Caution: use after checking whether the original command has redirection.
-
-- `verbose::Bool = true`: If `true`, print info and error messages. If `false`, print error messages only.
+- `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
 
 - `touch_run_id_file::Bool = true`: If `true`, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If `false`, the next time running the program, `skip_when_done=true` will not take effect.
 
+- `verbose::Bool = true`: If `true`, print info and error messages. If `false`, print error messages only.
+
 - `dry_run::Bool = false`: do not run the command, return `(command::AbstractCmd, run_id_file::String)`.
+
+- `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
 
 ### Workflow
 
-1. Validate compatibility between `p` and `inputs/outputs`.
+1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
 
-2. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs(outputs)`)
+2. Validate compatibility between `p` and `inputs/outputs`.
 
-3. Check command dependencies. (`check_dependencies`, `p.cmd_dependencies`)
+3. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs(outputs)`)
 
-4. Validate `inputs`. (`p.validate_inputs(inputs)`)
+4. Check command dependencies. (`check_dependencies`, `p.cmd_dependencies`)
 
-5. Generate runnable command from `p` and `inputs/outputs`. (`stdout`, `stderr`, `append`)
+5. Validate `inputs`. (`p.validate_inputs(inputs)`)
 
-6. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
+6. Generate runnable command from `p` and `inputs/outputs`. (`stdout`, `stderr`, `append`)
 
-7. Run command generated in #5.
+7. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
 
-8. Validate `outputs`. (`p.validate_outputs(outputs)`)
+8. Run command generated in #5.
 
-9. Wrap up. (`p.wrap_up(inputs, outputs)`)
+9. Validate `outputs`. (`p.validate_outputs(outputs)`)
 
-10. Success, touch run id file, and return true. (`touch_run_id_file::Bool`)
+10. Wrap up. (`p.wrap_up(inputs, outputs)`)
+
+11. Success, touch run id file, and return `(success::Bool, outputs::Dict{String})`. (`touch_run_id_file::Bool`)
 
 # Example
 
@@ -230,15 +236,15 @@ Return `(success::Bool, outputs::Dict{String})`
 		touch_run_id_file = false
 	)
 """
-function Base.run(
+function _run(
 	p::CmdProgram;
 	inputs=Dict{String, Any}(),
 	outputs=Dict{String, Any}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
-	stdout=nothing,
-	stderr=nothing,
-	append::Bool=false,
+	# stdout=nothing,
+	# stderr=nothing,
+	# append::Bool=false,
 	verbose::Bool=true,
 	touch_run_id_file::Bool=true,
 	dry_run::Bool=false
@@ -290,10 +296,6 @@ function Base.run(
 	@label dry_run_start
 	# preparation: replace inputs and outputs in cmd, including redirecting files
 	cmd = prepare_cmd(p, inputs, outputs)
-	# redirecting to stdout/stderr if specified.
-	if !(isnothing(stdout) && isnothing(stderr))
-		cmd = pipeline(cmd, stdout=stdout, stderr=stderr, append=append)
-	end
 
 	if dry_run
 		return (cmd, run_id_file)
@@ -305,7 +307,7 @@ function Base.run(
 		isok(p.prerequisites(inputs, outputs)) || error("ProgramPrerequisitesError: $(p.name): the prerequisites function returns false.")
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command). See error messages above." prerequisites=p.prerequisites command_template=p.cmd command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command). See error messages above." prerequisites=p.prerequisites command_template=p.cmd run_id inputs outputs
 		error("ProgramPrerequisitesError")
 		return false, outputs
 	end
@@ -315,7 +317,7 @@ function Base.run(
 		run(cmd)
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." prerequisites=p.prerequisites command_template=p.cmd command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." prerequisites=p.prerequisites command_running=cmd run_id inputs outputs
 		error("ProgramRunningError")
 		return false, outputs
 	end
@@ -325,7 +327,7 @@ function Base.run(
 		isok(p.validate_outputs(outputs)) || error("ProgramOutputValidationError: $(p.name): the validation function returns false.")
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command). See error messages above." validation_function=p.validate_outputs command_template=p.cmd command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command). See error messages above." validation_function=p.validate_outputs command_running=cmd run_id inputs outputs
 		error("ProgramOutputValidationError")
 		return false, outputs
 	end
@@ -334,7 +336,7 @@ function Base.run(
 		isok(p.wrap_up(inputs, outputs)) || error("ProgramWrapUpError: $(p.name): the wrap_up function returns false.")
 	catch e
 		rethrow(e)
-		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function. See error messages above." wrap_up=p.wrap_up command_template=p.cmd command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function. See error messages above." wrap_up=p.wrap_up command_running=cmd run_id inputs outputs
 		error("ProgramWrapUpError")
 		return false, outputs
 	end
@@ -344,9 +346,9 @@ function Base.run(
 
 	if verbose
 		if p.info_after == "auto" || p.info_after == ""
-			@info timestamp() * "Finishing program: $(p.name)" command_template=p.cmd command_running=cmd run_id inputs outputs
+			@info timestamp() * "Finishing program: $(p.name)" command_running=cmd run_id inputs outputs
 		else
-			@info timestamp() * p.info_after command_template=p.cmd command_running=cmd run_id inputs outputs
+			@info timestamp() * p.info_after command_running=cmd run_id inputs outputs
 		end
 	end
 	return true, outputs
@@ -383,7 +385,10 @@ function prepare_cmd(c::T, inputs::Dict{String}, outputs::Dict{String}) where T 
 		prepare_cmd(c.b, inputs, outputs)
 	)
 end
-function prepare_cmd(h::Base.FileRedirect, inputs::Dict{String}, outputs::Dict{String})
+function prepare_cmd(h::Base.TTY, inputs::Dict{String}, outputs::Dict{String})  # h: handle property of CmdRedirect
+	h
+end
+function prepare_cmd(h::Base.FileRedirect, inputs::Dict{String}, outputs::Dict{String})  # h: handle property of CmdRedirect
 	replacement = get(outputs, h.filename, nothing) |> to_cmd
 	if isnothing(replacement)
 		replacement = get(inputs, h.filename, nothing) |> to_cmd
