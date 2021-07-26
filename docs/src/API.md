@@ -5,19 +5,22 @@
 Program
 ```
 
-### Command Program
+## Command Program
 ```@docs
 CmdProgram()
-run(::CmdProgram)
 ```
 
-### Julia Program
+## Julia Program
 ```@docs
 JuliaProgram()
-run(::JuliaProgram)
 ```
 
-### Common Methods
+## Run Programs
+```@docs
+Base.run
+```
+
+## Common Methods
 ```@docs
 infer_outputs(::Program, ::Dict{String})
 check_dependency(::Program)
