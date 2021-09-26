@@ -7,7 +7,8 @@ using Logging
 include("utils.jl")
 export do_nothing, isok,
 str, to_str, to_cmd,
-replaceext, removeext
+replaceext, removeext,
+redirect_to_files
 
 include("CmdDependency.jl")
 export CmdDependency,
