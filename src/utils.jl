@@ -246,6 +246,8 @@ Redirect outputs of function `f` to file(s).
 
 - `xxxfile`: File path (`AbstractString`), `nothing` or `::IO`. `nothing` means no redirect. Files can be the same.
 - `mode`: same as `open(..., mode)`.
+
+Caution: If `xxxfile` is a `IO`, it will not close in it. Please use `close(io)` or `JobSchedulers.close_in_future(io, jobs)` manually!
 """
 function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
 	out = handle_open(outfile, mode)
