@@ -283,8 +283,11 @@ p = CmdProgram(
 	outputs = "c" => "<a>.<b>",
 	cmd = `echo this is stdout a b` & pipeline(`julia -e '@info "this is stderr"'`)
 )
+out_io = open("out.txt", "w+")
 
-run(p, touch_run_id_file=false, stdout="out.txt", stderr="err.txt", stdlog="log.txt")
+run(p, touch_run_id_file=false, stdout=out_io, stderr="err.txt", stdlog="log.txt")
+
+close(out_io)
 
 @test read("out.txt", String) == "this is stdout 10.6 5\n"
 @test read("err.txt", String) == "[ Info: this is stderr\n"

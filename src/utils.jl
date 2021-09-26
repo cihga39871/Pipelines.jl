@@ -225,7 +225,6 @@ removeext(path) = removeext(to_str(path))
 
 
 ## redirecting
-Base.open(::Nothing, mode) = nothing
 Base.close(::Nothing) = nothing
 Base.SimpleLogger(::Nothing) = nothing
 Base.with_logger(f::Function, ::Nothing) = f()
@@ -234,6 +233,10 @@ Base.redirect_stdout(f::Function, ::Nothing) = f()
 Base.redirect_stderr(f::Function, ::Nothing) = f()
 Base.redirect_stdout(f::Function, ::Nothing) = f()
 
+handle_open(::Nothing, mode) = nothing
+handle_open(io::IO, mode) = io # do not change and do not close when exit
+handle_open(file::AbstractString, mode) = open(file::AbstractString, mode)
+
 """
 	redirect_to_files(f::Function, outfile; mode="a+")
 	redirect_to_files(f::Function, outfile, errfile; mode="a+")
@@ -241,13 +244,13 @@ Base.redirect_stdout(f::Function, ::Nothing) = f()
 
 Redirect outputs of function `f` to file(s).
 
-- `xxxfile`: File path (`AbstractString`) or `nothing`. `nothing` means no redirect. Files can be the same.
+- `xxxfile`: File path (`AbstractString`), `nothing` or `::IO`. `nothing` means no redirect. Files can be the same.
 - `mode`: same as `open(..., mode)`.
 """
 function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
-	out = open(outfile, mode)
-	err = errfile == outfile ? out : open(errfile, mode)
-	log = logfile == outfile ? out : logfile == errfile ? err : open(logfile, mode)
+	out = handle_open(outfile, mode)
+	err = errfile == outfile ? out : handle_open(errfile, mode)
+	log = logfile == outfile ? out : logfile == errfile ? err : handle_open(logfile, mode)
 	res = redirect_stdout(out) do
 		redirect_stderr(err) do
 			logger = SimpleLogger(log)
@@ -256,15 +259,17 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
 			end
 		end
 	end
-	close(out)
-	close(err)
-	close(log)
+	outfile isa IO || close(out)
+	errfile isa IO || close(err)
+	logfile isa IO || close(log)
 	res
 end
 
-function redirect_to_files(f::Function, outfile, errfile; mode="a+")
-	out = open(outfile, mode)
-	err = errfile == outfile ? out : open(errfile, mode)
+
+
+function redirect_to_files(f::Function, outfile::T, errfile::T; mode="a+") where T <: Union{Nothing, AbstractString}
+	out = handle_open(outfile, mode)
+	err = errfile == outfile ? out : handle_open(errfile, mode)
 	res = redirect_stdout(out) do
 		redirect_stderr(err) do
 			logger = SimpleLogger(err)
@@ -273,13 +278,13 @@ function redirect_to_files(f::Function, outfile, errfile; mode="a+")
 			end
 		end
 	end
-	close(out)
-	close(err)
+	outfile isa IO || close(out)
+	errfile isa IO || close(err)
 	res
 end
 
-function redirect_to_files(f::Function, redirectfile; mode="a+")
-	out = open(redirectfile, mode)
+function redirect_to_files(f::Function, redirectfile::T; mode="a+") where T <: Union{Nothing, AbstractString}
+	out = handle_open(redirectfile, mode)
 	res = redirect_stdout(out) do
 		redirect_stderr(out) do
 			logger = SimpleLogger(out)
@@ -288,6 +293,6 @@ function redirect_to_files(f::Function, redirectfile; mode="a+")
 			end
 		end
 	end
-	close(out)
+	redirectfile isa IO || close(out)
 	res
 end
