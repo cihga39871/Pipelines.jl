@@ -184,6 +184,16 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 
 ## Change log
 
+v0.4.2
+
+- Better error stack trace after capturing.
+
+- Update file redirecting.
+
+v0.4.1
+
+- Fix file redirecting.
+
 v0.4.0
 
 - Feature: `run(p::Program, ...)` supports running at a specified directory (`dir`). Run ID files will also create at that directory.

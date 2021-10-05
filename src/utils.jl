@@ -257,44 +257,69 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
 		redirect_stderr(err) do
 			logger = SimpleLogger(log)
 			with_logger(logger) do
-				f()
+				try
+					f()
+				catch e
+					@error "" exception=(e, catch_backtrace())
+					e
+				end
 			end
 		end
 	end
 	outfile isa IO || close(out)
 	errfile isa IO || close(err)
 	logfile isa IO || close(log)
-	res
+	if res isa Exception
+		throw(res)
+	else
+		res
+	end
 end
 
 
 
-function redirect_to_files(f::Function, outfile::T, errfile::T; mode="a+") where T <: Union{Nothing, AbstractString}
+function redirect_to_files(f::Function, outfile, errfile; mode="a+")
 	out = handle_open(outfile, mode)
 	err = errfile == outfile ? out : handle_open(errfile, mode)
 	res = redirect_stdout(out) do
 		redirect_stderr(err) do
 			logger = SimpleLogger(err)
 			with_logger(logger) do
-				f()
+				try
+					f()
+				catch e
+					@error "" exception=(e, catch_backtrace())
+				end
 			end
 		end
 	end
 	outfile isa IO || close(out)
 	errfile isa IO || close(err)
-	res
+	if res isa Exception
+		throw(res)
+	else
+		res
+	end
 end
 
-function redirect_to_files(f::Function, redirectfile::T; mode="a+") where T <: Union{Nothing, AbstractString}
+function redirect_to_files(f::Function, redirectfile; mode="a+")
 	out = handle_open(redirectfile, mode)
 	res = redirect_stdout(out) do
 		redirect_stderr(out) do
 			logger = SimpleLogger(out)
 			with_logger(logger) do
-				f()
+				try
+					f()
+				catch e
+					@error "" exception=(e, catch_backtrace())
+				end
 			end
 		end
 	end
 	redirectfile isa IO || close(out)
-	res
+	if res isa Exception
+		throw(res)
+	else
+		res
+	end
 end
