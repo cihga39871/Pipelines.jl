@@ -190,6 +190,9 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
 
+!!! note
+    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+
 ### Workflow
 
 1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
@@ -236,15 +239,31 @@ Return `(success::Bool, outputs::Dict{String})`
 		touch_run_id_file = false
 	)
 """
+function Base.run(p::CmdProgram;
+	dir::AbstractString = "",
+	stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false,
+	kwarg...
+)
+	dir_backup = pwd()
+	dir == "" || cd(dir) # go to working directory
+
+	res = redirect_to_files(nothing, nothing, stdlog; mode = append ? "a+" : "w+") do
+		_run(p; stdout=stdout, stderr=stderr, append=append, kwarg...)
+	end
+
+	dir == "" || cd(dir_backup)
+	res
+end
+
 function _run(
 	p::CmdProgram;
 	inputs=Dict{String, Any}(),
 	outputs=Dict{String, Any}(),
 	skip_when_done::Bool=true,
 	check_dependencies::Bool=true,
-	# stdout=nothing,
-	# stderr=nothing,
-	# append::Bool=false,
+	stdout=nothing,
+	stderr=nothing,
+	append::Bool=false,
 	verbose::Bool=true,
 	touch_run_id_file::Bool=true,
 	dry_run::Bool=false
@@ -312,7 +331,7 @@ function _run(
 
 	# run the main command
 	try
-		run(cmd)
+		run(pipeline(cmd, stdout=stdout, stderr=stderr, append=append))
 	catch e
 		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." prerequisites=p.prerequisites command_running=cmd run_id inputs outputs exception=(e, catch_backtrace())
 		error("ProgramRunningError")

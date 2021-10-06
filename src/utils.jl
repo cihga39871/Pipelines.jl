@@ -225,6 +225,30 @@ removeext(path) = removeext(to_str(path))
 
 
 ## redirecting
+
+# save the default std
+stdout_origin = Base.stdout
+stderr_origin = Base.stderr
+
+"""
+	set_default_stdout()
+	set_default_stderr()
+
+Backup the current stdout and stderr as the default stdout and stderr when redirecting stdout/stderr fails when calling `redirect_to_files`. It happens when an old stream is closed and then redirected to.
+
+Please do not close them if you will use any of `run(::Program, ...)`, `redirect_to_files(...)`, `JobScheduler.Job(::Program, ...)`.
+
+!!! note
+    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+"""
+function set_default_stdout()
+	global stdout_origin = Base.stdout
+end
+function set_default_stderr()
+	global stderr_origin = Base.stderr
+end
+
+# extend IO
 Base.close(::Nothing) = nothing
 Base.SimpleLogger(::Nothing) = nothing
 Base.with_logger(f::Function, ::Nothing) = f()
@@ -237,6 +261,8 @@ handle_open(::Nothing, mode) = nothing
 handle_open(io::IO, mode) = io # do not change and do not close when exit
 handle_open(file::AbstractString, mode) = open(file::AbstractString, mode)
 
+
+
 """
 	redirect_to_files(f::Function, outfile; mode="a+")
 	redirect_to_files(f::Function, outfile, errfile; mode="a+")
@@ -247,25 +273,60 @@ Redirect outputs of function `f` to file(s).
 - `xxxfile`: File path (`AbstractString`), `nothing` or `::IO`. `nothing` means no redirect. Files can be the same.
 - `mode`: same as `open(..., mode)`.
 
-Caution: If `xxxfile` is a `IO`, it will not close in it. Please use `close(io)` or `JobSchedulers.close_in_future(io, jobs)` manually!
+Caution: If `xxxfile` is an `IO`, it won't be closed. Please use `close(io)` or `JobSchedulers.close_in_future(io, jobs)` manually!
+
+!!! note
+    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
 """
 function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
 	out = handle_open(outfile, mode)
 	err = errfile == outfile ? out : handle_open(errfile, mode)
 	log = logfile == outfile ? out : logfile == errfile ? err : handle_open(logfile, mode)
-	res = redirect_stdout(out) do
-		redirect_stderr(err) do
-			logger = SimpleLogger(log)
-			with_logger(logger) do
-				try
-					f()
-				catch e
-					@error "" exception=(e, catch_backtrace())
-					e
-				end
-			end
+
+	old_stdout = Base.stdout
+	old_stderr = Base.stderr
+
+	isnothing(out) || redirect_stdout(out)
+	isnothing(err) || redirect_stderr(err)
+
+	# it seems with_logger is thread safe?
+	logger = SimpleLogger(log)
+	res = with_logger(logger) do
+		try
+			f()
+		catch e
+			@error "" exception=(e, catch_backtrace())
+			e
 		end
 	end
+
+	# before switch to old stdxxx, check whether it is opened. It might be happen due to redirect_xxx is not thread safe!
+	if !isnothing(out)
+		if isopen(old_stdout)
+			try
+				# it is not atomic, so use try
+				redirect_stdout(old_stdout)
+			catch
+				redirect_stdout(stdout_origin) # defined when using Pipelines, can define manually by using set_default_stdout()
+			end
+		else
+			redirect_stdout(stdout_origin)
+		end
+	end
+
+	if !isnothing(err)
+		if isopen(old_stderr)
+			try
+				# it is not atomic, so use try
+				redirect_stderr(old_stderr)
+			catch
+				redirect_stderr(stderr_origin) # defined when using Pipelines, can define manually by using set_default_stdout()
+			end
+		else
+			redirect_stderr(stderr_origin)
+		end
+	end
+
 	outfile isa IO || close(out)
 	errfile isa IO || close(err)
 	logfile isa IO || close(log)
@@ -281,18 +342,51 @@ end
 function redirect_to_files(f::Function, outfile, errfile; mode="a+")
 	out = handle_open(outfile, mode)
 	err = errfile == outfile ? out : handle_open(errfile, mode)
-	res = redirect_stdout(out) do
-		redirect_stderr(err) do
-			logger = SimpleLogger(err)
-			with_logger(logger) do
-				try
-					f()
-				catch e
-					@error "" exception=(e, catch_backtrace())
-				end
-			end
+
+	old_stdout = Base.stdout
+	old_stderr = Base.stderr
+
+	isnothing(out) || redirect_stdout(out)
+	isnothing(err) || redirect_stderr(err)
+
+	# it seems with_logger is thread safe?
+	logger = SimpleLogger(err)
+	res = with_logger(logger) do
+		try
+			f()
+		catch e
+			@error "" exception=(e, catch_backtrace())
+			e
 		end
 	end
+
+	# before switch to old stdxxx, check whether it is opened. It might be happen due to redirect_xxx is not thread safe!
+	if !isnothing(out)
+		if isopen(old_stdout)
+			try
+				# it is not atomic, so use try
+				redirect_stdout(old_stdout)
+			catch
+				redirect_stdout(stdout_origin) # defined when using Pipelines, can define manually by using set_default_stdout()
+			end
+		else
+			redirect_stdout(stdout_origin)
+		end
+	end
+
+	if !isnothing(err)
+		if isopen(old_stderr)
+			try
+				# it is not atomic, so use try
+				redirect_stderr(old_stderr)
+			catch
+				redirect_stderr(stderr_origin) # defined when using Pipelines, can define manually by using set_default_stdout()
+			end
+		else
+			redirect_stderr(stderr_origin)
+		end
+	end
+
 	outfile isa IO || close(out)
 	errfile isa IO || close(err)
 	if res isa Exception
@@ -304,18 +398,50 @@ end
 
 function redirect_to_files(f::Function, redirectfile; mode="a+")
 	out = handle_open(redirectfile, mode)
-	res = redirect_stdout(out) do
-		redirect_stderr(out) do
-			logger = SimpleLogger(out)
-			with_logger(logger) do
-				try
-					f()
-				catch e
-					@error "" exception=(e, catch_backtrace())
-				end
-			end
+
+	old_stdout = Base.stdout
+	old_stderr = Base.stderr
+
+	if !isnothing(out)
+		redirect_stdout(out)
+		redirect_stderr(out)
+	end
+
+	logger = SimpleLogger(out)
+
+	res = with_logger(logger) do
+		try
+			f()
+		catch e
+			@error "" exception=(e, catch_backtrace())
 		end
 	end
+
+	# before switch to old stdxxx, check whether it is opened. It might be happen due to redirect_xxx is not thread safe!
+	if !isnothing(out)
+		if isopen(old_stdout)
+			try
+				# it is not atomic, so use try
+				redirect_stdout(old_stdout)
+			catch
+				redirect_stdout(stdout_origin) # defined when using Pipelines, can define manually by using set_default_stdout()
+			end
+		else
+			redirect_stdout(stdout_origin)
+		end
+
+		if isopen(old_stderr)
+			try
+				# it is not atomic, so use try
+				redirect_stderr(old_stderr)
+			catch
+				redirect_stderr(stderr_origin) # defined when using Pipelines, can define manually by using set_default_stdout()
+			end
+		else
+			redirect_stderr(stderr_origin)
+		end
+	end
+
 	redirectfile isa IO || close(out)
 	if res isa Exception
 		throw(res)

@@ -201,6 +201,9 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If the original function (`p.main`) has redirection, arguments defined here might not be effective for it.
 
+!!! note
+    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+
 ### Workflow
 
 1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
@@ -253,6 +256,22 @@ Return `(success::Bool, outputs::Dict{String})`
 		touch_run_id_file = false
 	) # outputs will be refreshed
 """
+function Base.run(p::JuliaProgram;
+	dir::AbstractString = "",
+	stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false,
+	kwarg...
+)
+	dir_backup = pwd()
+	dir == "" || cd(dir) # go to working directory
+
+	res = redirect_to_files(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
+		_run(p; kwarg...)
+	end
+
+	dir == "" || cd(dir_backup)
+	res
+end
+
 function _run(
 	p::JuliaProgram;
 	inputs=Dict{String, Any}(),

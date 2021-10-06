@@ -237,6 +237,9 @@ run(p::CmdProgram, inputs; kwargs...)
 )  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 ```
 
+!!! note
+    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
