@@ -33,4 +33,8 @@ include("pretty_print.jl")
 # binding documentations
 @doc (@doc _run) run
 
+function __init__()
+    Pipelines.set_default_stdout()
+    Pipelines.set_default_stderr()
+end
 end # module
