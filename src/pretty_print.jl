@@ -56,7 +56,7 @@ end
     end
 end
 
-function display_xxputs(max_bype::Int, xxputs::Vector{String}, xxput_types::Vector{DataType}, default_xxputs::Vector)
+function display_xxputs(max_bype::Int, xxputs::Vector{String}, xxput_types::Vector{Type}, default_xxputs::Vector)
 	n = length(xxputs)
 	if n == 0
 		println("<empty>")

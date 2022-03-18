@@ -19,7 +19,7 @@ isok(x) = true  # default is true
 
 ## parse default inputs/outputs
 function throw_invalid_xxputs(any)
-	throw(ErrorException("DataTypeError: Elements of inputs and outputs can only be one of `name::Union{String,Symbol}`, `name => default_value`, `name => data_type`, `name => default_value => data_type`, `name => data_type => default_value`. Invalid value: $any"))
+	throw(ErrorException("TypeError: Elements of inputs and outputs can only be one of `name::Union{String,Symbol}`, `name => default_value`, `name => data_type`, `name => default_value => data_type`, `name => data_type => default_value`. Invalid value: $any"))
 end
 
 """
@@ -27,7 +27,7 @@ end
 
 Parsing `inputs` and `outputs` when creating `Program` objects.
 
-Return `xxputs::Vector{String}, xxput_types::Vector{DataType}, default_xxputs::Vector`.
+Return `xxputs::Vector{String}, xxput_types::Vector{Type}, default_xxputs::Vector`.
 
 ## Valid `v` element types
 
@@ -35,14 +35,14 @@ Return `xxputs::Vector{String}, xxput_types::Vector{DataType}, default_xxputs::V
 
 - `name::String => value`: set default value, except `value` is `nothing` (default value not set).
 
-- `name::String => value_type::DataType`: no default value, but value type.
+- `name::String => value_type::Type`: no default value, but value type.
 
-- `name::String => value => value_type::DataType`: set default value and value type.
+- `name::String => value => value_type::Type`: set default value and value type.
 
-- `name::String => value_type::DataType => value`: set default value and value type.
+- `name::String => value_type::Type => value`: set default value and value type.
 """
 function parse_default(v::Vector{String})
-    xxput_types = DataType[Any for i = 1:length(v)]
+    xxput_types = Type[Any for i = 1:length(v)]
     default_xxputs = Nothing[nothing for i = 1:length(v)]
     return v, xxput_types, default_xxputs
 end
@@ -50,7 +50,7 @@ end
 function parse_default(v::Vector)
     n = length(v)
     xxputs = Vector{String}(undef, n)
-    xxput_types = Vector{DataType}(undef, n)
+    xxput_types = Vector{Type}(undef, n)
     default_xxputs = Vector{Any}(undef, n)
     for (i, ele) in enumerate(v)
         name, type, default = parse_default_element(ele)
@@ -88,7 +88,7 @@ function parse_default_element(ele::Pair)
 end
 parse_default_element(any) = throw_invalid_xxputs(any)
 
-function parse_arg_info(data_type::DataType)
+function parse_arg_info(data_type::Type)
 	data_type, nothing
 end
 function parse_arg_info(p::Pair)
@@ -97,27 +97,27 @@ end
 function parse_arg_info(value)
 	Any, value
 end
-function parse_arg_info_pair(a::DataType, b::DataType)
+function parse_arg_info_pair(a::Type, b::Type)
 	if a isa b
 		b, a
 	elseif b isa a
 		a, b
 	else
-		throw(ErrorException("DataTypeError: $(a) and $(b) are not inclusive."))
+		throw(ErrorException("TypeError: $(a) and $(b) are not inclusive."))
 	end
 end
-parse_arg_info_pair(a, b::DataType) = b, convert_data_type(a, b)
-parse_arg_info_pair(a::DataType, b) = a, convert_data_type(b, a)
+parse_arg_info_pair(a, b::Type) = b, convert_data_type(a, b)
+parse_arg_info_pair(a::Type, b) = a, convert_data_type(b, a)
 
 
-function convert_data_type(value, data_type::DataType)
+function convert_data_type(value, data_type::Type)
 	if isa(value, data_type)
 		return value
 	else
 		try
 			convert(data_type, value)
 		catch
-			throw(ErrorException("DataTypeError: cannot convert $value to $data_type."))
+			throw(ErrorException("TypeError: cannot convert $value to $data_type."))
 		end
 	end
 end
@@ -144,7 +144,7 @@ function to_xxput_dict(d::Dict)
 	res
 end
 to_xxput_dict(d::Dict{String}) = d
-to_xxput_dict(any) = throw(ErrorException("DataTypeError: cannot run Program: cannot convert to Dict{String}: inputs, outputs, or returned value of infer_outputs(inputs)"))
+to_xxput_dict(any) = throw(ErrorException("TypeError: cannot run Program: cannot convert to Dict{String}: inputs, outputs, or returned value of infer_outputs(inputs)"))
 
 
 ## String/Cmd conversion

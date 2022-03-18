@@ -184,6 +184,10 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 
 ## Change log
 
+v0.4.4
+
+- Fix: change DataType to Type throughout the code. It allows successful parsing of Union Type, such as `"READ1" => Union{String, Vector{String}}`.
+
 v0.4.3
 
 - Fix file redirecting exception when redirecting to a closed stream. Not solved: Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
