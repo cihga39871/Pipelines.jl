@@ -184,6 +184,10 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 
 ## Change log
 
+v0.4.5
+
+- Optimize: allow check dependencies when test argument is empty.
+
 v0.4.4
 
 - Fix: change DataType to Type throughout the code. It allows successful parsing of Union Type, such as `"READ1" => Union{String, Vector{String}}`.
