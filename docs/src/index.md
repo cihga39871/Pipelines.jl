@@ -184,6 +184,10 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 
 ## Change log
 
+v0.4.6
+
+- Fix: results of `isok(::AbstractString)` should be expected.
+
 v0.4.5
 
 - Optimize: allow check dependencies when test argument is empty.

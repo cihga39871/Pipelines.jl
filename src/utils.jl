@@ -14,7 +14,7 @@ do_nothing(x, y) = nothing
 
 isok(x::Nothing) = true
 isok(x::Bool) = x
-isok(x::AbstractString) = occursin(r"y(es)?|ok?|t(rue)?|^1$"i, x)
+isok(x::AbstractString) = !isempty(x) && !occursin(r"^n(o|ull)?$|^f(alse)?$|^0$"i, x)
 isok(x) = true  # default is true
 
 ## parse default inputs/outputs
