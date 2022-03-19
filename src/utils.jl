@@ -255,7 +255,6 @@ Base.with_logger(f::Function, ::Nothing) = f()
 
 Base.redirect_stdout(f::Function, ::Nothing) = f()
 Base.redirect_stderr(f::Function, ::Nothing) = f()
-Base.redirect_stdout(f::Function, ::Nothing) = f()
 
 handle_open(::Nothing, mode) = nothing
 handle_open(io::IO, mode) = io # do not change and do not close when exit
