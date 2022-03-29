@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Command Dependency · Pipelines.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Pipelines.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../command_program/">Command Program</a></li><li><a class="tocitem" href="../julia_program/">Julia Program</a></li><li class="is-active"><a class="tocitem" href>Command Dependency</a><ul class="internal"><li><a class="tocitem" href="#Create"><span>Create</span></a></li><li><a class="tocitem" href="#Check"><span>Check</span></a></li><li><a class="tocitem" href="#Use-with-CmdProgram"><span>Use with <code>CmdProgram</code></span></a></li></ul></li></ul></li><li><a class="tocitem" href="../API/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Manual</a></li><li class="is-active"><a href>Command Dependency</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Command Dependency</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/cihga39871/Pipelines.jl/blob/master/docs/src/command_dependency.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Command-Dependency"><a class="docs-heading-anchor" href="#Command-Dependency">Command Dependency</a><a id="Command-Dependency-1"></a><a class="docs-heading-anchor-permalink" href="#Command-Dependency" title="Permalink"></a></h1><p>Command Dependency (<code>CmdDependency</code>) is the external dependent program that can be used in Command Program (<code>CmdProgram</code>).</p><h2 id="Create"><a class="docs-heading-anchor" href="#Create">Create</a><a id="Create-1"></a><a class="docs-heading-anchor-permalink" href="#Create" title="Permalink"></a></h2><pre><code class="language-julia">CmdDependency(;
+    exec::Base.AbstractCmd=``,
+    test_args::Base.AbstractCmd=``,
+    validate_success::Bool=false,
+    validate_stdout::Function=do_nothing,
+    validate_stderr::Function=do_nothing,
+    exit_when_fail::Bool=true
+)</code></pre><ul><li><p><code>exec::AbstractCmd</code>: the command to call the dependency.</p></li><li><p><code>test_args::AbstractCmd</code>: for testing purposes, the command to be appended to <code>exec</code>.</p></li><li><p><code>validate_success::Bool</code>: when checking the dependency, whether to validate the exit code == 0.</p></li><li><p><code>validate_stdout::Function</code>: a function takes standard out as <code>String</code> and return the validation result as <code>::Bool</code>.</p></li><li><p><code>validate_stderr::Function</code>: a function takes standard error as <code>String</code> and return the validation result as <code>::Bool</code>.</p></li><li><p><code>exit_when_fail::Bool</code>: if validation fails, whether to throw error and exit.</p></li></ul><h3 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h3><pre><code class="language-julia">julia = CmdDependency(
+    exec = `julia`,
+    test_args = `--version`,
+    validate_success = true,
+    validate_stdout = x -&gt; occursin(r&quot;^julia version&quot;, x),
+    validate_stderr = do_nothing,
+    exit_when_fail = true
+)</code></pre><h2 id="Check"><a class="docs-heading-anchor" href="#Check">Check</a><a id="Check-1"></a><a class="docs-heading-anchor-permalink" href="#Check" title="Permalink"></a></h2><p><code>CmdDependency</code> can be checked manually by using</p><pre><code class="language-julia">check_dependency(p::CmdDependency)</code></pre><p>Usually, it is not necessary when you specify <code>CmdDependency</code> in <code>CmdProgram</code> because dependency check will be done when running <code>CmdProgram</code> by default.</p><h2 id="Use-with-CmdProgram"><a class="docs-heading-anchor" href="#Use-with-CmdProgram">Use with <code>CmdProgram</code></a><a id="Use-with-CmdProgram-1"></a><a class="docs-heading-anchor-permalink" href="#Use-with-CmdProgram" title="Permalink"></a></h2><p>When building <code>CmdProgram</code>, we can specify our command dependencies by using</p><pre><code class="language-julia">dep1 = CmdDependency(...)
+dep2 = CmdDependency(...)
+
+prog = CmdProgram(
+    cmd_dependencies = [dep1, dep2],
+    ...
+)</code></pre><p>To call the dependency in command, we can prepend a dollor sign (<code>$</code>):</p><pre><code class="language-julia">prog = CmdProgram(
+    cmd_dependencies = [dep1, dep2],
+    cmd = `$dep1 --args` &amp; `$dep2 --args`
+)</code></pre><h3 id="An-Example"><a class="docs-heading-anchor" href="#An-Example">An Example</a><a id="An-Example-1"></a><a class="docs-heading-anchor-permalink" href="#An-Example" title="Permalink"></a></h3><p>We use the same example in Command Program page.</p><p>Adding <code>samtools</code> and <code>bowtie2</code> as the dependencies of the bowtie2 mapping program:</p><pre><code class="language-julia">SAMTOOLS = CmdDependency(
+    exec = `samtools`,
+    test_args = `--version`,
+    validate_success = true,
+    validate_stdout = x -&gt; occursin(r&quot;^samtools \d+&quot;, x)
+)
+
+BOWTIE2 = CmdDependency(
+    exec = `bowtie2`,
+    test_args = `--version`,
+    validate_success = true,
+    validate_stdout = x -&gt; occursin(r&quot;bowtie2-align-s version \d+&quot;, x)
+)
+
+program_bowtie2 = CmdProgram(
+    name = &quot;Bowtie2 Mapping&quot;,
+    id_file = &quot;.bowtie2&quot;,
+
+    cmd_dependencies = [SAMTOOLS, BOWTIE2],
+
+    inputs = [&quot;FASTQ&quot;, &quot;REF&quot;],
+    validate_inputs = inputs -&gt; begin
+        check_dependency_file(inputs[&quot;FASTQ&quot;]) &amp;&amp;
+        check_dependency_file(inputs[&quot;REF&quot;])
+    end,
+
+    prerequisites = (inputs, outputs) -&gt; begin
+        mkpath(dirname(to_str(outputs[&quot;BAM&quot;])))
+    end,
+
+    outputs = [&quot;BAM&quot;],
+    infer_outputs = inputs -&gt; begin
+        Dict(&quot;BAM&quot; =&gt; str(inputs[&quot;FASTQ&quot;]) * &quot;.bam&quot;)
+    end,
+    validate_outputs = outputs -&gt; begin
+        check_dependency_file(outputs[&quot;BAM&quot;])
+    end,
+
+    cmd = pipeline(`$BOWTIE2 -x REF -q FASTQ`, `$SAMTOOLS sort -O bam -o BAM`),
+
+    wrap_up = (inputs, outputs) -&gt; run(`$SAMTOOLS index $(outputs[&quot;BAM&quot;])`)
+)</code></pre><p>To run the program, we can decide whether to check dependencies with <code>run(..., check_dependencies=true)</code>:</p><pre><code class="language-julia">inputs = Dict(&quot;FASTQ&quot; =&gt; &quot;a.fastq&quot;, &quot;REF&quot; =&gt; &quot;ref.fasta&quot;)
+success, outputs = run(program_bowtie2, inputs; check_dependencies = true)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../julia_program/">« Julia Program</a><a class="docs-footer-nextpage" href="../API/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 29 March 2022 22:27">Tuesday 29 March 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
