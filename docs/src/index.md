@@ -184,6 +184,14 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 
 ## Change log
 
+v0.5.0
+
+- Optimize: stack traces of failed results.
+
+- Fix: original stdout and stderr can be recovered by using `restore_stdout()` and `restore_stderr()`. Remove `set_default_stdout()` and `set_default_stderr()` because they cause confusion sometimes.
+
+- Optimize: default output of program info.
+
 v0.4.6
 
 - Fix: results of `isok(::AbstractString)` should be expected.

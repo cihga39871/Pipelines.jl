@@ -45,9 +45,9 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `id_file::String`: The prefix of *run ID file*. To prevent from running the program with the same inputs and outputs twice, it will generate a unique *run ID file* after a successful run.
 
-- `info_before::String`: Print it when starting the program.
+- `info_before::String`: Print it when the program is started.
 
-- `info_after::String`: Print it when finishing the program.
+- `info_after::String`: Print it when the program is finished.
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
@@ -266,7 +266,7 @@ function _run(
 
 	if verbose
 		if p.info_before == "auto" || p.info_before == ""
-			@info timestamp() * "Starting program: $(p.name)" command_template=p.cmd run_id inputs outputs
+			@info timestamp() * "Started: $(p.name)" command_template=p.cmd run_id inputs outputs
 		else
 			@info timestamp() * p.info_before command_template=p.cmd run_id inputs outputs
 		end
@@ -274,7 +274,7 @@ function _run(
 
 	# skip when done
 	if skip_when_done && isfile(run_id_file) && isok(p.validate_outputs(outputs))
-		@warn timestamp() * "Skipping finished program: $(p.name)" command_template=p.cmd run_id inputs outputs
+		@warn timestamp() * "Skipped finished program: $(p.name)" command_template=p.cmd run_id inputs outputs
 		return true, outputs
 	end
 
@@ -345,7 +345,7 @@ function _run(
 
 	if verbose
 		if p.info_after == "auto" || p.info_after == ""
-			@info timestamp() * "Finishing program: $(p.name)" command_running=cmd run_id inputs outputs
+			@info timestamp() * "Finished: $(p.name)" command_running=cmd run_id inputs outputs
 		else
 			@info timestamp() * p.info_after command_running=cmd run_id inputs outputs
 		end

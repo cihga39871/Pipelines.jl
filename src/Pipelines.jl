@@ -7,7 +7,10 @@ using Logging
 include("utils.jl")
 export do_nothing, isok,
 str, to_str, to_cmd,
-replaceext, removeext,
+replaceext, removeext
+
+include("redirection.jl")
+export restore_stdout, restore_stdout,
 redirect_to_files
 
 include("CmdDependency.jl")
@@ -32,9 +35,6 @@ include("pretty_print.jl")
 
 # binding documentations
 @doc (@doc _run) run
+@doc (@doc restore_stderr) restore_stdout
 
-function __init__()
-    Pipelines.set_default_stdout()
-    Pipelines.set_default_stderr()
-end
 end # module
