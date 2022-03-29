@@ -5,14 +5,14 @@ mutable struct CmdProgram <: Program
 	info_after::String
     cmd_dependencies::Vector{CmdDependency}
 	inputs::Vector{String}
-	input_types::Vector{DataType}
+	input_types::Vector{Type}
 	default_inputs::Vector
 	validate_inputs::Function
 	prerequisites::Function
     cmd::Base.AbstractCmd
 	infer_outputs::Function
 	outputs::Vector{String}
-	output_types::Vector{DataType}
+	output_types::Vector{Type}
 	default_outputs::Vector
 	validate_outputs::Function
 	wrap_up::Function

@@ -5,14 +5,14 @@ mutable struct JuliaProgram <: Program
 	info_after::String
     cmd_dependencies::Vector{CmdDependency}
 	inputs::Vector{String}
-	input_types::Vector{DataType}
+	input_types::Vector{Type}
 	default_inputs::Vector
 	validate_inputs::Function
 	prerequisites::Function
     main::Function
 	infer_outputs::Function
 	outputs::Vector{String}
-	output_types::Vector{DataType}
+	output_types::Vector{Type}
 	default_outputs::Vector
 	validate_outputs::Function
 	wrap_up::Function
@@ -33,7 +33,7 @@ end
 		main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
 		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
 		outputs                    = Vector{String}(),
-		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String},
+		validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
 		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 	) -> JuliaProgram
 
