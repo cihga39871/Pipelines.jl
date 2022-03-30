@@ -12,7 +12,8 @@ makedocs(
             "julia_program.md",
             "command_dependency.md",
         ],
-        "API.md"
+        "API.md",
+        "Change Log" => "changelog.md"
     ]
 )
 
