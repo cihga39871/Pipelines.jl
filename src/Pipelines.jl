@@ -37,4 +37,18 @@ include("pretty_print.jl")
 @doc (@doc _run) run
 @doc (@doc restore_stderr) restore_stdout
 
+function __init__()
+    global stdout_origin
+    global stderr_origin
+
+    if isnothing(stdout_origin)
+        Base.stdout isa Base.TTY || (@warn "Base.stdout was changed when initiating Pipelines.jl. `restore_stdout()` can only restore to the current one." Base.stdout)
+        stdout_origin = Base.stdout
+    end
+    if isnothing(stderr_origin)
+        Base.stderr isa Base.TTY || (@warn "Base.stderr was changed when initiating Pipelines.jl. `restore_stderr()` can only restore to the current one." Base.stderr)
+        stderr_origin = Base.stderr
+    end
+end
+
 end # module

@@ -1,8 +1,8 @@
 
 ### stdout and stderr redirecting
 
-stdout_origin = Base.stdout isa Base.TTY ? Base.stdout : nothing
-stderr_origin = Base.stderr isa Base.TTY ? Base.stderr : nothing
+stdout_origin = nothing  # re-defined in __init__()
+stderr_origin = nothing  # re-defined in __init__()
 
 """
 	restore_stdout()
