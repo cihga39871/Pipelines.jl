@@ -10,7 +10,7 @@ str, to_str, to_cmd,
 replaceext, removeext
 
 include("redirection.jl")
-export restore_stdout, restore_stdout,
+export restore_stdout, restore_stderr,
 redirect_to_files
 
 include("CmdDependency.jl")

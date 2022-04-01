@@ -8,6 +8,7 @@ Program
 ## Command Program
 ```@docs
 CmdProgram()
+prepare_cmd
 ```
 
 ## Julia Program
@@ -32,6 +33,7 @@ CmdDependency()
 check_dependency(::CmdDependency)
 check_dependency_dir(path::AbstractString; exit_when_false=true)
 check_dependency_file(path::AbstractString; exit_when_false=true)
+exec
 ```
 
 ## Utils
@@ -41,4 +43,11 @@ to_cmd(::Cmd)
 split(::Cmd)
 replaceext(::String, ::AbstractString)
 removeext(::String)
+```
+
+## Redirection
+```@docs
+redirect_to_files
+restore_stdout
+restore_stderr
 ```

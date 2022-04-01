@@ -1,8 +1,12 @@
 # Change log
 
+## v0.5.2
+
+- Fix: Export `restore_stderr`.
+
 ## v0.5.1
 
-- Fix : stdxxx_origin set to nothing when reloading Pipelines from another module.
+- Fix: stdxxx_origin set to nothing when reloading Pipelines from another module.
 
 ## v0.5.0
 
