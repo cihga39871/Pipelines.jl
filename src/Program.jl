@@ -194,17 +194,49 @@ function Base.run(p::Program, inputs; kwarg...)
 end
 
 function Base.run(p::Program;
-	dir::AbstractString = "",
+	dir::AbstractString = "", retry::Int = 0,
 	stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false,
 	kwarg...
 )
-	dir_backup = pwd()
-	dir == "" || cd(dir) # go to working directory
-
-	res = redirect_to_files(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
-		_run(p; kwarg...)
+	if dir != ""
+		dir_backup = pwd()
+		dir = abspath(dir)
+		cd(dir) # go to working directory
 	end
 
-	dir == "" || cd(dir_backup)
+	n_try = 0
+	local res
+	while n_try <= retry
+		res = redirect_to_files(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
+			if n_try > 0
+				@warn "Retry $(p.name) ($n_try/$retry)"
+			end
+			_run(p; dir = dir, kwarg...)
+		end
+		res isa StackTraceVector || break  # res isa StackTraceVector means failed, need retry.
+		n_try += 1
+	end
+
+	if dir != ""
+		cd(dir_backup)
+	end
 	res
 end
+
+function parse_verbose(verbose::Symbol)
+	if verbose in (:all, :min, :none)
+		return verbose
+	elseif verbose == :minimum
+		return :min
+	elseif verbose in (:max, :maximum, :full, :yes, :true)
+		return :all
+	elseif verbose in (:no, :nothing, :null, :false)
+		return :none
+	else
+		@error "Cannot determine verbose level ($verbose). Set to :all. Accepted verbose options are true, false, :all, :min, and :none."
+		return :all
+	end
+end
+parse_verbose(verbose::Bool) = verbose ? :all : :none
+parse_verbose(::Nothing) = :none
+parse_verbose(verbose::AbstractString) = parse_verbose(Symbol(verbose))

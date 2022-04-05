@@ -154,6 +154,7 @@ end
 		skip_when_done::Bool=true,
 		touch_run_id_file::Bool=true,
 		verbose::Bool=true,
+		retry::Int=0,
 		dry_run::Bool=false,
 		stdout=nothing,
 		stderr=nothing,
@@ -176,7 +177,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
   > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
 
-- `dir::AbstractString = ""`: working directory to run the program.
+- `dir::AbstractString = ""`: working directory to run the program and store `run_id_file`.
 
 - `check_dependencies::Bool = true`: check dependencies for `p` (`p.cmd_dependencies`).
 
@@ -184,7 +185,9 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `touch_run_id_file::Bool = true`: If `true`, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If `false`, the next time running the program, `skip_when_done=true` will not take effect.
 
-- `verbose::Bool = true`: If `true`, print info and error messages. If `false`, print error messages only.
+- `verbose = true`: If `true` or `:all`, print all info and error messages. If `:min`, print minimum info and error messages. If `false` or `:none`, print error messages only.
+
+- `retry::Int = 0`: If failed, retry for INT times.
 
 - `dry_run::Bool = false`: do not run the command, return `(command::AbstractCmd, run_id_file::String)`.
 
@@ -248,33 +251,46 @@ function _run(
 	# stdout=nothing,
 	# stderr=nothing,
 	# append::Bool=false,
-	verbose::Bool=true,
+	verbose::Union{Bool, Symbol, AbstractString}=true,
 	touch_run_id_file::Bool=true,
-	dry_run::Bool=false
+	dry_run::Bool=false,
+	dir::AbstractString=""
 )
 	# input/output completion
 	inputs, outputs = xxputs_completion_and_check(p, inputs, outputs)
 
 	# run id based on inputs and outputs
 	run_id = generate_run_uuid(inputs, outputs)
-	run_id_file = p.id_file * "." * string(run_id)
+	run_id_file = joinpath(dir, p.id_file * "." * string(run_id))
 
 	# whether dry run
 	if dry_run
 		@goto dry_run_start
 	end
 
-	if verbose
+	verbose_level = parse_verbose(verbose)
+
+	if verbose_level == :all
 		if p.info_before == "auto" || p.info_before == ""
 			@info timestamp() * "Started: $(p.name)" command_template=p.cmd run_id inputs outputs
 		else
 			@info timestamp() * p.info_before command_template=p.cmd run_id inputs outputs
 		end
+	elseif verbose_level == :min
+		if p.info_before == "auto" || p.info_before == ""
+			@info timestamp() * "Started: $(p.name) [$(run_id)]"
+		else
+			@info timestamp() * p.info_before * " [$(run_id)]"
+		end
 	end
 
 	# skip when done
 	if skip_when_done && isfile(run_id_file) && isok(p.validate_outputs(outputs))
-		@warn timestamp() * "Skipped finished program: $(p.name)" command_template=p.cmd run_id inputs outputs
+		if verbose_level == :all
+			@warn timestamp() * "Skipped finished program: $(p.name)" command_template=p.cmd run_id inputs outputs
+		else
+			@warn timestamp() * "Skipped finished program: $(p.name) [$(run_id)]"
+		end
 		return true, outputs
 	end
 
@@ -290,8 +306,8 @@ function _run(
 	try
 		isok(p.validate_inputs(inputs)) || error("ProgramInputValidationError: $(p.name): the prerequisites function returns false.")
 	catch e
-		@error timestamp() * "ProgramInputValidationError: $(p.name): fail to validate inputs (before running the main command). See error messages above." validation_function=p.validate_inputs command_template=p.cmd run_id inputs outputs exception=(e, catch_backtrace())
-		error("ProgramInputValidationError")
+		@error timestamp() * "ProgramInputValidationError: $(p.name): fail to validate inputs (before running the main command). See error messages below." validation_function=p.validate_inputs command_template=p.cmd run_id inputs outputs exception=(e, catch_backtrace())
+		rethrow(e)
 		return false, outputs
 	end
 
@@ -309,7 +325,7 @@ function _run(
 		isok(p.prerequisites(inputs, outputs)) || error("ProgramPrerequisitesError: $(p.name): the prerequisites function returns false.")
 	catch e
 		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command). See error messages above." prerequisites=p.prerequisites command_template=p.cmd run_id inputs outputs exception=(e, catch_backtrace())
-		error("ProgramPrerequisitesError")
+		rethrow(e)
 		return false, outputs
 	end
 
@@ -319,7 +335,7 @@ function _run(
 		# run(pipeline(cmd, stdout=stdout, stderr=stderr, append=append))
 	catch e
 		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." prerequisites=p.prerequisites command_running=cmd run_id inputs outputs exception=(e, catch_backtrace())
-		error("ProgramRunningError")
+		rethrow(e)
 		return false, outputs
 	end
 
@@ -328,7 +344,7 @@ function _run(
 		isok(p.validate_outputs(outputs)) || error("ProgramOutputValidationError: $(p.name): the validation function returns false.")
 	catch e
 		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command). See error messages above." validation_function=p.validate_outputs command_running=cmd run_id inputs outputs exception=(e, catch_backtrace())
-		error("ProgramOutputValidationError")
+		rethrow(e)
 		return false, outputs
 	end
 
@@ -336,18 +352,24 @@ function _run(
 		isok(p.wrap_up(inputs, outputs)) || error("ProgramWrapUpError: $(p.name): the wrap_up function returns false.")
 	catch e
 		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function. See error messages above." wrap_up=p.wrap_up command_running=cmd run_id inputs outputs exception=(e, catch_backtrace())
-		error("ProgramWrapUpError")
+		rethrow(e)
 		return false, outputs
 	end
 
 	# touch the run_id_file
 	touch_run_id_file && touch(run_id_file)
 
-	if verbose
+	if verbose_level == :all
 		if p.info_after == "auto" || p.info_after == ""
 			@info timestamp() * "Finished: $(p.name)" command_running=cmd run_id inputs outputs
 		else
 			@info timestamp() * p.info_after command_running=cmd run_id inputs outputs
+		end
+	elseif verbose_level == :min
+		if p.info_after == "auto" || p.info_after == ""
+			@info timestamp() * "Finished: $(p.name) [$run_id]"
+		else
+			@info timestamp() * p.info_after * " [$run_id]"
 		end
 	end
 	return true, outputs

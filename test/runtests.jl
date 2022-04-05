@@ -293,6 +293,33 @@ close(out_io)
 @test read("err.txt", String) == "[ Info: this is stderr\n"
 @test !occursin("[ Info: this is stderr", read("log.txt", String))
 
+
+## version 0.6
+
+# test retry
+p_error = CmdProgram(
+	id_file = "id_file",
+	cmd = `julia --abcdefg`
+)
+p_error_res = run(p_error, retry=1, verbose=:min)
+@test p_error_res isa Pipelines.StackTraceVector
+
+pj_error = JuliaProgram(
+	id_file = "id_file",
+	main = (x, y) -> begin
+		if !isfile("x")
+			touch("x")
+			error("x not exist, so created")
+		end
+		return y
+	end
+)
+rm("x", force=true)
+pj_error_res = run(pj_error, retry=1, verbose=:min)
+rm("x", force=true)
+@test pj_error_res[1]
+
+
 # clean up
 cd(homedir())
 rm(tmp, recursive=true)

@@ -1,5 +1,13 @@
 # Change log
 
+## v0.6.0
+
+- Feature: allow retry for failed program: `run(p::Program, ...; retry = 1)`.
+
+- Fix: the run id file generated after a successful run is under the directory specified in `run(p::Program, ...; dir = "directory")`, if `p.id_file` is not an absolute path (default).
+
+- Feature: `verbose` in `run(p::Program, ...; verbose = :min)`: If `true` or `:all`, print all info and error messages. If `:min`, print minimum info and error messages. If `false` or `:none`, print error messages only.
+
 ## v0.5.2
 
 - Fix: Export `restore_stderr`.
