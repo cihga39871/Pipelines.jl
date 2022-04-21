@@ -12,12 +12,14 @@
 abstract type Program end
 
 """
-	infer_outputs(p::Program, inputs::Dict{String})
+	infer_outputs(p::Program, inputs)
+	infer_outputs(p::Program, inputs, outputs)
 
 Infer the default outputs from `p::Program` and `inputs::Dict{String}`.
 """
-function infer_outputs(p::Program, inputs::Dict{String})
-	p.infer_outputs(inputs)
+function infer_outputs(p::Program, inputs, outputs = Dict())
+	i, o = xxputs_completion_and_check(p, inputs, outputs)
+	o
 end
 
 function check_keywords(p::Program, inputs::Dict{String}, outputs::Dict{String})
@@ -148,11 +150,11 @@ end
 find_keywords(not_string) = []
 
 """
-	xxputs_completion_and_check(p::Program, inputs::Dict{String}, outputs::Dict{String})
+	xxputs_completion_and_check(p::Program, inputs, outputs)
 
 1. Check and complete `inputs` using types and values stored in `p`.
 
-2. If `outputs` is empty, run `p.infer_outputs`.
+2. Run `p.infer_outputs` if defined, and then merge it and outputs (user-input keys are kept).
 
 3. Check and complete `outputs` using types and values stored in `p`.
 
@@ -168,8 +170,9 @@ function xxputs_completion_and_check(p::Program, inputs::Dict{String}, outputs::
 	if isempty(p.outputs)
 		# do nothing to outputs
 	else
-		if isempty(outputs) && p.infer_outputs !== do_nothing
-			outputs = to_xxput_dict(p.infer_outputs(inputs))
+		if p.infer_outputs !== do_nothing
+			outputs_from_infer = to_xxput_dict(p.infer_outputs(inputs))
+			outputs = merge(outputs_from_infer, outputs)
 		end
 		outputs = outputs_completion(p::Program, outputs::Dict{String})
 	end

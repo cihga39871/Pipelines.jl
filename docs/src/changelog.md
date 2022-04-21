@@ -1,5 +1,13 @@
 # Change log
 
+## v0.6.1
+
+- Fix: `to_xxput_dict(d::Dict)`: `v` not defined: change `v` to `d`.
+
+- Fix: `xxputs_completion_and_check(p, inputs, outputs)`: Now, if `outputs` are not empty and `p.infer_outputs` is defined, the function will first run `p.infer_outputs` and then merge the result and `outputs` (user-input keys are kept).
+
+- Optimize: function `infer_outputs(p::Program, inputs)` now works like `xxputs_completion_and_check` but only return `outputs::Dict{String}`. It does not affect user-defined function `p.infer_outputs`. In addition, `inputs` is no longer strict to `Dict{String}` because the it will convert to `Dict{String}` first.
+
 ## v0.6.0
 
 - Feature: allow retry for failed program: `run(p::Program, ...; retry = 1)`.

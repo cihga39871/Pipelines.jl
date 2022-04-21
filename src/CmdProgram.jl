@@ -153,7 +153,7 @@ end
 		check_dependencies::Bool=true,
 		skip_when_done::Bool=true,
 		touch_run_id_file::Bool=true,
-		verbose::Bool=true,
+		verbose=true,
 		retry::Int=0,
 		dry_run::Bool=false,
 		stdout=nothing,

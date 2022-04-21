@@ -138,7 +138,7 @@ function to_xxput_dict(v::Vector{V}) where V <: Pair
 end
 function to_xxput_dict(d::Dict)
 	res = Dict{String,Any}()
-	for p in v
+	for p in d
 		res[str(p.first)] = p.second
 	end
 	res
