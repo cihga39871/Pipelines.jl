@@ -16,24 +16,25 @@ JuliaProgram(;
     validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String},
     wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
 ) -&gt; JuliaProgram</code></pre><h2 id="Run"><a class="docs-heading-anchor" href="#Run">Run</a><a id="Run-1"></a><a class="docs-heading-anchor-permalink" href="#Run" title="Permalink"></a></h2><p>To run a <code>JuliaProgram</code>, the methods are the same as <code>CmdProgram</code>:</p><pre><code class="language-julia">run(
-    p::JuliaProgram;
-    inputs=Dict{String}(),
-    outputs=Dict{String}(),
-    dir::AbstractString=&quot;&quot;,
-    check_dependencies::Bool=true,
-    skip_when_done::Bool=true,
-    touch_run_id_file::Bool=true,
-    verbose::Bool=true,
-    dry_run::Bool=false,
-    stdout=nothing,
-    stderr=nothing,
-    stdlog=nothing,
-    append::Bool=false
+	p::Program;
+	inputs=Dict{String}(),
+	outputs=Dict{String}(),
+	dir::AbstractString=&quot;&quot;,
+	check_dependencies::Bool=true,
+	skip_when_done::Bool=true,
+	touch_run_id_file::Bool=true,
+	verbose=true,
+	retry::Int=0,
+	dry_run::Bool=false,
+	stdout=nothing,
+	stderr=nothing,
+	stdlog=nothing,
+	append::Bool=false
 ) -&gt; (success::Bool, outputs::Dict{String})
 
-run(p::JuliaProgram, inputs, outputs; kwargs...)
+run(p::Program, inputs, outputs; kwargs...)
 
-run(p::JuliaProgram, inputs; kwargs...)
+run(p::Program, inputs; kwargs...)
 )  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.</code></pre><div class="admonition is-info"><header class="admonition-header">Compatibility with JobSchedulers.jl</header><div class="admonition-body"><p>Pipelines.jl is fully compatible with <a href="https://github.com/cihga39871/JobSchedulers.jl">JobSchedulers.jl</a> which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.</p><p><code>run(::Program, ...)</code> can be replaced by <code>Job(::Program, ...)</code>. The latter creates a <code>Job</code>, and you can submit the job to queue by using <code>submit!(::Job)</code>. See example below.</p></div></div><h2 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h2><pre><code class="language-julia">using Pipelines
 
 p = JuliaProgram(
@@ -73,4 +74,4 @@ job = Job(p, inputs, outputs;
 submit!(job)  # submit job to queue
 
 result(job)  # get the returned result
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../command_program/">« Command Program</a><a class="docs-footer-nextpage" href="../command_dependency/">Command Dependency »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 22 April 2022 18:58">Friday 22 April 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../command_program/">« Command Program</a><a class="docs-footer-nextpage" href="../command_dependency/">Command Dependency »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 22 April 2022 22:43">Friday 22 April 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
