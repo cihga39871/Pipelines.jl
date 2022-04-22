@@ -75,17 +75,17 @@ run(echo, inputs)
     ```julia
     run(echo, inputs)
     ```
-
+    
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
-
+    
     ```julia
     # Method 1: stop checking finished program
     run(echo, inputs; skip_when_done = false)
-
+    
     # Method 2: delete the run_id_file before running again:
     cmd, run_id_file = run(echo, inputs; dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
-
+    
     # Method 3: Do not generate run_id_file when first running.
     run(echo, inputs; touch_run_id_file=false)
     ```
@@ -143,7 +143,7 @@ If the default value is a `String`, it can be interpolated by using `<keyword>`,
 
 > This step is prior to adding default values of outputs, and string interpolation using `<>`.
 
-We also provide a method (`infer_outputs::Function`) in `CmdProgram` to generate complex `outputs::Dict{String}` from `inputs::Dict{String}`. The type used in the function is restricted to `Dict{String}`
+We also provide a parameter (`infer_outputs::Function`) in `CmdProgram` to generate complex `outputs::Dict{String}` from `inputs::Dict{String}`. The argument (`inputs`) and returned value of the function has to be a `Dict{String}`.
 
 ```julia
 using Dates
@@ -181,3 +181,4 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 ## Future Development
 
 - Support running competitive tasks with **locks**.
+

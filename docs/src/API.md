@@ -23,7 +23,7 @@ Base.run
 
 ## Common Methods
 ```@docs
-infer_outputs(::Program, ::Dict{String})
+infer_outputs
 check_dependency(::Program)
 ```
 

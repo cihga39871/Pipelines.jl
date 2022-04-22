@@ -45,31 +45,32 @@ To run a `JuliaProgram`, the methods are the same as `CmdProgram`:
 
 ```julia
 run(
-    p::JuliaProgram;
-    inputs=Dict{String}(),
-    outputs=Dict{String}(),
-    dir::AbstractString="",
-    check_dependencies::Bool=true,
-    skip_when_done::Bool=true,
-    touch_run_id_file::Bool=true,
-    verbose::Bool=true,
-    dry_run::Bool=false,
-    stdout=nothing,
-    stderr=nothing,
-    stdlog=nothing,
-    append::Bool=false
+	p::Program;
+	inputs=Dict{String}(),
+	outputs=Dict{String}(),
+	dir::AbstractString="",
+	check_dependencies::Bool=true,
+	skip_when_done::Bool=true,
+	touch_run_id_file::Bool=true,
+	verbose=true,
+	retry::Int=0,
+	dry_run::Bool=false,
+	stdout=nothing,
+	stderr=nothing,
+	stdlog=nothing,
+	append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
 
-run(p::JuliaProgram, inputs, outputs; kwargs...)
+run(p::Program, inputs, outputs; kwargs...)
 
-run(p::JuliaProgram, inputs; kwargs...)
+run(p::Program, inputs; kwargs...)
 )  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 ```
 
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-
+    
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`. See example below.
 
 ## Example
