@@ -1,5 +1,11 @@
 # Change log
 
+## v0.7.0
+
+- Fix: `generate_run_uuid`: more stable way to generate run UUID using inputs and outputs.
+
+**Caution**: The UUIDs generated using old versions will be out of date, so if you run the same Program with the same parameters, the program will generate a different UUID. This is why it is considered as a breaking version.
+
 ## v0.6.1
 
 - Fix: `to_xxput_dict(d::Dict)`: `v` not defined: change `v` to `d`.

@@ -40,10 +40,14 @@ function check_dependency(p::Program)
 end
 
 function generate_run_uuid(inputs::Dict{String}, outputs::Dict{String})
-	all_cmd = ``
-	foreach(x -> append!(all_cmd.exec, to_cmd(x).exec), values(inputs))
-	foreach(x -> append!(all_cmd.exec, to_cmd(x).exec), values(outputs))
-	uuid5(UUID4, string(all_cmd))
+	out_uuid = UUID4
+	for d in (inputs, outputs)
+		sd = sort(d)
+		for (k,v) in sd
+			out_uuid = uuid5(out_uuid, string(k, ":", v))
+		end
+	end
+	return out_uuid
 end
 
 """
