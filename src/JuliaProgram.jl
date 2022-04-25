@@ -342,7 +342,7 @@ function _run(
 	end
 
 	# run the main command
-	outputs = try
+	outputs_main = try
 		p.main(inputs, outputs)
 	catch e
 		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." run_id inputs outputs exception=(e, catch_backtrace())
@@ -351,14 +351,21 @@ function _run(
 	end
 
 	# check type of outputs
-	if !isa(outputs, Dict)
-		@error timestamp() * "ProgramMainReturnValueError: $(p.name): the returned value is not a Dict" run_id inputs outputs
-		error("ProgramMainReturnValueError")
-		return false, outputs
+	if !isa(outputs_main, Dict)
+		@warn timestamp() * "ProgramMainReturnValue: $(p.name): the returned value of the main function is not a Dict, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main
+
+		# check keys in outputs::Dict{String}
+		check_outputs_keywords(p, outputs)
+	else
+		outputs = try
+			check_outputs_keywords(p, outputs_main)
+			outputs_main
+		catch
+			@warn timestamp() * "ProgramMainReturnValue: $(p.name): the returned Dict of the main function does not pass the keyword checks, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main
+			outputs
+		end
 	end
 
-	# check keys in outputs::Dict{String}
-	check_outputs_keywords(p, outputs)
 
 	# confirmation: validate outputs
 	try

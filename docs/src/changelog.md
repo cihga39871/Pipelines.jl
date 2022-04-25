@@ -1,5 +1,13 @@
 # Change log
 
+## v0.7.1
+
+- Optimize: the returned value of the main function of `JuliaProgram` does not required to be a `Dict`. If it is not a `Dict` or the returned Dict fails to pass keyword check, a warn message will be displayed and the inferred `outputs` will be used.
+
+- Fix: MethodError: no method matching sort(::Dict{String, Any}) in `generate_run_uuid(...)`: import `OrderedCollections.jl`.
+
+- Optimize: do not show the error messages twice when `stderr` is not redirected.
+
 ## v0.7.0
 
 - Fix: `generate_run_uuid`: more stable way to generate run UUID using inputs and outputs.

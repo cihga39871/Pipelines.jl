@@ -3,6 +3,7 @@ module Pipelines
 using Dates
 using UUIDs
 using Logging
+using OrderedCollections  # sorting dict in generate_run_uuid
 
 include("utils.jl")
 export do_nothing, isok,

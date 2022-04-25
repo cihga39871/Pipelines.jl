@@ -190,6 +190,8 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
 	isnothing(out) || redirect_stdout(out)
 	isnothing(err) || redirect_stderr(err)
 
+	show_error = Base.stderr !== stderr_origin
+
 	res = try_function(f, log)
 
 	# before switch to old stdxxx, check whether it is opened. It might be happen due to redirect_xxx is not thread safe!
@@ -222,7 +224,7 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
 	outfile isa IO || close(out)
 	errfile isa IO || close(err)
 	logfile isa IO || close(log)
-	if res isa StackTraceVector
+	if res isa StackTraceVector && show_error
 		show(res)
 	end
 	return res
