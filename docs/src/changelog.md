@@ -1,5 +1,9 @@
 # Change log
 
+## v0.7.2
+
+- Optimize: do not show the error stack traces twice (`@error` and `rethrow()`).
+
 ## v0.7.1
 
 - Optimize: the returned value of the main function of `JuliaProgram` does not required to be a `Dict`. If it is not a `Dict` or the returned Dict fails to pass keyword check, a warn message will be displayed and the inferred `outputs` will be used.

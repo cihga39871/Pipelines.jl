@@ -320,7 +320,7 @@ function _run(
 	try
 		isok(p.validate_inputs(inputs)) || error("ProgramInputValidationError: $(p.name): the prerequisites function returns false.")
 	catch e
-		@error timestamp() * "ProgramInputValidationError: $(p.name): fail to validate inputs (before running the main command). See error messages below." validation_function=p.validate_inputs run_id inputs outputs exception=(e, catch_backtrace())
+		@error timestamp() * "ProgramInputValidationError: $(p.name): fail to validate inputs (before running the main command)." validation_function=p.validate_inputs run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -336,7 +336,7 @@ function _run(
 	try
 		isok(p.prerequisites(inputs, outputs)) || error("ProgramPrerequisitesError: $(p.name): the prerequisites function returns false.")
 	catch e
-		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command). See error messages above." prerequisites=p.prerequisites run_id inputs outputs exception=(e, catch_backtrace())
+		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command)." prerequisites=p.prerequisites run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -345,7 +345,7 @@ function _run(
 	outputs_main = try
 		p.main(inputs, outputs)
 	catch e
-		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command. See error messages above." run_id inputs outputs exception=(e, catch_backtrace())
+		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command." run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -371,7 +371,7 @@ function _run(
 	try
 		isok(p.validate_outputs(outputs)) || error("ProgramOutputValidationError: $(p.name): the validation function returns false.")
 	catch e
-		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command). See error messages above." validation_function=p.validate_outputs run_id inputs outputs exception=(e, catch_backtrace())
+		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command)." validation_function=p.validate_outputs run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -379,7 +379,7 @@ function _run(
 	try
 		isok(p.wrap_up(inputs, outputs)) || error("ProgramWrapUpError: $(p.name): the wrap_up function returns false.")
 	catch e
-		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function. See error messages above." wrap_up=p.wrap_up run_id inputs outputs exception=(e, catch_backtrace())
+		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function." wrap_up=p.wrap_up run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
