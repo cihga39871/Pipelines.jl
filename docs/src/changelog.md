@@ -1,5 +1,9 @@
 # Change log
 
+## v0.7.3
+
+- Fix a method overwrite warning when defining `Base.redirect_stdout(f::Function, ::Nothing) = f()`: redirect_stdout and redirect_stderr are the same (::Base.RedirectStdStream) at least from julia v1.7, so defining redirect_stdout means redirect_stderr is also defined. If diff exists in previous julia versions, check first.
+
 ## v0.7.2
 
 - Optimize: do not show the error stack traces twice (`@error` and `rethrow()`).

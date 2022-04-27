@@ -154,7 +154,13 @@ Base.close(::Nothing) = nothing
 # Base.with_logger(f::Function, ::Nothing) = f()
 
 Base.redirect_stdout(f::Function, ::Nothing) = f()
-Base.redirect_stderr(f::Function, ::Nothing) = f()
+# redirect_stdout and redirect_stderr are the same (::Base.RedirectStdStream) at least from julia v1.7, so defining redirect_stdout means redirect_stderr is also defined. If diff exists in previous julia versions, check first.
+try
+	Base.redirect_stderr(time, nothing)
+catch
+	Base.redirect_stderr(f::Function, ::Nothing) = f()
+end
+
 
 handle_open(::Nothing, mode) = nothing
 handle_open(io::IO, mode) = io # do not change and do not close when exit
