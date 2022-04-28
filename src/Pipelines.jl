@@ -18,8 +18,7 @@ include("CmdDependency.jl")
 export CmdDependency,
 check_dependency,
 check_dependency_file,
-check_dependency_dir,
-exec
+check_dependency_dir
 
 include("Program.jl")
 export Program,
@@ -36,7 +35,6 @@ include("pretty_print.jl")
 
 # binding documentations
 @doc (@doc _run) run
-@doc (@doc restore_stderr) restore_stdout
 
 function __init__()
     global stdout_origin

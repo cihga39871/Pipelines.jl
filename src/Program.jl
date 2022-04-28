@@ -31,12 +31,54 @@ function check_outputs_keywords(p::Program, outputs::Dict{String})
 end
 
 """
-	check_dependency(p::Program)
+	check_dependency(p::Program; exit_when_fail::Bool=true)
 
 Check dependencies listed in `p.cmd_dependencies`.
 """
-function check_dependency(p::Program)
-	foreach(check_dependency, p.cmd_dependencies)
+function check_dependency(p::Program; exit_when_fail::Bool=true)
+	length(p.cmd_dependencies) == 0 && (return true)
+	final_res = true
+	for dep in p.cmd_dependencies
+		res = check_dependency(dep; exit_when_fail = exit_when_fail)
+		if !res
+			final_res = false
+		end
+	end
+	final_res
+end
+
+"""
+    check_dependency(m::Module = @__MODULE__; exit_when_fail = true, verbose = true)
+
+Check all `CmdDependency` and `Program` under `m::Module`.
+"""
+function check_dependency(m::Module = @__MODULE__; exit_when_fail = true, verbose = true)
+	verbose && (@info "Dependencies Status:")
+
+    deps = filter!(x -> isdefined(m, x) && (getfield(m, x) isa CmdDependency || getfield(m, x) isa Program), names(m))
+	length(deps) == 0 && (return true)
+
+	final_res = true
+	for dep_name in deps
+		dep = getfield(m, dep_name)
+		res = check_dependency(dep; exit_when_fail = exit_when_fail)
+		if res
+			verbose && (@info "    OK  $m.$dep_name")
+		else
+			verbose && (@info "  FAIL  $m.$dep_name")
+			final_res = false
+		end
+	end
+	return final_res
+end
+
+"""
+    status_dependency(m::Module = @__MODULE__; exit_when_fail = false, verbose = true)
+
+Check all `CmdDependency` and `Program` under `m::Module`. Similar to `check_dependency`, but do not `exit_when_fail` by default.
+"""
+function status_dependency(m::Module = @__MODULE__; exit_when_fail = false, verbose = true)
+	check_dependency(m; exit_when_fail = exit_when_fail, verbose = verbose)
 end
 
 function generate_run_uuid(inputs::Dict{String}, outputs::Dict{String})

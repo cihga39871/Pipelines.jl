@@ -1,5 +1,15 @@
 # Change log
 
+## v0.7.4
+
+- Fix: `check_dependency(p::Program)` return `::Bool` now.
+
+- Feature: `check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail)`: new argument `exit_when_fail` to override `p.exit_when_fail`.
+
+- Feature: new function to check all `CmdDependency` and `Program` under `m::Module`: `check_dependency(m::Module = @__MODULE__; exit_when_fail = true, verbose = true)`
+
+- Feature: new function to display dependency status: `status_dependency(m::Module = @__MODULE__; exit_when_fail = false, verbose = true)`.
+
 ## v0.7.3
 
 - Fix a method overwrite warning when defining `Base.redirect_stdout(f::Function, ::Nothing) = f()`: redirect_stdout and redirect_stderr are the same (::Base.RedirectStdStream) at least from julia v1.7, so defining redirect_stdout means redirect_stderr is also defined. If diff exists in previous julia versions, check first.

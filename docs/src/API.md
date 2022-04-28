@@ -3,6 +3,7 @@
 ## Program
 ```@docs
 Program
+infer_outputs
 ```
 
 ## Command Program
@@ -21,28 +22,28 @@ JuliaProgram()
 Base.run
 ```
 
-## Common Methods
-```@docs
-infer_outputs
-check_dependency(::Program)
-```
-
 ## Command Dependency
 ```@docs
-CmdDependency()
-check_dependency(::CmdDependency)
+CmdDependency
+check_dependency
 check_dependency_dir(path::AbstractString; exit_when_false=true)
 check_dependency_file(path::AbstractString; exit_when_false=true)
-exec
+```
+
+## Common Methods
+```@docs
+status_dependency
 ```
 
 ## Utils
 ```@docs
-to_str(::Cmd)
-to_cmd(::Cmd)
-split(::Cmd)
 replaceext(::String, ::AbstractString)
 removeext(::String)
+split(::Cmd)
+to_str(::Cmd)
+to_cmd(::Cmd)
+do_nothing
+isok
 ```
 
 ## Redirection

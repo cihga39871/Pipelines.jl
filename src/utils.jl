@@ -8,10 +8,21 @@ timestamp() = Dates.format(now(), "yyyy-mm-dd HH:MM:SS ")
 const UUID4 = uuid4(UUIDs.MersenneTwister(39871))
 
 ## simple functions
+"""
+	do_nothing() = nothing
+	do_nothing(x) = nothing
+	do_nothing(x, y) = nothing
+"""
 do_nothing() = nothing
 do_nothing(x) = nothing
 do_nothing(x, y) = nothing
 
+"""
+	isok(x::Nothing) = true
+	isok(x::Bool) = x
+	isok(x::AbstractString) = !isempty(x) && !occursin(r"^n(o|ull)?$|^f(alse)?$|^0$"i, x)
+	isok(x::Any) = true  # default is true
+"""
 isok(x::Nothing) = true
 isok(x::Bool) = x
 isok(x::AbstractString) = !isempty(x) && !occursin(r"^n(o|ull)?$|^f(alse)?$|^0$"i, x)

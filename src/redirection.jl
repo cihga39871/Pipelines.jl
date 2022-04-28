@@ -6,12 +6,13 @@ stderr_origin = nothing  # re-defined in __init__()
 
 """
 	restore_stdout()
-	restore_stderr()
 
-Restore the current stdout and stderr to the original stdout and stderr. It is useful when redirecting stdout/stderr fails when calling `redirect_to_files`, which happens when an old stream is closed and then redirected to.
+Restore the current stdout to the original stdout. It is useful when redirecting stdout/stderr fails when calling `redirect_to_files`, which happens when an old stream is closed and then redirected to.
 
 !!! note
     Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+
+See also `restore_stderr()`.
 """
 function restore_stdout()
 	global stdout_origin
@@ -21,6 +22,17 @@ function restore_stdout()
 		redirect_stdout(stdout_origin)
 	end
 end
+
+"""
+	restore_stderr()
+
+Restore the current stderr to the original stderr. It is useful when redirecting stdout/stderr fails when calling `redirect_to_files`, which happens when an old stream is closed and then redirected to.
+
+!!! note
+Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+
+See also `restore_stdout()`.
+"""
 function restore_stderr()
 	global stderr_origin
 	if isnothing(stderr_origin)

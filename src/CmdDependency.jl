@@ -95,7 +95,7 @@ function readall(cmd::Base.AbstractCmd)
 end
 
 """
-	check_dependency(p::CmdDependency) -> Bool
+	check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail) -> Bool
 
 Check `CmdDependency` by evaluating:
 
@@ -103,9 +103,9 @@ Check `CmdDependency` by evaluating:
 
 If success, return `true`.
 
-If fail, return `false`, or throw DependencyError when `p.exit_when_fail` set to `true`.
+If fail, return `false`, or throw DependencyError when `exit_when_fail` set to `true`.
 """
-function check_dependency(p::CmdDependency)
+function Pipelines.check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail)
     out, err, success = readall(`$p $(p.test_args)`)
 	has_dependency = true
 
@@ -137,7 +137,7 @@ function check_dependency(p::CmdDependency)
 	println(stderr, out)
 	println(stderr, "Dependency check stderr:")
 	println(stderr, err)
-	if p.exit_when_fail
+	if exit_when_fail
 		error("DependencyError: invalid: $p")
 	end
 	return false
