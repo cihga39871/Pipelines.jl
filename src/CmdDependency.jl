@@ -105,7 +105,7 @@ If success, return `true`.
 
 If fail, return `false`, or throw DependencyError when `exit_when_fail` set to `true`.
 """
-function Pipelines.check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail)
+function check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail)
     out, err, success = readall(`$p $(p.test_args)`)
 	has_dependency = true
 

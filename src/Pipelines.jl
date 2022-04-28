@@ -22,7 +22,8 @@ check_dependency_dir
 
 include("Program.jl")
 export Program,
-infer_outputs
+infer_outputs,
+status_dependency
 
 include("CmdProgram.jl")
 export CmdProgram,

@@ -20,7 +20,7 @@ do_nothing(x, y) = nothing
 """
 	isok(x::Nothing) = true
 	isok(x::Bool) = x
-	isok(x::AbstractString) = !isempty(x) && !occursin(r"^n(o|ull)?$|^f(alse)?$|^0$"i, x)
+	isok(x::AbstractString) = true unless x is "" / n / no / null / f / false / 0
 	isok(x::Any) = true  # default is true
 """
 isok(x::Nothing) = true

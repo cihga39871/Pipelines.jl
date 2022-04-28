@@ -59,13 +59,22 @@ function check_dependency(m::Module = @__MODULE__; exit_when_fail = true, verbos
 	length(deps) == 0 && (return true)
 
 	final_res = true
+	max_len = maximum([length(String(d)) for d in deps])
 	for dep_name in deps
+		nspace = max_len - length(String(dep_name))
+		space = " " ^ nspace
 		dep = getfield(m, dep_name)
 		res = check_dependency(dep; exit_when_fail = exit_when_fail)
-		if res
-			verbose && (@info "    OK  $m.$dep_name")
-		else
-			verbose && (@info "  FAIL  $m.$dep_name")
+		status = res ? "  OK" : "FAIL"
+		if verbose
+			if dep isa CmdDependency
+				@info "  $status  $m.$dep_name  $space$(dep.exec)"
+			else  # Program
+				@info "  $status  $m.$dep_name"
+			end
+		end
+
+		if !res
 			final_res = false
 		end
 	end
