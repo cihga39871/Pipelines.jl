@@ -14,7 +14,7 @@ Building reusable pipelines and workflows is easier than you have ever thought.
 
 - Supports external command lines and pure Julia functions.
 
-- Supports **resuming**/**retry** interrupted tasks, **skipping** finished tasks.
+- Supports **resuming** interrupted tasks, **retrying** failed tasks, and **skipping** finished tasks.
 
 - Supports dependency check.
 
