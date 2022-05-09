@@ -1,4 +1,4 @@
-mutable struct CmdProgram <: Program
+mutable struct CmdProgram <: Programkwargs
 	name::String
 	id_file::String
 	info_before::String
@@ -80,30 +80,19 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 	p = CmdProgram(
 		id_file = "id_file",
-		inputs = [
-			"input",
-			"input2" => Int,
-			"optional_arg" => 5,
-			"optional_arg2" => 0.5 => Number
-		],
-		outputs =
-			"output" => "<input>.output"
-		,
-		cmd = `echo input input2 optional_arg optional_arg2 output`
-	)
+		inputs = ["input",
+		          "input2" => Int,
+		          "optional_arg" => 5,
+		          "optional_arg2" => 0.5 => Number],
+		outputs = "output" => "<input>.output",
+		cmd = `echo input input2 optional_arg optional_arg2 output`)
 
-	inputs = Dict(
-		"input" => `in1`,
-		"input2" => 2
-	)
+	inputs = Dict("input" => `in1`,	"input2" => 2)
+	outputs = Dict("output" => "out")
+	run(p, inputs, outputs; touch_run_id_file = false)
 
-	outputs = Dict(
-		"output" => "out"
-	)
-
-	run(p, inputs, outputs;
-		touch_run_id_file = false
-	)
+	# Run program without creating `inputs::Dict` and `outputs::Dict`
+	@run p input=`in1` input2=2 output="out" touch_run_id_file=false
 """
 function CmdProgram(;
 	name::String               = "Command Program",
@@ -146,7 +135,7 @@ end
 
 """
 	run(
-		p::CmdProgram;
+		p::Program;
 		inputs=Dict{String}(),
 		outputs=Dict{String}(),
 		dir::AbstractString="",
@@ -162,20 +151,22 @@ end
 		append::Bool=false
 	) -> (success::Bool, outputs::Dict{String})
 
-	run(p::CmdProgram, inputs, outputs; kwargs...)
+	run(p::Program, inputs, outputs; kwargs...)
 
-	run(p::CmdProgram, inputs; kwargs...)
+	run(p::Program, inputs; kwargs...)
 	)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 
-Run Command Program (CmdProgram) using specified `inputs` and `outputs`.
+Run Program (CmdProgram or JuliaProgram) using specified `inputs` and `outputs`.
 
 Return `(success::Bool, outputs::Dict{String})`
 
-- `p::CmdProgram`: the command program template.
+- `p::Program`: the command or Julia program template.
 
-- `inputs::Dict{String}` and `outputs::Dict{String}`: `p::CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are `Dict(keyword::String => replacement)`. The replacements do not have a length limit, unless a *keyword* refers to a filename (length == 1).
+- `inputs` and `outputs`: `p::Program` stores a program template with replaceable portions as *keywords*. All keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are better to be `Dict(keyword::String => replacement)`.
 
   > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
+
+  > If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` ***only*** when the returned value is a `Dict{String}` and passes `p.validate_outputs`.
 
 - `dir::AbstractString = ""`: working directory to run the program and store `run_id_file`.
 
@@ -208,13 +199,13 @@ Return `(success::Bool, outputs::Dict{String})`
 
 5. Validate `inputs`. (`p.validate_inputs(inputs)`)
 
-6. Generate runnable command from `p` and `inputs/outputs`. (`stdout`, `stderr`, `append`)
+6. [CmdProgram only] Generate runnable command from `p` and `inputs/outputs`. (`stdout`, `stderr`, `append`)
 
 7. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
 
-8. Run command generated in #5.
+8. Run command [CmdProgram] or the main function [JuliaProgram].
 
-9. Validate `outputs`. (`p.validate_outputs(outputs)`)
+9. If `p isa CmdProgram`, validate `outputs` only. If `p isa JuliaProgram`, validate the returned value of the main function. If pass, `outputs` will ***overwritten by the returned value***. Otherwise, the original `outputs` is ***kept***. (`p.validate_outputs(outputs)`)
 
 10. Wrap up. (`p.wrap_up(inputs, outputs)`)
 
@@ -224,23 +215,23 @@ Return `(success::Bool, outputs::Dict{String})`
 
 	p = CmdProgram(
 		id_file = "id_file",
-		inputs = ["input", "input2"],
-		outputs = ["output"],
-		cmd = `echo input input2 output`
+		inputs = ["a", "b"],
+		outputs = ["c"],
+		cmd = `echo a b c`
 	)
 
 	inputs = Dict(
-		"input" => `in1`,
-		"input2" => 2
-	)
+		"a" => `in1`,
+		"b" => 2)
+	outputs = "c" => "out"
+	run(p, inputs, outputs; touch_run_id_file = false)
 
-	outputs = Dict(
-		"output" => "out"
-	)
+	# `@run` is an alternative to `run` without generating Dict of inputs and outputs
+	@run p a=`in1` b=2 c="out" touch_run_id_file=false
 
-	run(p, inputs, outputs;
-		touch_run_id_file = false
-	)
+# Alternative to `run`
+
+See also [`@run`](@ref)
 """
 function _run(
 	p::CmdProgram;

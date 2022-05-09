@@ -124,12 +124,12 @@ macro run(program, args...)
                     setindex!(outputs, Core.eval(@__MODULE__, val), key)
                 else  # may be keyword parameters of other functions, such as run, Job.
                     arg.head = :kw  # keyword head is :kw, rather than :(=)
-                    if !(arg.args[2] isa QuoteNode) # QuoteNode: such as :(:sym)
-                        arg.args[2] = Core.eval(@__MODULE__, arg.args[2])
+                    if !(val isa QuoteNode) # QuoteNode: such as :(:sym)
+                        arg.args[2] = Core.eval(@__MODULE__, val)
                     end
                     push!(kw_args, arg)
                 end
-            elseif arg.head == :(...)
+            elseif arg.head == :(...)  # common_args...
                 local extra_args = Core.eval(@__MODULE__, arg.args[1])
                 local extra_args_keys = keys(extra_args)
                 local extra_args_vals = values(extra_args)

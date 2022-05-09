@@ -238,8 +238,22 @@ run(p::Program, inputs; kwargs...)
 )  # only usable when outputs have default values.
 ```
 
+Or, you can use a macro version of `@run`:
+
+```julia
+@run p::Program key_value_args... run_args...
+```
+
+- `key_value_args`: the inputs and outputs are provided in the form of `key = value`, rather than `Dict`.
+
+- `run_args`: the keyword arguments pass to `run(p::Program, inputs, outputs, run_args...)`.
+
+
+
 !!! note
     Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different `Tasks` or multi-thread mode.
+
+
 
 !!! note "Compatibility with JobSchedulers.jl"
 

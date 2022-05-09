@@ -62,7 +62,7 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
   *HOW DOES THIS WORK?*
 
   > `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be set in `inputs::Vector{String}` and `outputs::Vector{String}`.
-  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value is `Dict{String}` with proper keys.
+  > Caution: the returned value of `p.main` will be assigned to new `outputs` when the returned value is `Dict{String}` with proper keys. Otherwise, a warning will show and the returned value will be the original `outputs::Dict`.
 
 - `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
 
@@ -76,42 +76,34 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
 - `validate_outputs::Function`: A function to validate outputs. It takes *one* argument `Dict{String}` whose keys are the same as `outputs`. If validation fail, throw error or return false.
 
+  > Caution: the returned value of `p.main` will be assigned to new `outputs` when the returned value is `Dict{String}` with proper keys. Otherwise, a warning will show and the returned value will be the original `outputs::Dict`.
+
 - `wrap_up::Function`: the last function to run. It takes *two* arguments `Dict{String}` whose keys are the same as `inputs` and `outputs`, respectively.
 
 # Example
 
 	p = JuliaProgram(
 		id_file = "id_file",
-		inputs = [
-			"a",
-			"b" => Int
-		],
-		outputs =
-			"c" => "<a>.<b>"
-		,
+		inputs = ["a",
+		          "b" => Int],
+		outputs = "c" => "<a>.<b>",
 		main = (inputs, outputs) -> begin
 			a = inputs["a"]
 			b = inputs["b"]
 			println("inputs are ", a, " and ", b)
 			println("You can also use info in outputs: ", outputs["c"])
 	        println("The returned value will be assigned to a new outputs")
-
 	        return Dict{String,Any}("c" => b^2)
-		end
-	)
+		end)
 
-	inputs = Dict(
-		"a" => `in1`,
-		"b" => 2
-	)
+	inputs = Dict("a" => `in1`, "b" => 2)
+	outputs = "c" => "out"
+	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
 
-	outputs = Dict(
-		"c" => "out"
-	)
+	@assert new_out != outputs  # outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
 
-	success, outputs = run(p, inputs, outputs;
-		touch_run_id_file = false
-	) # outputs will be refreshed
+	# Run program without creating `inputs::Dict` and `outputs::Dict`
+	success, new_out = @run p a=`in1` b=2 c="out" touch_run_id_file=false
 """
 function JuliaProgram(;
 	name::String               = "Julia Program",
@@ -152,113 +144,6 @@ function JuliaProgram(;
 	)
 end
 
-"""
-------------
-
-	run(
-		p::JuliaProgram;
-		inputs=Dict{String}(),
-		outputs=Dict{String}(),
-		dir::AbstractString="",
-		check_dependencies::Bool=true,
-		skip_when_done::Bool=true,
-		touch_run_id_file::Bool=true,
-		verbose=true,
-		retry::Int=0,
-		dry_run::Bool=false,
-		stdout=nothing,
-		stderr=nothing,
-		stdlog=nothing,
-		append::Bool=false
-	) -> (success::Bool, outputs::Dict{String})
-
-	run(p::JuliaProgram, inputs, outputs; kwargs...)
-
-	run(p::JuliaProgram, inputs; kwargs...)
-	)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
-
-Run Julia Program (JuliaProgram) using specified `inputs` and `outputs`.
-
-Return `(success::Bool, outputs::Dict{String})`
-
-- `p::JuliaProgram`: the command program template.
-
-- `inputs::Dict{String}` and `outputs::Dict{String}`: `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be the same as `p.inputs::Vector{String}` and `p.outputs::Vector{String}`.
-
-  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
-  > *Caution:* the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value of `p.main` is `Dict{String}` with proper keys.
-
-- `dir::AbstractString = ""`: working directory to run the program and store `run_id_file`.
-
-- `check_dependencies::Bool = true`: check dependencies for `p` (`p.cmd_dependencies`).
-
-- `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
-
-- `touch_run_id_file::Bool = true`: If `true`, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If `false`, the next time running the program, `skip_when_done=true` will not take effect.
-
-- `verbose = true`: If `true` or `:all`, print all info and error messages. If `:min`, print minimum info and error messages. If `false` or `:none`, print error messages only.
-
-- `retry::Int = 0`: If failed, retry for INT times.
-
-- `dry_run::Bool = false`: do not run the command, return `(fake_outputs::Dict{String}, run_id_file::String)`.
-
-- `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If the original function (`p.main`) has redirection, arguments defined here might not be effective for it.
-
-!!! note
-    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
-
-### Workflow
-
-1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
-
-2. Validate compatibility between `p` and `inputs/outputs`.
-
-3. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs(outputs)`)
-
-4. Check command dependencies. (`check_dependencies`, `p.cmd_dependencies`)
-
-5. Validate `inputs`. (`p.validate_inputs(inputs)`)
-
-6. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
-
-7. Run main function and ***the returned value will be assigned to new `outputs`***. (`outputs = p.main(inputs, outputs)`)
-
-8. Validate `outputs`. (`p.validate_outputs(outputs)`)
-
-9. Wrap up. (`p.wrap_up(inputs, outputs)`)
-
-10. Success, touch run id file, and return `(success::Bool, outputs::Dict{String})`. (`touch_run_id_file::Bool`)
-
-# Example
-
-	p = JuliaProgram(
-		id_file = "id_file",
-		inputs = ["a", "b"],
-		outputs = ["out"],
-		main = (inputs, outputs) -> begin
-			a = inputs["a"]
-			b = inputs["b"]
-			println("inputs are ", a, " and ", b)
-			println("You can also use info in outputs: ", outputs["out"])
-
-			println("The returned value will be assigned to a new outputs")
-			return Dict{String,Any}("out" => b^2)
-		end
-	)
-
-	inputs = Dict(
-		"a" => `in1`,
-		"b" => 2
-	)
-
-	outputs = Dict(
-		"out" => "will_be_replaced"
-	)
-
-	success, outputs = run(p, inputs, outputs;
-		touch_run_id_file = false
-	) # outputs will be refreshed
-"""
 function _run(
 	p::JuliaProgram;
 	inputs=Dict{String, Any}(),
