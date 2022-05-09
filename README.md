@@ -6,7 +6,7 @@ Building reusable pipelines and workflows is easier than you have ever thought.
 
 | **Documentation**                                                               |
 |:-------------------------------------------------------------------------------:|
-| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://cihga39871.github.io/Pipelines.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://cihga39871.github.io/Pipelines.jl/dev) |
+| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://cihga39871.github.io/Pipelines.jl/dev) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://cihga39871.github.io/Pipelines.jl/dev) |
 
 ## Package Features
 
@@ -14,7 +14,7 @@ Building reusable pipelines and workflows is easier than you have ever thought.
 
 - Supports external command lines and pure Julia functions.
 
-- Supports **resuming** interrupted tasks, **skipping** finished tasks.
+- Supports **resuming**/**retry** interrupted tasks, **skipping** finished tasks.
 
 - Supports dependency check.
 
