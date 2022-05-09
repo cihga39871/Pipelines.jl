@@ -1,5 +1,11 @@
 # Change log
 
+## v0.7.5
+
+- Feature: Simplify: new macro `@run program key_value_args... run_args...`: Run `program` without creating `inputs::Dict` and `outputs::Dict`. The inputs and outputs are provided in the form of `key = value`, rather than `Dict`.
+
+- Feature: Simplify: new macro `@vars program::Program key_value_args...`: Return runable `(inputs::Dict, outputs::Dict)` for `program` using `key_value_args` in the form of `key = value`.
+
 ## v0.7.4
 
 - Fix: `check_dependency(p::Program)` return `::Bool` now.

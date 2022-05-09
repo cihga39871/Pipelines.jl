@@ -93,7 +93,7 @@ end
 function generate_run_uuid(inputs::Dict{String}, outputs::Dict{String})
 	out_uuid = UUID4
 	for d in (inputs, outputs)
-		sd = sort(d)
+		sd = sort(OrderedDict(d))
 		for (k,v) in sd
 			out_uuid = uuid5(out_uuid, string(k, ":", v))
 		end

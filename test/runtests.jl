@@ -321,7 +321,8 @@ rm("x", force=true)
 
 
 ## macro
-p = CmdProgram(
+jp = JuliaProgram(
+	name = "Echo",
 	id_file = "id_file",
 	inputs = [
 		"input",
@@ -332,14 +333,25 @@ p = CmdProgram(
 	outputs = [
 		"output" => "<input>.output"
 	],
-	cmd = `echo input input2 optional_arg optional_arg2 output`
+	main = (x,y) -> begin
+		@show x
+		@show y
+		y
+	end
 )
 
 i = "iout"
 kk = :xxx
-ins, outs = @vars p input = kk input2 = 22 optional_arg = :sym output = i
+ins, outs = @vars jp input = kk input2 = 22 optional_arg = :sym output = i
 @test ins == Dict{String, Any}("optional_arg" => :sym, "input" => kk, "input2" => 22)
 @test outs == Dict{String,Any}("output" => "iout")
+# run(jp, ins, outs; touch_run_id_file = false)
+
+b = false
+commonargs = (touch_run_id_file = b, verbose = :min)
+run_res = @run jp input = kk input2 = 22 optional_arg = :min output = i touch_run_id_file = b
+run_res = @run jp input = kk input2 = 22 optional_arg = :min output = i touch_run_id_file = b verbose = :min
+run_res = @run jp input = kk input2 = 22 optional_arg = :sym output = i commonargs...
 
 # clean up
 cd(homedir())
