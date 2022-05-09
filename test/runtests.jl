@@ -320,6 +320,27 @@ rm("x", force=true)
 @test pj_error_res[1]
 
 
+## macro
+p = CmdProgram(
+	id_file = "id_file",
+	inputs = [
+		"input",
+		"input2" => Int,
+		"optional_arg" => 5,
+		"optional_arg2" => 0.5 => Number
+	],
+	outputs = [
+		"output" => "<input>.output"
+	],
+	cmd = `echo input input2 optional_arg optional_arg2 output`
+)
+
+i = "iout"
+kk = :xxx
+ins, outs = @vars p input = kk input2 = 22 optional_arg = :sym output = i
+@test ins == Dict{String, Any}("optional_arg" => :sym, "input" => kk, "input2" => 22)
+@test outs == Dict{String,Any}("output" => "iout")
+
 # clean up
 cd(homedir())
 rm(tmp, recursive=true)

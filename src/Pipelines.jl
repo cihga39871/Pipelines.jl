@@ -34,6 +34,9 @@ export JuliaProgram
 
 include("pretty_print.jl")
 
+include("macros.jl")
+export @vars
+
 # binding documentations
 @doc (@doc _run) run
 
