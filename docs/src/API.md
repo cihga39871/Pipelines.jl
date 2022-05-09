@@ -20,6 +20,8 @@ JuliaProgram()
 ## Run Programs
 ```@docs
 Base.run
+@run
+@vars
 ```
 
 ## Command Dependency

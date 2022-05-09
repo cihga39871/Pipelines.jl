@@ -69,24 +69,32 @@ inputs = Dict(
 run(echo, inputs)
 ```
 
+To make life easier, you can also use the macro version of `@run`:
+
+```julia
+@run(echo, REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
+```
+
 !!! note "Program will not run twice by default!"
     If you run a program with the same inputs again, the program will just return the same result, display a warning message without running the command twice.
 
     ```julia
     run(echo, inputs)
     ```
-    
+
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
-    
+
     ```julia
     # Method 1: stop checking finished program
     run(echo, inputs; skip_when_done = false)
-    
+
     # Method 2: delete the run_id_file before running again:
     cmd, run_id_file = run(echo, inputs; dry_run = true) # Dry-run returns the command and run id file without running it.
+    cmd2, run_id_file2 = @run(echo, REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy, dry_run = true)
     rm(run_id_file)  # remove the run_id_file
-    
-    # Method 3: Do not generate run_id_file when first running.
+    rm(run_id_file2)  # remove the second run_id_file
+
+    # Method 3: Do not generate run_id_file after a successful run.
     run(echo, inputs; touch_run_id_file=false)
     ```
 
@@ -112,9 +120,15 @@ outputs = "OUTPUT_FILE" => "out.txt" # save output to file
 
 run(prog, inputs, outputs) # will return (success::Bool, outputs)
 
+# If using @run, inputs and outputs can be mixed together:
+@run(prog, INPUT1 = "Good", INPUT2 = "Morning", INPUT3 = "Human", OUTPUT_FILE = "morning.txt")
+
 run(`cat out.txt`) # print the content of out.txt
 # 39871
 # Hello, Pipeline.jl
+run(`cat morning.txt`) # print the content of out.txt
+# Good Morning
+# Human
 ```
 
 ### Default values
@@ -181,4 +195,3 @@ Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihg
 ## Future Development
 
 - Support running competitive tasks with **locks**.
-
