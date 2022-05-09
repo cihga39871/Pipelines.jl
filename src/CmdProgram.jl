@@ -1,4 +1,4 @@
-mutable struct CmdProgram <: Programkwargs
+mutable struct CmdProgram <: Program
 	name::String
 	id_file::String
 	info_before::String
