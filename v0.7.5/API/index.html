@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>API · Pipelines.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Pipelines.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../command_program/">Command Program</a></li><li><a class="tocitem" href="../julia_program/">Julia Program</a></li><li><a class="tocitem" href="../command_dependency/">Command Dependency</a></li></ul></li><li class="is-active"><a class="tocitem" href>API</a><ul class="internal"><li><a class="tocitem" href="#Program"><span>Program</span></a></li><li><a class="tocitem" href="#Command-Program"><span>Command Program</span></a></li><li><a class="tocitem" href="#Julia-Program"><span>Julia Program</span></a></li><li><a class="tocitem" href="#Run-Programs"><span>Run Programs</span></a></li><li><a class="tocitem" href="#Command-Dependency"><span>Command Dependency</span></a></li><li><a class="tocitem" href="#Common-Methods"><span>Common Methods</span></a></li><li><a class="tocitem" href="#Utils"><span>Utils</span></a></li><li><a class="tocitem" href="#Redirection"><span>Redirection</span></a></li></ul></li><li><a class="tocitem" href="../changelog/">Change Log</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>API</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>API</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/cihga39871/Pipelines.jl/blob/master/docs/src/API.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="API"><a class="docs-heading-anchor" href="#API">API</a><a id="API-1"></a><a class="docs-heading-anchor-permalink" href="#API" title="Permalink"></a></h1><h2 id="Program"><a class="docs-heading-anchor" href="#Program">Program</a><a id="Program-1"></a><a class="docs-heading-anchor-permalink" href="#Program" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="Pipelines.Program" href="#Pipelines.Program"><code>Pipelines.Program</code></a> — <span class="docstring-category">Type</span></header><section><div><p><strong>Summary</strong></p><pre><code class="language-none">abstract type Program &lt;: Any</code></pre><p><strong>Subtypes</strong></p><pre><code class="language-none">CmdProgram
+JuliaProgram</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/Program.jl#L2-L11">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.infer_outputs" href="#Pipelines.infer_outputs"><code>Pipelines.infer_outputs</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">infer_outputs(p::Program, inputs)
+infer_outputs(p::Program, inputs, outputs)</code></pre><p>Infer the default outputs from <code>p::Program</code> and <code>inputs::Dict{String}</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/Program.jl#L14-L19">source</a></section></article><h2 id="Command-Program"><a class="docs-heading-anchor" href="#Command-Program">Command Program</a><a id="Command-Program-1"></a><a class="docs-heading-anchor-permalink" href="#Command-Program" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="Pipelines.CmdProgram-Tuple{}" href="#Pipelines.CmdProgram-Tuple{}"><code>Pipelines.CmdProgram</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">CmdProgram &lt;: Program
+
+CmdProgram(;
+	name::String               = &quot;Command Program&quot;,
+	id_file::String            = &quot;&quot;,
+	info_before::String        = &quot;auto&quot;,
+	info_after::String         = &quot;auto&quot;,
+	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
+	inputs                     = Vector{String}(),
+	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
+	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
+	cmd::Base.AbstractCmd      = ``,
+	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
+	outputs                    = Vector{String}(),
+	validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
+	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
+) -&gt; CmdProgram</code></pre><p>Command program template. To run a <code>CmdProgram</code>, use <code>run(::CmdProgram; kwargs...).</code></p><p><strong>Arguments</strong></p><ul><li><p><code>name::String</code>: Program name.</p></li><li><p><code>id_file::String</code>: The prefix of <em>run ID file</em>. To prevent from running the program with the same inputs and outputs twice, it will generate a unique <em>run ID file</em> after a successful run.</p></li><li><p><code>info_before::String</code>: Print it when the program is started.</p></li><li><p><code>info_after::String</code>: Print it when the program is finished.</p></li><li><p><code>cmd_dependencies::Vector{CmdDependency}</code>: Any command dependencies used in the program.</p></li><li><p><code>inputs</code> and <code>outputs</code>: Elements (or vectors containing elements) in the following format: (1) <code>keyword</code> (2) <code>keyword =&gt; data_type</code> (3) <code>keyword =&gt; default_value</code> (4) <code>keyword =&gt; default_value =&gt; data_type</code>.</p><p><code>keyword</code> is an argument name, can be <code>String</code> or <code>Symbol</code>.</p><p><code>default_value</code> is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: <code>nothing</code> is preserved and means default value not set. If <code>String</code>, it can contain other keywords, but need to quote using &#39;&lt;&gt;&#39;, such as <code>&quot;&lt;arg&gt;.txt&quot;</code></p><p><code>data_type</code> is optional. If set, the value provided have to be this data type, or an error will throw.</p><p><em>HOW DOES THIS WORK?</em></p><blockquote><p><code>CmdProgram</code> stores a command template. In the template, replaceable portions are occupied by <em>keywords</em>, and all keywords are set in <code>inputs</code> and <code>outputs</code>. <code>keyword</code>s will be replaced before running the program. Users need to provide a dictionary of <code>keyword::String =&gt; value</code> in <code>run(::Program, inputs::Dict{String}, outputs::Dict{String})</code>.</p></blockquote></li><li><p><code>validate_inputs::Function</code>: A function to validate inputs. It takes <em>one</em> argument <code>Dict{String, ValidInputTypes}</code> whose keys are the same as <code>inputs</code>. If validation fail, throw error or return false.</p></li><li><p><code>prerequisites</code>: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes <em>two</em> arguments <code>Dict{String, ValidInputTypes}</code> whose keys are the same as <code>inputs</code> and <code>outputs</code>, respectively.</p></li><li><p><code>cmd::AbstractCmd</code>: The main command template. In the template, keywords in <code>inputs::Vector{String}</code> and <code>outputs::Vector{String}</code> will be replaced when envoking <code>run(::CmdProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})</code>.</p></li><li><p><code>infer_outputs::Function</code>: A function to infer outputs from inputs. It takes <em>one</em> argument <code>Dict{String, ValidInputTypes}</code> whose keys are the same as <code>inputs</code>.</p></li><li><p><code>validate_outputs::Function</code>: A function to validate outputs. It takes <em>one</em> argument <code>Dict{String, ValidInputTypes}</code> whose keys are the same as <code>outputs</code>. If validation fail, throw error or return false.</p></li><li><p><code>wrap_up::Function</code>: the last function to run. It takes <em>two</em> arguments <code>Dict{String, ValidInputTypes}</code> whose keys are the same as <code>inputs</code> and <code>outputs</code>, respectively.</p></li></ul><p><strong>Example</strong></p><pre><code class="language-none">p = CmdProgram(
+	id_file = &quot;id_file&quot;,
+	inputs = [
+		&quot;input&quot;,
+		&quot;input2&quot; =&gt; Int,
+		&quot;optional_arg&quot; =&gt; 5,
+		&quot;optional_arg2&quot; =&gt; 0.5 =&gt; Number
+	],
+	outputs =
+		&quot;output&quot; =&gt; &quot;&lt;input&gt;.output&quot;
+	,
+	cmd = `echo input input2 optional_arg optional_arg2 output`
+)
+
+inputs = Dict(
+	&quot;input&quot; =&gt; `in1`,
+	&quot;input2&quot; =&gt; 2
+)
+
+outputs = Dict(
+	&quot;output&quot; =&gt; &quot;out&quot;
+)
+
+run(p, inputs, outputs;
+	touch_run_id_file = false
+)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/CmdProgram.jl#L21-L107">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.prepare_cmd" href="#Pipelines.prepare_cmd"><code>Pipelines.prepare_cmd</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">prepare_cmd(p::CmdProgram, inputs, outputs)</code></pre><p>Prepare the runable command. Keywords in CmdProgram will be given to values of inputs/outputs.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/CmdProgram.jl#L432-L436">source</a></section></article><h2 id="Julia-Program"><a class="docs-heading-anchor" href="#Julia-Program">Julia Program</a><a id="Julia-Program-1"></a><a class="docs-heading-anchor-permalink" href="#Julia-Program" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="Pipelines.JuliaProgram-Tuple{}" href="#Pipelines.JuliaProgram-Tuple{}"><code>Pipelines.JuliaProgram</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">JuliaProgram &lt;: Program
+
+JuliaProgram(;
+	name::String               = &quot;Unnamed Command Program&quot;,
+	id_file::String            = &quot;&quot;,
+	info_before::String        = &quot;auto&quot;,
+	info_after::String         = &quot;auto&quot;,
+	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
+	inputs                     = Vector{String}(),
+	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
+	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
+	main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
+	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
+	outputs                    = Vector{String}(),
+	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
+	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
+) -&gt; JuliaProgram</code></pre><p>Julia program template. To run a <code>JuliaProgram</code>, use <code>run(::JuliaProgram; kwargs...).</code></p><p><strong>Arguments</strong></p><ul><li><p><code>name::String</code>: Program name.</p></li><li><p><code>id_file::String</code>: The prefix of <em>run ID file</em>. To prevent from running the program with the same inputs and outputs twice, it will generate a unique <em>run ID file</em> after a successful run.</p></li><li><p><code>info_before::String</code>: Print it when the program is started.</p></li><li><p><code>info_after::String</code>: Print it when the program is finished.</p></li><li><p><code>cmd_dependencies::Vector{CmdDependency}</code>: Any command dependencies used in the program.</p></li><li><p><code>inputs</code> and <code>outputs</code>: Elements (or vectors containing elements) in the following format: (1) <code>keyword</code> (2) <code>keyword =&gt; data_type</code> (3) <code>keyword =&gt; default_value</code> (4) <code>keyword =&gt; default_value =&gt; data_type</code>.</p><p><code>keyword</code> is an argument name, can be <code>String</code> or <code>Symbol</code>.</p><p><code>default_value</code> is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: <code>nothing</code> is preserved and means default value not set. If <code>String</code>, it can contain other keywords, but need to quote using &#39;&lt;&gt;&#39;, such as <code>&quot;&lt;arg&gt;.txt&quot;</code></p><p><code>data_type</code> is optional. If set, the value provided have to be this data type, or an error will throw.</p><p><em>HOW DOES THIS WORK?</em></p><blockquote><p><code>JuliaProgram</code> stores a Julia function, with two arguments <code>inputs::Dict{String}, outputs::Dict{String}</code>. The keys of the two arguments should be set in <code>inputs::Vector{String}</code> and <code>outputs::Vector{String}</code>. Caution: the returned value of <code>p.main</code> will be assigned to new <code>outputs</code>. Please ensure the returned value is <code>Dict{String}</code> with proper keys.</p></blockquote></li><li><p><code>validate_inputs::Function</code>: A function to validate inputs. It takes <em>one</em> argument <code>Dict{String}</code> whose keys are the same as <code>inputs</code>. If validation fail, throw error or return false.</p></li><li><p><code>prerequisites</code>: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes <em>two</em> arguments <code>Dict{String}</code> whose keys are the same as <code>inputs</code> and <code>outputs</code>, respectively.</p></li><li><p><code>main::Function</code>: The main julia function. It takes <em>two</em> arguments <code>Dict{String}</code> whose keys are the same as <code>inputs</code> and <code>outputs</code>, respectively.</p><blockquote><p>Caution: the returned value of <code>p.main</code> will be assigned to new <code>outputs</code>. Please ensure the returned value is <code>Dict{String}</code> with proper keys.</p></blockquote></li><li><p><code>infer_outputs::Function</code>: A function to infer outputs from inputs. It takes <em>one</em> argument <code>Dict{String}</code> whose keys are the same as <code>inputs</code>.</p></li><li><p><code>validate_outputs::Function</code>: A function to validate outputs. It takes <em>one</em> argument <code>Dict{String}</code> whose keys are the same as <code>outputs</code>. If validation fail, throw error or return false.</p></li><li><p><code>wrap_up::Function</code>: the last function to run. It takes <em>two</em> arguments <code>Dict{String}</code> whose keys are the same as <code>inputs</code> and <code>outputs</code>, respectively.</p></li></ul><p><strong>Example</strong></p><pre><code class="language-none">p = JuliaProgram(
+	id_file = &quot;id_file&quot;,
+	inputs = [
+		&quot;a&quot;,
+		&quot;b&quot; =&gt; Int
+	],
+	outputs =
+		&quot;c&quot; =&gt; &quot;&lt;a&gt;.&lt;b&gt;&quot;
+	,
+	main = (inputs, outputs) -&gt; begin
+		a = inputs[&quot;a&quot;]
+		b = inputs[&quot;b&quot;]
+		println(&quot;inputs are &quot;, a, &quot; and &quot;, b)
+		println(&quot;You can also use info in outputs: &quot;, outputs[&quot;c&quot;])
+        println(&quot;The returned value will be assigned to a new outputs&quot;)
+
+        return Dict{String,Any}(&quot;c&quot; =&gt; b^2)
+	end
+)
+
+inputs = Dict(
+	&quot;a&quot; =&gt; `in1`,
+	&quot;b&quot; =&gt; 2
+)
+
+outputs = Dict(
+	&quot;c&quot; =&gt; &quot;out&quot;
+)
+
+success, outputs = run(p, inputs, outputs;
+	touch_run_id_file = false
+) # outputs will be refreshed</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/JuliaProgram.jl#L21-L115">source</a></section></article><h2 id="Run-Programs"><a class="docs-heading-anchor" href="#Run-Programs">Run Programs</a><a id="Run-Programs-1"></a><a class="docs-heading-anchor-permalink" href="#Run-Programs" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="Base.run" href="#Base.run"><code>Base.run</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">run(
+	p::CmdProgram;
+	inputs=Dict{String}(),
+	outputs=Dict{String}(),
+	dir::AbstractString=&quot;&quot;,
+	check_dependencies::Bool=true,
+	skip_when_done::Bool=true,
+	touch_run_id_file::Bool=true,
+	verbose=true,
+	retry::Int=0,
+	dry_run::Bool=false,
+	stdout=nothing,
+	stderr=nothing,
+	stdlog=nothing,
+	append::Bool=false
+) -&gt; (success::Bool, outputs::Dict{String})
+
+run(p::CmdProgram, inputs, outputs; kwargs...)
+
+run(p::CmdProgram, inputs; kwargs...)
+)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.</code></pre><p>Run Command Program (CmdProgram) using specified <code>inputs</code> and <code>outputs</code>.</p><p>Return <code>(success::Bool, outputs::Dict{String})</code></p><ul><li><p><code>p::CmdProgram</code>: the command program template.</p></li><li><p><code>inputs::Dict{String}</code> and <code>outputs::Dict{String}</code>: <code>p::CmdProgram</code> stores a command template. In the template, replaceable portions are occupied by <em>keywords</em>, and all keywords can be found at <code>p.inputs</code> and <code>p.outputs</code> string vectors. Here, <code>inputs</code> and <code>outputs</code> are <code>Dict(keyword::String =&gt; replacement)</code>. The replacements do not have a length limit, unless a <em>keyword</em> refers to a filename (length == 1).</p><blockquote><p>If data types of <code>inputs</code> and <code>outputs</code> are not <code>Dict{String}</code>, they will be converted as far as possible. If the conversion fails, program will throw an error.</p></blockquote></li><li><p><code>dir::AbstractString = &quot;&quot;</code>: working directory to run the program and store <code>run_id_file</code>.</p></li><li><p><code>check_dependencies::Bool = true</code>: check dependencies for <code>p</code> (<code>p.cmd_dependencies</code>).</p></li><li><p><code>skip_when_done::Bool = true</code>: Skip running the program and return <code>true</code> if it has been done before (the <code>run_id_file</code> exists and <code>p.validate_outputs(outputs)</code> passes.)</p></li><li><p><code>touch_run_id_file::Bool = true</code>: If <code>true</code>, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If <code>false</code>, the next time running the program, <code>skip_when_done=true</code> will not take effect.</p></li><li><p><code>verbose = true</code>: If <code>true</code> or <code>:all</code>, print all info and error messages. If <code>:min</code>, print minimum info and error messages. If <code>false</code> or <code>:none</code>, print error messages only.</p></li><li><p><code>retry::Int = 0</code>: If failed, retry for INT times.</p></li><li><p><code>dry_run::Bool = false</code>: do not run the command, return <code>(command::AbstractCmd, run_id_file::String)</code>.</p></li><li><p><code>stdout</code>, <code>stderr</code>, <code>stdlog</code> and <code>append</code>: Redirect the program outputs to files. <code>stdlog</code> is the Julia logging of <code>@info</code>, <code>@warn</code>, <code>@error</code>, etc. Caution: If the original command (<code>p.cmd</code>) has redirection, arguments defined here might not be effective for the command.</p></li></ul><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different <code>Tasks</code> or multi-thread mode.</p></div></div><p><strong>Workflow</strong></p><ol><li><p>Go to the working directory. Establish redirection. (<code>dir</code>, <code>stdout</code>, <code>stderr</code>, <code>stdlog</code>, <code>append</code>).</p></li><li><p>Validate compatibility between <code>p</code> and <code>inputs/outputs</code>.</p></li><li><p>Check whether the program has run before. (<code>skip_when_done</code>, <code>p.validate_outputs(outputs)</code>)</p></li><li><p>Check command dependencies. (<code>check_dependencies</code>, <code>p.cmd_dependencies</code>)</p></li><li><p>Validate <code>inputs</code>. (<code>p.validate_inputs(inputs)</code>)</p></li><li><p>Generate runnable command from <code>p</code> and <code>inputs/outputs</code>. (<code>stdout</code>, <code>stderr</code>, <code>append</code>)</p></li><li><p>Preparing before running main command. (<code>p.prerequisites(inputs, outputs)</code>)</p></li><li><p>Run command generated in #5.</p></li><li><p>Validate <code>outputs</code>. (<code>p.validate_outputs(outputs)</code>)</p></li><li><p>Wrap up. (<code>p.wrap_up(inputs, outputs)</code>)</p></li><li><p>Success, touch run id file, and return <code>(success::Bool, outputs::Dict{String})</code>. (<code>touch_run_id_file::Bool</code>)</p></li></ol><p><strong>Example</strong></p><pre><code class="language-none">p = CmdProgram(
+	id_file = &quot;id_file&quot;,
+	inputs = [&quot;input&quot;, &quot;input2&quot;],
+	outputs = [&quot;output&quot;],
+	cmd = `echo input input2 output`
+)
+
+inputs = Dict(
+	&quot;input&quot; =&gt; `in1`,
+	&quot;input2&quot; =&gt; 2
+)
+
+outputs = Dict(
+	&quot;output&quot; =&gt; &quot;out&quot;
+)
+
+run(p, inputs, outputs;
+	touch_run_id_file = false
+)</code></pre><hr/><pre><code class="language-none">run(
+	p::JuliaProgram;
+	inputs=Dict{String}(),
+	outputs=Dict{String}(),
+	dir::AbstractString=&quot;&quot;,
+	check_dependencies::Bool=true,
+	skip_when_done::Bool=true,
+	touch_run_id_file::Bool=true,
+	verbose=true,
+	retry::Int=0,
+	dry_run::Bool=false,
+	stdout=nothing,
+	stderr=nothing,
+	stdlog=nothing,
+	append::Bool=false
+) -&gt; (success::Bool, outputs::Dict{String})
+
+run(p::JuliaProgram, inputs, outputs; kwargs...)
+
+run(p::JuliaProgram, inputs; kwargs...)
+)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.</code></pre><p>Run Julia Program (JuliaProgram) using specified <code>inputs</code> and <code>outputs</code>.</p><p>Return <code>(success::Bool, outputs::Dict{String})</code></p><ul><li><p><code>p::JuliaProgram</code>: the command program template.</p></li><li><p><code>inputs::Dict{String}</code> and <code>outputs::Dict{String}</code>: <code>JuliaProgram</code> stores a Julia function, with two arguments <code>inputs::Dict{String}, outputs::Dict{String}</code>. The keys of the two arguments should be the same as <code>p.inputs::Vector{String}</code> and <code>p.outputs::Vector{String}</code>.</p><blockquote><p>If data types of <code>inputs</code> and <code>outputs</code> are not <code>Dict{String}</code>, they will be converted as far as possible. If the conversion fails, program will throw an error. <em>Caution:</em> the returned value of <code>p.main</code> will be assigned to new <code>outputs</code>. Please ensure the returned value of <code>p.main</code> is <code>Dict{String}</code> with proper keys.</p></blockquote></li><li><p><code>dir::AbstractString = &quot;&quot;</code>: working directory to run the program and store <code>run_id_file</code>.</p></li><li><p><code>check_dependencies::Bool = true</code>: check dependencies for <code>p</code> (<code>p.cmd_dependencies</code>).</p></li><li><p><code>skip_when_done::Bool = true</code>: Skip running the program and return <code>true</code> if it has been done before (the <code>run_id_file</code> exists and <code>p.validate_outputs(outputs)</code> passes.)</p></li><li><p><code>touch_run_id_file::Bool = true</code>: If <code>true</code>, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If <code>false</code>, the next time running the program, <code>skip_when_done=true</code> will not take effect.</p></li><li><p><code>verbose = true</code>: If <code>true</code> or <code>:all</code>, print all info and error messages. If <code>:min</code>, print minimum info and error messages. If <code>false</code> or <code>:none</code>, print error messages only.</p></li><li><p><code>retry::Int = 0</code>: If failed, retry for INT times.</p></li><li><p><code>dry_run::Bool = false</code>: do not run the command, return <code>(fake_outputs::Dict{String}, run_id_file::String)</code>.</p></li><li><p><code>stdout</code>, <code>stderr</code>, <code>stdlog</code> and <code>append</code>: Redirect the program outputs to files. <code>stdlog</code> is the Julia logging of <code>@info</code>, <code>@warn</code>, <code>@error</code>, etc. Caution: If the original function (<code>p.main</code>) has redirection, arguments defined here might not be effective for it.</p></li></ul><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different <code>Tasks</code> or multi-thread mode.</p></div></div><p><strong>Workflow</strong></p><ol><li><p>Go to the working directory. Establish redirection. (<code>dir</code>, <code>stdout</code>, <code>stderr</code>, <code>stdlog</code>, <code>append</code>).</p></li><li><p>Validate compatibility between <code>p</code> and <code>inputs/outputs</code>.</p></li><li><p>Check whether the program has run before. (<code>skip_when_done</code>, <code>p.validate_outputs(outputs)</code>)</p></li><li><p>Check command dependencies. (<code>check_dependencies</code>, <code>p.cmd_dependencies</code>)</p></li><li><p>Validate <code>inputs</code>. (<code>p.validate_inputs(inputs)</code>)</p></li><li><p>Preparing before running main command. (<code>p.prerequisites(inputs, outputs)</code>)</p></li><li><p>Run main function and ***the returned value will be assigned to new <code>outputs</code>***. (<code>outputs = p.main(inputs, outputs)</code>)</p></li><li><p>Validate <code>outputs</code>. (<code>p.validate_outputs(outputs)</code>)</p></li><li><p>Wrap up. (<code>p.wrap_up(inputs, outputs)</code>)</p></li><li><p>Success, touch run id file, and return <code>(success::Bool, outputs::Dict{String})</code>. (<code>touch_run_id_file::Bool</code>)</p></li></ol><p><strong>Example</strong></p><pre><code class="language-none">p = JuliaProgram(
+	id_file = &quot;id_file&quot;,
+	inputs = [&quot;a&quot;, &quot;b&quot;],
+	outputs = [&quot;out&quot;],
+	main = (inputs, outputs) -&gt; begin
+		a = inputs[&quot;a&quot;]
+		b = inputs[&quot;b&quot;]
+		println(&quot;inputs are &quot;, a, &quot; and &quot;, b)
+		println(&quot;You can also use info in outputs: &quot;, outputs[&quot;out&quot;])
+
+		println(&quot;The returned value will be assigned to a new outputs&quot;)
+		return Dict{String,Any}(&quot;out&quot; =&gt; b^2)
+	end
+)
+
+inputs = Dict(
+	&quot;a&quot; =&gt; `in1`,
+	&quot;b&quot; =&gt; 2
+)
+
+outputs = Dict(
+	&quot;out&quot; =&gt; &quot;will_be_replaced&quot;
+)
+
+success, outputs = run(p, inputs, outputs;
+	touch_run_id_file = false
+) # outputs will be refreshed</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/Pipelines.jl#L41">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.@run" href="#Pipelines.@run"><code>Pipelines.@run</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@run program::Program key_value_args... run_args...</code></pre><p>Run <code>program</code> without creating <code>inputs::Dict</code> and <code>outputs::Dict</code>.</p><ul><li><p><code>key_value_args</code>: the inputs and outputs are provided in the form of <code>key = value</code>, rather than <code>Dict</code>.</p></li><li><p><code>run_args</code>: the keyword arguments pass to <code>run(p::Program, inputs, outputs, run_args...)</code>.</p></li></ul><p>See also <a href="#Pipelines.@vars"><code>@vars</code></a> <a href="#Base.run"><code>run</code></a></p><p><strong>Example</strong></p><pre><code class="language-julia">jp = JuliaProgram(
+	name = &quot;Echo&quot;,
+	id_file = &quot;id_file&quot;,
+	inputs = [
+		&quot;input&quot;,
+		&quot;input2&quot; =&gt; Int,
+		&quot;optional_arg&quot; =&gt; 5,
+		&quot;optional_arg2&quot; =&gt; 0.5 =&gt; Number
+	],
+	outputs = [
+		&quot;output&quot; =&gt; &quot;&lt;input&gt;.output&quot;
+	],
+	main = (x,y) -&gt; begin
+		@show x
+		@show y
+		y
+	end
+)
+
+i = &quot;iout&quot;
+kk = :xxx
+b = false
+commonargs = (touch_run_id_file = b, verbose = :min)
+run_res = @run jp input=kk input2=22 optional_arg=:min output=i touch_run_id_file=b
+run_res = @run jp input=kk input2=22 optional_arg=:min output=i touch_run_id_file=b verbose=:min
+run_res = @run jp input=kk input2=22 optional_arg=:sym output=i commonargs...
+# (true, Dict{String, Any}(&quot;output&quot; =&gt; &quot;iout&quot;))</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/macros.jl#L61-L102">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.@vars" href="#Pipelines.@vars"><code>Pipelines.@vars</code></a> — <span class="docstring-category">Macro</span></header><section><div><pre><code class="language-julia">@vars program::Program key_value_args...</code></pre><p>Return runable <code>(inputs::Dict, outputs::Dict)</code> for <code>program</code> using <code>key_value_args</code> in the form of <code>key = value</code>.</p><p>See also <a href="#Pipelines.@run"><code>@run</code></a></p><p><strong>Example</strong></p><pre><code class="language-julia">p = CmdProgram(
+	inputs = [
+		&quot;input&quot;,
+		&quot;input2&quot; =&gt; Int,
+		&quot;optional_arg&quot; =&gt; 5,
+		&quot;optional_arg2&quot; =&gt; 0.5 =&gt; Number
+	],
+	outputs = [
+		&quot;out&quot; =&gt; &quot;&lt;input&gt;.output&quot;
+	],
+	cmd = `echo input input2 optional_arg optional_arg2 output`
+)
+
+i = &quot;iout&quot;
+kk = :xxx
+inputs, outputs = @vars p input=kk input2=22 optional_arg=:sym out=i
+run(p, inputs, outputs; touch_run_id_file = false)
+# (true, Dict{String, Any}(&quot;output&quot; =&gt; &quot;iout&quot;))</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/macros.jl#L1-L29">source</a></section></article><h2 id="Command-Dependency"><a class="docs-heading-anchor" href="#Command-Dependency">Command Dependency</a><a id="Command-Dependency-1"></a><a class="docs-heading-anchor-permalink" href="#Command-Dependency" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="Pipelines.CmdDependency" href="#Pipelines.CmdDependency"><code>Pipelines.CmdDependency</code></a> — <span class="docstring-category">Type</span></header><section><div><p><strong>Struct</strong></p><pre><code class="language-none">mutable struct CmdDependency
+	exec::Base.Cmd
+	test_args::Base.Cmd
+	validate_success::Bool
+	validate_stdout::Function
+	validate_stderr::Function
+	exit_when_fail::Bool
+end</code></pre><p><strong>Methods</strong></p><pre><code class="language-none">CmdDependency(;
+	exec::Base.Cmd=``,
+	test_args::Base.Cmd=``,
+	validate_success::Bool=false,
+	validate_stdout::Function=do_nothing,
+	validate_stderr::Function=do_nothing,
+	exit_when_fail::Bool=true
+)</code></pre><p>Create Command Dependency (<code>CmdDependency</code>).</p><p><strong>Arguments</strong></p><ul><li><p><code>exec::AbstractCmd</code>: the command to call the dependency.</p></li><li><p><code>test_args::AbstractCmd</code>: for testing purposes, the command to be appended to <code>exec</code>.</p></li><li><p><code>validate_success::Bool</code>: when checking the dependency, whether to validate the exit code == 0.</p></li><li><p><code>validate_stdout::Function</code>: a function takes standard out as <code>String</code> and return the validation result as <code>::Bool</code>.</p></li><li><p><code>validate_stderr::Function</code>: a function takes standard error as <code>String</code> and return the validation result as <code>::Bool</code>.</p></li><li><p><code>exit_when_fail::Bool</code>: if validation fails, whether to throw error and exit.</p></li></ul><p><strong>Example</strong></p><pre><code class="language-none">julia = CmdDependency(
+	exec = Base.julia_cmd(),
+	test_args = `--version`,
+	validate_success = true,
+	validate_stdout = x -&gt; occursin(r&quot;^julia version&quot;, x),
+	validate_stderr = do_nothing,
+	exit_when_fail = true
+)
+
+check_dependency(julia)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/CmdDependency.jl#L11-L63">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.check_dependency" href="#Pipelines.check_dependency"><code>Pipelines.check_dependency</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail) -&gt; Bool</code></pre><p>Check <code>CmdDependency</code> by evaluating:</p><pre><code class="language-none">`$(p.exec) $(p.test_args)`</code></pre><p>If success, return <code>true</code>.</p><p>If fail, return <code>false</code>, or throw DependencyError when <code>exit_when_fail</code> set to <code>true</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/CmdDependency.jl#L97-L107">source</a></section><section><div><pre><code class="language-none">check_dependency(p::Program; exit_when_fail::Bool=true)</code></pre><p>Check dependencies listed in <code>p.cmd_dependencies</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/Program.jl#L33-L37">source</a></section><section><div><pre><code class="language-none">check_dependency(m::Module = @__MODULE__; exit_when_fail = true, verbose = true)</code></pre><p>Check all <code>CmdDependency</code> and <code>Program</code> under <code>m::Module</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/Program.jl#L50-L54">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.check_dependency_dir-Tuple{AbstractString}" href="#Pipelines.check_dependency_dir-Tuple{AbstractString}"><code>Pipelines.check_dependency_dir</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">check_dependency_dir(path::Union{AbstractString,Cmd}; exit_when_false=true) -&gt; Bool</code></pre><p>Checke whether a directory exists. Return <code>::Bool</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/CmdDependency.jl#L166-L170">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.check_dependency_file-Tuple{AbstractString}" href="#Pipelines.check_dependency_file-Tuple{AbstractString}"><code>Pipelines.check_dependency_file</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">check_dependency_file(path::Union{AbstractString,Cmd}; exit_when_false=true) -&gt; Bool</code></pre><p>Checke whether a file exists. Return <code>::Bool</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/CmdDependency.jl#L151-L155">source</a></section></article><h2 id="Common-Methods"><a class="docs-heading-anchor" href="#Common-Methods">Common Methods</a><a id="Common-Methods-1"></a><a class="docs-heading-anchor-permalink" href="#Common-Methods" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="Pipelines.status_dependency" href="#Pipelines.status_dependency"><code>Pipelines.status_dependency</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">status_dependency(m::Module = @__MODULE__; exit_when_fail = false, verbose = true)</code></pre><p>Check all <code>CmdDependency</code> and <code>Program</code> under <code>m::Module</code>. Similar to <code>check_dependency</code>, but do not <code>exit_when_fail</code> by default.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/Program.jl#L84-L88">source</a></section></article><h2 id="Utils"><a class="docs-heading-anchor" href="#Utils">Utils</a><a id="Utils-1"></a><a class="docs-heading-anchor-permalink" href="#Utils" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="Pipelines.replaceext-Tuple{String,AbstractString}" href="#Pipelines.replaceext-Tuple{String,AbstractString}"><code>Pipelines.replaceext</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">replaceext(path, replacement::AbstractString)</code></pre><p>If the last component of a path contains a dot, leave everything before the dot as usual, and everything after the dot is replaced by <code>replacement</code>. Otherwise, <code>replacement</code> will be appended to <code>path</code>.</p><p>If <code>replacement</code> is empty, the last dot will be removed.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/utils.jl#L210-L216">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.removeext-Tuple{String}" href="#Pipelines.removeext-Tuple{String}"><code>Pipelines.removeext</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">removeext(path)</code></pre><p>If the last component of a path contains a dot, leave everything before the dot as usual, and everything including and after the dot is discarded.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/utils.jl#L229-L233">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Base.split-Tuple{Cmd}" href="#Base.split-Tuple{Cmd}"><code>Base.split</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">split(c::Cmd) = c.exec :: Vector{String}</code></pre><p>Return splitted arguments of <code>Cmd</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/utils.jl#L200-L204">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.to_str-Tuple{Cmd}" href="#Pipelines.to_str-Tuple{Cmd}"><code>Pipelines.to_str</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">to_str(x) -&gt; String
+str(x) -&gt; String</code></pre><p>Convert <code>x</code> to <code>String</code>.</p><ul><li><p><code>x::Cmd</code>: remove backticks (return <code>string(x)[2:end-1]</code>).</p></li><li><p><code>x::Nothing</code>: return <code>&quot;&quot;</code>.</p></li><li><p><code>x::Vector</code>: join elements with <code>&quot;_&quot;</code> as delim.</p></li><li><p><code>x::Any</code>: return <code>string(x)</code>.</p></li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/utils.jl#L162-L175">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.to_cmd-Tuple{Cmd}" href="#Pipelines.to_cmd-Tuple{Cmd}"><code>Pipelines.to_cmd</code></a> — <span class="docstring-category">Method</span></header><section><div><pre><code class="language-julia">to_cmd(x) -&gt; Cmd</code></pre><p>Convert <code>x</code> to Cmd.</p><p>Exception: when <code>x::Nothing</code>, return <code>nothing::Nothing</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/utils.jl#L183-L189">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.do_nothing" href="#Pipelines.do_nothing"><code>Pipelines.do_nothing</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">do_nothing() = nothing
+do_nothing(x) = nothing
+do_nothing(x, y) = nothing</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/utils.jl#L11-L15">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.isok" href="#Pipelines.isok"><code>Pipelines.isok</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">isok(x::Nothing) = true
+isok(x::Bool) = x
+isok(x::AbstractString) = true unless x is &quot;&quot; / n / no / null / f / false / 0
+isok(x::Any) = true  # default is true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/utils.jl#L20-L25">source</a></section></article><h2 id="Redirection"><a class="docs-heading-anchor" href="#Redirection">Redirection</a><a id="Redirection-1"></a><a class="docs-heading-anchor-permalink" href="#Redirection" title="Permalink"></a></h2><article class="docstring"><header><a class="docstring-binding" id="Pipelines.redirect_to_files" href="#Pipelines.redirect_to_files"><code>Pipelines.redirect_to_files</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">redirect_to_files(f::Function, file; mode=&quot;a+&quot;)
+redirect_to_files(f::Function, outfile, errfile; mode=&quot;a+&quot;)
+redirect_to_files(f::Function, outfile, errfile, logfile; mode=&quot;a+&quot;)</code></pre><p>Redirect outputs of function <code>f</code> to file(s).</p><ul><li><code>xxxfile</code>: File path (<code>AbstractString</code>), <code>nothing</code> or <code>::IO</code>. <code>nothing</code> means no redirect. Files can be the same.</li><li><code>mode</code>: same as <code>open(..., mode)</code>.</li></ul><p>Caution: If <code>xxxfile</code> is an <code>IO</code>, it won&#39;t be closed. Please use <code>close(io)</code> or <code>JobSchedulers.close_in_future(io, jobs)</code> manually!</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different <code>Tasks</code> or multi-thread mode.</p></div></div></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/redirection.jl#L185-L199">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.restore_stdout" href="#Pipelines.restore_stdout"><code>Pipelines.restore_stdout</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">restore_stdout()</code></pre><p>Restore the current stdout to the original stdout. It is useful when redirecting stdout/stderr fails when calling <code>redirect_to_files</code>, which happens when an old stream is closed and then redirected to.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different <code>Tasks</code> or multi-thread mode.</p></div></div><p>See also <code>restore_stderr()</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/redirection.jl#L7-L16">source</a></section></article><article class="docstring"><header><a class="docstring-binding" id="Pipelines.restore_stderr" href="#Pipelines.restore_stderr"><code>Pipelines.restore_stderr</code></a> — <span class="docstring-category">Function</span></header><section><div><pre><code class="language-julia">restore_stderr()</code></pre><p>Restore the current stderr to the original stderr. It is useful when redirecting stdout/stderr fails when calling <code>redirect_to_files</code>, which happens when an old stream is closed and then redirected to.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"></div></div><p>Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different <code>Tasks</code> or multi-thread mode.</p><p>See also <code>restore_stdout()</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/cihga39871/Pipelines.jl/blob/2b76594130d713dc876f3f5000202607ac776338/src/redirection.jl#L26-L35">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../command_dependency/">« Command Dependency</a><a class="docs-footer-nextpage" href="../changelog/">Change Log »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 9 May 2022 17:52">Monday 9 May 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
