@@ -15,7 +15,7 @@ JuliaProgram(;
     outputs                    = Vector{String}(),
     validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String},
     wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
-) -&gt; JuliaProgram</code></pre><h2 id="Run"><a class="docs-heading-anchor" href="#Run">Run</a><a id="Run-1"></a><a class="docs-heading-anchor-permalink" href="#Run" title="Permalink"></a></h2><p>To run a <code>JuliaProgram</code>, the methods are the same as <code>CmdProgram</code>:</p><pre><code class="language-julia">run(
+) -&gt; JuliaProgram</code></pre><h2 id="Run"><a class="docs-heading-anchor" href="#Run">Run</a><a id="Run-1"></a><a class="docs-heading-anchor-permalink" href="#Run" title="Permalink"></a></h2><p>To run a <code>JuliaProgram</code>, the methods are the same as <code>CmdProgram</code>:</p><pre><code class="language-julia">success, outputs = prog_run(p::Program; program_kwargs..., run_kwargs...)</code></pre><ul><li><code>program_kwargs...</code> include elements in <code>p.inputs</code> and <code>p.outputs</code></li><li><code>run_kwargs...</code> are keyword arguments pass to <code>run(p::Program, inputs, outputs, run_kwargs...)</code> (see below.)</li></ul><p>The old method needs to create <code>inputs::Dict{String}</code> and <code>outputs::Dict{String}</code> first:</p><pre><code class="language-julia">success, outputs = run(
 	p::Program;
 	inputs=Dict{String}(),
 	outputs=Dict{String}(),
@@ -32,10 +32,10 @@ JuliaProgram(;
 	append::Bool=false
 ) -&gt; (success::Bool, outputs::Dict{String})
 
-run(p::Program, inputs, outputs; kwargs...)
+success, outputs = run(p::Program, inputs, outputs; kwargs...)
 
-run(p::Program, inputs; kwargs...)
-)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.</code></pre><p>Or, you can use a macro version of <code>@run</code>:</p><pre><code class="language-julia">@run p::Program key_value_args... run_args...</code></pre><ul><li><p><code>key_value_args</code>: the inputs and outputs are provided in the form of <code>key = value</code>, rather than <code>Dict</code>.</p></li><li><p><code>run_args</code>: the keyword arguments pass to <code>run(p::Program, inputs, outputs, run_args...)</code>.</p></li></ul><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different <code>Tasks</code> or multi-thread mode.</p></div></div><div class="admonition is-info"><header class="admonition-header">Compatibility with JobSchedulers.jl</header><div class="admonition-body"><p>Pipelines.jl is fully compatible with <a href="https://github.com/cihga39871/JobSchedulers.jl">JobSchedulers.jl</a> which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.</p><p><code>run(::Program, ...)</code> can be replaced by <code>Job(::Program, ...)</code>. The latter creates a <code>Job</code>, and you can submit the job to queue by using <code>submit!(::Job)</code>. See example below.</p><p>Also, like <code>@run</code> and <code>run</code>, <code>@Job</code> is also an alternative to <code>Job(::Program, ...)</code> since JobSchedulers v0.6.7.</p></div></div><h2 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h2><pre><code class="language-julia">using Pipelines
+# only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
+success, outputs = run(p::Program, inputs; kwargs...)</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different <code>Tasks</code> or multi-thread mode.</p></div></div><div class="admonition is-info"><header class="admonition-header">Compatibility with JobSchedulers.jl</header><div class="admonition-body"><p>Pipelines.jl is fully compatible with <a href="https://github.com/cihga39871/JobSchedulers.jl">JobSchedulers.jl</a> which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.</p><p><code>run(::Program, ...)</code> can be replaced by <code>Job(::Program, ...)</code>. The latter creates a <code>Job</code>, and you can submit the job to queue by using <code>submit!(::Job)</code>. See example below.</p><p>Also, like <code>@run</code> and <code>run</code>, <code>@Job</code> is also an alternative to <code>Job(::Program, ...)</code> since JobSchedulers v0.6.7.</p></div></div><h2 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h2><pre><code class="language-julia">using Pipelines
 
 p = JuliaProgram(
     id_file = &quot;id_file&quot;,
@@ -52,21 +52,12 @@ p = JuliaProgram(
     end
 )
 
-inputs = Dict(
-    &quot;a&quot; =&gt; `in1`,
-    &quot;b&quot; =&gt; 2
-)
-
-outputs = Dict(
-    &quot;out&quot; =&gt; &quot;will_be_replaced&quot;
-)
-
-success, outputs = run(p, inputs, outputs;
-    touch_run_id_file = false
-) # outputs will be refreshed
+success, outputs = prog_run(p, a=`in1`, b=2, out=&quot;any&quot;, touch_run_id_file=false) # outputs will be refreshed
 
 # An alternative way to run
-@run p a=`in1` b=2 out=&quot;any&quot; touch_run_id_file=false</code></pre><h3 id="Compatibility-with-JobSchedulers.jl"><a class="docs-heading-anchor" href="#Compatibility-with-JobSchedulers.jl">Compatibility with JobSchedulers.jl</a><a id="Compatibility-with-JobSchedulers.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Compatibility-with-JobSchedulers.jl" title="Permalink"></a></h3><pre><code class="language-julia">using JobSchedulers
+inputs = Dict(&quot;a&quot; =&gt; `in1`, &quot;b&quot; =&gt; 2)
+outputs = &quot;out&quot; =&gt; &quot;will_be_replaced&quot;
+success, outputs = run(p, inputs, outputs; touch_run_id_file = false)</code></pre><h3 id="Compatibility-with-JobSchedulers.jl"><a class="docs-heading-anchor" href="#Compatibility-with-JobSchedulers.jl">Compatibility with JobSchedulers.jl</a><a id="Compatibility-with-JobSchedulers.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Compatibility-with-JobSchedulers.jl" title="Permalink"></a></h3><pre><code class="language-julia">using JobSchedulers
 
 scheduler_start()  # start job scheduler
 
@@ -74,10 +65,10 @@ job = Job(p, inputs, outputs;
     touch_run_id_file = false
 )  # create a Job object; same arguments as `run`
 
-# An alternative way to create a Job, since JobSchedulers v0.6.7
-job = @Job p a=`in1` b=2 out=&quot;any&quot; touch_run_id_file=false
+# An alternative way to create a Job, since JobSchedulers v0.6.8
+job = Job(p, a=`in1`, b=2, out=&quot;any&quot;, touch_run_id_file=false)
 
 submit!(job)  # submit job to queue
 
 result(job)  # get the returned result
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../command_program/">« Command Program</a><a class="docs-footer-nextpage" href="../command_dependency/">Command Dependency »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 10 May 2022 03:14">Tuesday 10 May 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../command_program/">« Command Program</a><a class="docs-footer-nextpage" href="../command_dependency/">Command Dependency »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 17 May 2022 15:26">Tuesday 17 May 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
