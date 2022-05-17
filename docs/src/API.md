@@ -20,12 +20,6 @@ JuliaProgram()
 
 ## Run Programs
 
-### New way (since v0.7.7)
-```@docs
-prog_run
-```
-
-### Old way
 ```@docs
 Base.run
 ```

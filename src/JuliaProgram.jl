@@ -16,6 +16,21 @@ mutable struct JuliaProgram <: Program
 	default_outputs::Vector
 	validate_outputs::Function
 	wrap_up::Function
+
+	function JuliaProgram(name, id_file, info_before, info_after, cmd_dependencies, inputs, input_types, default_inputs, validate_inputs, prerequisites, main, infer_outputs, outputs, output_types, default_outputs, validate_outputs, wrap_up)
+
+		check_reserved_xxputs(inputs, input_types)
+		check_reserved_xxputs(outputs, output_types)
+
+		check_function_methods(validate_inputs, (Dict, ), "validate_inputs")
+		check_function_methods(prerequisites, (Dict, Dict), "prerequisites")
+		check_function_methods(main, (Dict, Dict), "main")
+		check_function_methods(infer_outputs, (Dict, ), "infer_outputs")
+		check_function_methods(validate_outputs, (Dict, ), "validate_outputs")
+		check_function_methods(wrap_up, (Dict, Dict), "wrap_up")
+
+		new(name, id_file, info_before, info_after, cmd_dependencies, inputs, input_types, default_inputs, validate_inputs, prerequisites, main, infer_outputs, outputs, output_types, default_outputs, validate_outputs, wrap_up)
+	end
 end
 
 """

@@ -61,28 +61,29 @@ echo = CmdProgram(
 Running the program is just like running other `Cmd`,  but here we need to specify inputs in keyward arguments. Caution: use `;` to split positional and keyward arguments, and do not use `,`.
 
 ```julia
-prog_run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
+run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
 ```
 
 !!! note "Program will not run twice by default!"
     If you run a program with the same inputs again, the program will just return the same result, display a warning message without running the command twice.
 
     ```julia
-    prog_run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
+    input_args = (REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
+    run(echo; input_args...)
     ```
 
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
 
     ```julia
     # Method 1: stop checking finished program using skip_when_done = false
-    prog_run(echo; input_args..., skip_when_done = false)
+    run(echo; input_args..., skip_when_done = false)
 
     # Method 2: delete the run_id_file before running again
-    cmd, run_id_file = prog_run(echo; input_args..., dry_run = true) # Dry-run returns the command and run id file without running it.
+    cmd, run_id_file = run(echo; input_args..., dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
 
     # Method 3: Do not generate run_id_file after a successful run
-    prog_run(echo; input_args..., touch_run_id_file=false)
+    run(echo; input_args..., touch_run_id_file=false)
     ```
 
 ### Program with Outputs
@@ -99,7 +100,7 @@ prog = CmdProgram(
 )
 
 # inputs and outputs can be mixed together:
-prog_run(prog; INPUT1 = "Good", INPUT2 = "Morning", INPUT3 = "Human", OUTPUT_FILE = "morning.txt")
+run(prog; INPUT1 = "Good", INPUT2 = "Morning", INPUT3 = "Human", OUTPUT_FILE = "morning.txt")
 
 run(`cat morning.txt`) # print the content of out.txt
 # Good Morning
@@ -135,7 +136,6 @@ If the default value is a `String`, it can be interpolated by using `<keyword>`,
 We also provide a parameter (`infer_outputs::Function`) in `CmdProgram` to generate complex `outputs::Dict{String}` from `inputs::Dict{String}`. The argument (`inputs`) and returned value of the function has to be a `Dict{String}`.
 
 ```julia
-using Dates
 
 prog = CmdProgram(
     inputs = [
@@ -145,17 +145,16 @@ prog = CmdProgram(
     outputs = "OUTPUT_FILE",
     cmd = pipeline(`echo INPUT1 INPUT2`, `sort`, "OUTPUT_FILE"),
     infer_outputs = inputs -> Dict(
-        "OUTPUT_FILE" => string(now(), "__", inputs["INPUT1"], ".txt")
+        "OUTPUT_FILE" => joinpath(pwd(), string("out_", inputs["INPUT1"], ".txt"))
     )
 )
-success, outputs = prog_run(prog; INPUT1 = 5)
+success, outputs = run(prog; INPUT1 = 5)
 ```
 
 We can also generate default outputs without running the program:
 
 ```julia
-inputs = Dict("INPUT1" => 5)
-outputs = infer_outputs(prog, inputs)
+outputs = infer_outputs(prog; INPUT1 = 5)
 ```
 
 ### Julia Program
@@ -166,7 +165,7 @@ Pipelines also defined `JuliaProgram` type for pure Julia functions. It is like 
 
 Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
 
-`prog_run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
+`run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
 
 ## Future Development
 

@@ -1,5 +1,13 @@
 # Change log
 
+## v0.7.7
+
+- Feature: now `run(p; kwargs...)` works like `prog_run(p::Program; kwargs...)`. If original `inputs, outputs` are given, and same keys in `kwargs...` are found, the latter will override the former. If program args are conflict with other arguments, an error will throw.
+
+- Feature: `infer_outputs(prog; INPUT1 = 5)` now supports `run`-like kwargs.
+
+- Feature: Before creating new Program, `check_reserved_xxputs` and `check_function_methods`.
+
 ## v0.7.6
 
 - Fix: replace `@run` in v0.7.5 with a new function `prog_run(p::Program; kwargs...)`. The original `@run` only works for global variables, otherwise you need to use `@eval` and complicated `$` to pass variables to AST.

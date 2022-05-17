@@ -1,4 +1,27 @@
 
+const RESERVED_KEY_SET = Set(["name", "user", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run", "stdlog", "append"])
+const COMMON_KEY_DICT = Dict{String, Type}("ncpu" => Int)
+
+function check_reserved_xxputs(xxputs::Vector{String}, xxput_types::Vector{Type})
+	for (i, key) in enumerate(xxputs)
+		if key in RESERVED_KEY_SET
+			error("Program: cannot use the reserved key ($key) in inputs or outputs. Please use another key name.")
+		end
+		# res is a type, check whether the type is ok
+		allowed_type = get(COMMON_KEY_DICT, key, Any)
+		type = xxput_types[i]
+		if !(type <: allowed_type)
+			error("Program: the key ($key) in inputs or outputs has specific meaning and is restricted to type $allowed_type. Please use another key name or specify type $allowed_type for $key.")
+		end
+	end
+end
+
+function check_function_methods(f::Function, t::Tuple, name = string(f))
+	if !hasmethod(f, t)
+		error("Program: function `$name` does not have the required method: $t. See more at the documents of `JuliaProgram` or `CmdProgram`.")
+	end
+end
+
 """
 # Summary
 
@@ -12,12 +35,21 @@
 abstract type Program end
 
 """
+	infer_outputs(p::Program; input_kwargs...)
 	infer_outputs(p::Program, inputs)
 	infer_outputs(p::Program, inputs, outputs)
 
 Infer the default outputs from `p::Program` and `inputs::Dict{String}`.
 """
-function infer_outputs(p::Program, inputs, outputs = Dict())
+function infer_outputs(p::Program, inputs, outputs = Dict{String,Any}())
+	i, o = xxputs_completion_and_check(p, inputs, outputs)
+	o
+end
+function infer_outputs(p::Program; input_kwargs...)
+	inputs, outputs, kws = parse_program_args(p; input_kwargs...)
+	if length(kws) > 0
+		@warn "Some keyword arguments are not part of inputs and outputs" kws...
+	end
 	i, o = xxputs_completion_and_check(p, inputs, outputs)
 	o
 end
@@ -262,6 +294,8 @@ function Base.run(p::Program;
 		cd(dir) # go to working directory
 	end
 
+	inputs, outputs, kws = parse_program_args(p; kwarg...)
+
 	n_try = 0
 	local res
 	while n_try <= retry
@@ -269,7 +303,7 @@ function Base.run(p::Program;
 			if n_try > 0
 				@warn "Retry $(p.name) ($n_try/$retry)"
 			end
-			_run(p; dir = dir, kwarg...)
+			_run(p; dir = dir, inputs = inputs, outputs = outputs, kws...)
 		end
 		res isa StackTraceVector || break  # res isa StackTraceVector means failed, need retry.
 		n_try += 1
@@ -282,7 +316,9 @@ function Base.run(p::Program;
 end
 
 """
-	prog_run(p::Program; kwargs...)
+	run(p::Program; kwargs...)
+	run(p::Program, inputs, outputs; kwargs...)
+	run(p::Program, inputs; kwargs...) # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 
 Run Program (CmdProgram or JuliaProgram).
 
@@ -290,9 +326,19 @@ Return `(success::Bool, outputs::Dict{String})`
 
   > If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` ***only*** when the returned value is a `Dict{String}` and passes `p.validate_outputs`. See more at [`JuliaProgram`](@ref).
 
+# Positional Arguments
+
+- `p::Program`: the command or Julia program template.
+
+- `inputs` and `outputs`: `p::Program` stores a program template with replaceable portions as *keywords*. All keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are better to be `Dict(keyword::String => replacement)`.
+
+  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
+
+  > If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` ***only*** when the returned value is a `Dict{String}` and passes `p.validate_outputs`.
+
 # Keyword Arguments:
 
-- elements in `p.inputs` and `p.outputs`.
+- elements in `p.inputs` and `p.outputs`. They will merge to positional arguments `inputs` and `outputs`.
 
 - `dir::AbstractString = ""`: working directory to run the program and store `run_id_file`.
 
@@ -354,50 +400,20 @@ Return `(success::Bool, outputs::Dict{String})`
 	        return Dict{String,Any}("c" => b^2)
 		end)
 
-	# running the program using `prog_run`: keyword arguments include keys of inputs and outputs
-	success, new_out = prog_run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
+	# running the program using `run`: keyword arguments include keys of inputs and outputs
+	success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
 
 	# for CmdProgram, outputs are inferred before running the main command, however,
 	# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
 	@assert new_out != outputs
 
-	# an old way to `run` program: need to create Dicts of inputs and outputs first.
+	# an old way to `run` program: need to create inputs and outputs first.
 	inputs = Dict("a" => `in1`, "b" => 2)
 	outputs = "c" => "out"
 	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
 """
 function prog_run(p::Program; args...)
-    inputs, outputs, kws = parse_program_args(p::Program; args...)
-	if isempty(inputs)
-
-		if isempty(outputs)
-			if length(kws) == 0
-		        run(p)
-		    else
-		        run(p; kws...)
-		    end
-		else
-			if length(kws) == 0
-				run(p, inputs, outputs)
-			else
-				run(p, inputs, outputs; kws...)
-			end
-		end
-	else
-		if isempty(outputs)
-			if length(kws) == 0
-		        run(p, inputs)
-		    else
-		        run(p, inputs; kws...)
-		    end
-		else
-			if length(kws) == 0
-				run(p, inputs, outputs)
-			else
-				run(p, inputs, outputs; kws...)
-			end
-		end
-	end
+	run(p; args...)
 end
 
 """
@@ -418,6 +434,10 @@ function parse_program_args(p::Program; args...)
             inputs[k_str] = v
         elseif k_str in p.outputs
             outputs[k_str] = v
+		elseif k === :inputs
+			inputs = merge(to_xxput_dict(v), inputs)
+		elseif k === :outputs
+			outputs = merge(to_xxput_dict(v), outputs)
         else
             push!(kw_indices, i)
         end

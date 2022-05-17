@@ -86,7 +86,7 @@ program_bowtie2 = CmdProgram(
     `to_str` converts most types to `String`, and `to_cmd` to `Cmd`. They are tailored for parsing `inputs["x"]` and `outputs["x"]`.
 
     User-defined `inputs, outputs::Dict{String}` only confine the key type (`String`), does not confine the value type because of flexibility. When writing functions using inputs/outputs, we should consider this. It can be a Number, a Cmd, a String, and even a Vector. Pipeline.jl provides `to_str` and `to_cmd` to elegantly convert those types to `String` or `Cmd` as you wish.
-    
+
     Other conversions are also available, such as `replaceext` (replace extension) and `removeext` (remove extension). More details are in API/Utils page.
 
 
@@ -212,10 +212,10 @@ In this way, all preparation and post-evaluation can be wrapped in a single `Cmd
 
 ## Run
 
-To run a `Program`, use one of the following methods. 
+To run a `Program`, use one of the following methods.
 
 ```julia
-success, outputs = prog_run(p::Program; program_kwargs..., run_kwargs...)
+success, outputs = run(p::Program; program_kwargs..., run_kwargs...)
 ```
 
 - `program_kwargs...` include elements in `p.inputs` and `p.outputs`
@@ -257,7 +257,7 @@ success, outputs = run(p::Program, inputs; run_kwargs...)
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-    
+
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
 
 The explanation of arguments is in the next section.

@@ -23,7 +23,9 @@ i = "iout"
 kk = :xxx
 b = false
 commonargs = (touch_run_id_file = b, verbose = :min)
-prog_run(jp; input1 = kk, input2 = 33, output = i, commonargs...)
+@test run(jp; input1 = kk, input2 = 33, output = i, commonargs...) == (true, Dict{String, Any}("output" => "iout"))
+
+@test run(jp, Dict(), "output" => "old"; input1 = kk, input2 = 33, output = i, commonargs...) == (true, Dict{String, Any}("output" => "iout"))
 
 ## v0.7.6 @extractvars wrapped in p.main(inputs, outputs)
 #=jp2 = JuliaProgram(

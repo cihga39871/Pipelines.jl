@@ -44,7 +44,7 @@ JuliaProgram(;
 To run a `JuliaProgram`, the methods are the same as `CmdProgram`:
 
 ```julia
-success, outputs = prog_run(p::Program; program_kwargs..., run_kwargs...)
+success, outputs = run(p::Program; program_kwargs..., run_kwargs...)
 ```
 
 - `program_kwargs...` include elements in `p.inputs` and `p.outputs`
@@ -86,9 +86,9 @@ success, outputs = run(p::Program, inputs; kwargs...)
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-    
+
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`. See example below.
-    
+
     Also, like `@run` and `run`, `@Job` is also an alternative to `Job(::Program, ...)` since JobSchedulers v0.6.7.
 
 ## Example
@@ -110,7 +110,7 @@ p = JuliaProgram(
     end
 )
 
-success, outputs = prog_run(p, a=`in1`, b=2, out="any", touch_run_id_file=false) # outputs will be refreshed
+success, outputs = run(p, a=`in1`, b=2, out="any", touch_run_id_file=false) # outputs will be refreshed
 
 # An alternative way to run
 inputs = Dict("a" => `in1`, "b" => 2)

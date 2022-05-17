@@ -16,6 +16,20 @@ mutable struct CmdProgram <: Program
 	default_outputs::Vector
 	validate_outputs::Function
 	wrap_up::Function
+
+	function CmdProgram(name, id_file, info_before, info_after, cmd_dependencies, inputs, input_types, default_inputs, validate_inputs, prerequisites, cmd, infer_outputs, outputs, output_types, default_outputs, validate_outputs, wrap_up)
+
+		check_reserved_xxputs(inputs, input_types)
+		check_reserved_xxputs(outputs, output_types)
+
+		check_function_methods(validate_inputs, (Dict, ), "validate_inputs")
+		check_function_methods(prerequisites, (Dict, Dict), "prerequisites")
+		check_function_methods(infer_outputs, (Dict, ), "infer_outputs")
+		check_function_methods(validate_outputs, (Dict, ), "validate_outputs")
+		check_function_methods(wrap_up, (Dict, Dict), "wrap_up")
+
+		new(name, id_file, info_before, info_after, cmd_dependencies, inputs, input_types, default_inputs, validate_inputs, prerequisites, cmd, infer_outputs, outputs, output_types, default_outputs, validate_outputs, wrap_up)
+	end
 end
 
 """
@@ -134,104 +148,6 @@ function CmdProgram(;
 	)
 end
 
-"""
-	run(
-		p::Program;
-		inputs=Dict{String}(),
-		outputs=Dict{String}(),
-		dir::AbstractString="",
-		check_dependencies::Bool=true,
-		skip_when_done::Bool=true,
-		touch_run_id_file::Bool=true,
-		verbose=true,
-		retry::Int=0,
-		dry_run::Bool=false,
-		stdout=nothing,
-		stderr=nothing,
-		stdlog=nothing,
-		append::Bool=false
-	) -> (success::Bool, outputs::Dict{String})
-
-	run(p::Program, inputs, outputs; kwargs...)
-
-	run(p::Program, inputs; kwargs...)
-	)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
-
-Run Program (CmdProgram or JuliaProgram) using specified `inputs` and `outputs`.
-
-Return `(success::Bool, outputs::Dict{String})`
-
-- `p::Program`: the command or Julia program template.
-
-- `inputs` and `outputs`: `p::Program` stores a program template with replaceable portions as *keywords*. All keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are better to be `Dict(keyword::String => replacement)`.
-
-  > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
-
-  > If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` ***only*** when the returned value is a `Dict{String}` and passes `p.validate_outputs`.
-
-- `dir::AbstractString = ""`: working directory to run the program and store `run_id_file`.
-
-- `check_dependencies::Bool = true`: check dependencies for `p` (`p.cmd_dependencies`).
-
-- `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
-
-- `touch_run_id_file::Bool = true`: If `true`, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If `false`, the next time running the program, `skip_when_done=true` will not take effect.
-
-- `verbose = true`: If `true` or `:all`, print all info and error messages. If `:min`, print minimum info and error messages. If `false` or `:none`, print error messages only.
-
-- `retry::Int = 0`: If failed, retry for INT times.
-
-- `dry_run::Bool = false`: do not run the program, return `(command::AbstractCmd, run_id_file::String)` for CmdProgram, or `(inferred_outputs::Dict{String}, run_id_file::String)` for JuliaProgram.
-
-- `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
-
-!!! note
-    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
-
-### Workflow
-
-1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
-
-2. Validate compatibility between `p` and `inputs/outputs`.
-
-3. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs(outputs)`)
-
-4. Check command dependencies. (`check_dependencies`, `p.cmd_dependencies`)
-
-5. Validate `inputs`. (`p.validate_inputs(inputs)`)
-
-6. [CmdProgram only] Generate runnable command from `p` and `inputs/outputs`. (`stdout`, `stderr`, `append`)
-
-7. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
-
-8. Run command [CmdProgram] or the main function [JuliaProgram].
-
-9. If `p isa CmdProgram`, validate `outputs` only. If `p isa JuliaProgram`, validate the returned value of the main function. If pass, `outputs` will ***overwritten by the returned value***. Otherwise, the original `outputs` is ***kept***. (`p.validate_outputs(outputs)`)
-
-10. Wrap up. (`p.wrap_up(inputs, outputs)`)
-
-11. Success, touch run id file, and return `(success::Bool, outputs::Dict{String})`. (`touch_run_id_file::Bool`)
-
-# Example
-
-	p = CmdProgram(
-		id_file = "id_file",
-		inputs = ["a", "b"],
-		outputs = ["c"],
-		cmd = `echo a b c`
-	)
-
-	inputs = Dict(
-		"a" => `in1`,
-		"b" => 2)
-	outputs = "c" => "out"
-	run(p, inputs, outputs; touch_run_id_file = false)
-
-	# `prog_run` is an alternative to `run` without generating Dict of inputs and outputs
-	prog_run(p, a=`in1`, b=2, c="out", touch_run_id_file=false)
-
-See also [`prog_run`](@ref)
-"""
 function _run(
 	p::CmdProgram;
 	inputs=Dict{String, Any}(),

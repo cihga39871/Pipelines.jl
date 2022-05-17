@@ -35,7 +35,7 @@ export JuliaProgram
 include("pretty_print.jl")
 
 # binding documentations
-@doc (@doc _run) run
+@doc (@doc prog_run) run
 
 function __init__()
     global stdout_origin
