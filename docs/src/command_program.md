@@ -212,10 +212,19 @@ In this way, all preparation and post-evaluation can be wrapped in a single `Cmd
 
 ## Run
 
-To run a `Program`, use one of the following methods:
+To run a `Program`, use one of the following methods. 
 
 ```julia
-run(
+success, outputs = prog_run(p::Program; program_kwargs..., run_kwargs...)
+```
+
+- `program_kwargs...` include elements in `p.inputs` and `p.outputs`
+- `run_kwargs...` are keyword arguments pass to `run(p::Program, inputs, outputs, run_kwargs...)` (see below.)
+
+The old method needs to create `inputs::Dict{String}` and `outputs::Dict{String}` first:
+
+```julia
+success, outputs = run(
 	p::Program;
 	inputs=Dict{String}(),
 	outputs=Dict{String}(),
@@ -232,21 +241,11 @@ run(
 	append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
 
-run(p::Program, inputs, outputs; kwargs...)
+success, outputs = run(p::Program, inputs, outputs; run_kwargs...)
 
-run(p::Program, inputs; kwargs...)
-)  # only usable when outputs have default values.
+# only usable when outputs have default values.
+success, outputs = run(p::Program, inputs; run_kwargs...)
 ```
-
-Or, you can use a macro version of `@run`:
-
-```julia
-@run p::Program key_value_args... run_args...
-```
-
-- `key_value_args`: the inputs and outputs are provided in the form of `key = value`, rather than `Dict`.
-
-- `run_args`: the keyword arguments pass to `run(p::Program, inputs, outputs, run_args...)`.
 
 
 

@@ -281,6 +281,151 @@ function Base.run(p::Program;
 	res
 end
 
+"""
+	prog_run(p::Program; kwargs...)
+
+Run Program (CmdProgram or JuliaProgram).
+
+Return `(success::Bool, outputs::Dict{String})`
+
+  > If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` ***only*** when the returned value is a `Dict{String}` and passes `p.validate_outputs`. See more at [`JuliaProgram`](@ref).
+
+# Keyword Arguments:
+
+- elements in `p.inputs` and `p.outputs`.
+
+- `dir::AbstractString = ""`: working directory to run the program and store `run_id_file`.
+
+- `check_dependencies::Bool = true`: check dependencies for `p` (`p.cmd_dependencies`).
+
+- `skip_when_done::Bool = true`: Skip running the program and return `true` if it has been done before (the `run_id_file` exists and `p.validate_outputs(outputs)` passes.)
+
+- `touch_run_id_file::Bool = true`: If `true`, touch a unique run ID file, which indicate the program is successfully run with given inputs and outputs. If `false`, the next time running the program, `skip_when_done=true` will not take effect.
+
+- `verbose = true`: If `true` or `:all`, print all info and error messages. If `:min`, print minimum info and error messages. If `false` or `:none`, print error messages only.
+
+- `retry::Int = 0`: If failed, retry for INT times.
+
+- `dry_run::Bool = false`: do not run the program, return `(command::AbstractCmd, run_id_file::String)` for CmdProgram, or `(inferred_outputs::Dict{String}, run_id_file::String)` for JuliaProgram.
+
+- `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If `p isa CmdProgram` and the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
+
+!!! note
+	Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+
+### Workflow
+
+1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
+
+2. Validate compatibility between `p` and `inputs/outputs`.
+
+3. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs(outputs)`)
+
+4. Check command dependencies. (`check_dependencies`, `p.cmd_dependencies`)
+
+5. Validate `inputs`. (`p.validate_inputs(inputs)`)
+
+6. [CmdProgram only] Generate runnable command from `p` and `inputs/outputs`. (`stdout`, `stderr`, `append`)
+
+7. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
+
+8. Run command [CmdProgram] or the main function [JuliaProgram].
+
+9. If `p isa CmdProgram`, validate `outputs` only. If `p isa JuliaProgram`, validate the returned value of the main function. If pass, `outputs` will ***overwritten by the returned value***. Otherwise, the original `outputs` is ***kept***. (`p.validate_outputs(outputs)`)
+
+10. Wrap up. (`p.wrap_up(inputs, outputs)`)
+
+11. Success, touch run id file, and return `(success::Bool, outputs::Dict{String})`. (`touch_run_id_file::Bool`)
+
+
+# Example
+
+	p = JuliaProgram(
+		id_file = "id_file",
+		inputs = ["a",
+		          "b" => Int],
+		outputs = "c" => "<a>.<b>",
+		main = (inputs, outputs) -> begin
+			a = inputs["a"]
+			b = inputs["b"]
+			println("inputs are ", a, " and ", b)
+			println("You can also use info in outputs: ", outputs["c"])
+	        println("The returned value will be assigned to a new outputs")
+	        return Dict{String,Any}("c" => b^2)
+		end)
+
+	# running the program using `prog_run`: keyword arguments include keys of inputs and outputs
+	success, new_out = prog_run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
+
+	# for CmdProgram, outputs are inferred before running the main command, however,
+	# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
+	@assert new_out != outputs
+
+	# an old way to `run` program: need to create Dicts of inputs and outputs first.
+	inputs = Dict("a" => `in1`, "b" => 2)
+	outputs = "c" => "out"
+	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
+"""
+function prog_run(p::Program; args...)
+    inputs, outputs, kws = parse_program_args(p::Program; args...)
+	if isempty(inputs)
+
+		if isempty(outputs)
+			if length(kws) == 0
+		        run(p)
+		    else
+		        run(p; kws...)
+		    end
+		else
+			if length(kws) == 0
+				run(p, inputs, outputs)
+			else
+				run(p, inputs, outputs; kws...)
+			end
+		end
+	else
+		if isempty(outputs)
+			if length(kws) == 0
+		        run(p, inputs)
+		    else
+		        run(p, inputs; kws...)
+		    end
+		else
+			if length(kws) == 0
+				run(p, inputs, outputs)
+			else
+				run(p, inputs, outputs; kws...)
+			end
+		end
+	end
+end
+
+"""
+	parse_program_args(p::Program; kwargs...)
+
+Classify `args...` to inputs and outputs of `p` or other keyword arguments.
+
+Return (inputs::Dict{String}, outputs::Dict{String}, other_kwargs::Tuple)
+"""
+function parse_program_args(p::Program; args...)
+    inputs = Dict{String,Any}()
+    outputs = Dict{String,Any}()
+    kw_indices = Vector{Int}()
+    for (i, arg) in enumerate(args)
+        k, v = arg
+        k_str = string(k)
+        if k_str in p.inputs
+            inputs[k_str] = v
+        elseif k_str in p.outputs
+            outputs[k_str] = v
+        else
+            push!(kw_indices, i)
+        end
+    end
+    kws = collect(args)[kw_indices]
+    return inputs, outputs, kws
+end
+
 function parse_verbose(verbose::Symbol)
 	if verbose in (:all, :min, :none)
 		return verbose

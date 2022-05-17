@@ -21,7 +21,7 @@ check_dependency_file,
 check_dependency_dir
 
 include("Program.jl")
-export Program,
+export Program, prog_run,
 infer_outputs,
 status_dependency
 
@@ -33,9 +33,6 @@ include("JuliaProgram.jl")
 export JuliaProgram
 
 include("pretty_print.jl")
-
-include("macros.jl")
-export @vars, @run
 
 # binding documentations
 @doc (@doc _run) run

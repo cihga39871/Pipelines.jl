@@ -44,7 +44,16 @@ JuliaProgram(;
 To run a `JuliaProgram`, the methods are the same as `CmdProgram`:
 
 ```julia
-run(
+success, outputs = prog_run(p::Program; program_kwargs..., run_kwargs...)
+```
+
+- `program_kwargs...` include elements in `p.inputs` and `p.outputs`
+- `run_kwargs...` are keyword arguments pass to `run(p::Program, inputs, outputs, run_kwargs...)` (see below.)
+
+The old method needs to create `inputs::Dict{String}` and `outputs::Dict{String}` first:
+
+```julia
+success, outputs = run(
 	p::Program;
 	inputs=Dict{String}(),
 	outputs=Dict{String}(),
@@ -61,21 +70,11 @@ run(
 	append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
 
-run(p::Program, inputs, outputs; kwargs...)
+success, outputs = run(p::Program, inputs, outputs; kwargs...)
 
-run(p::Program, inputs; kwargs...)
-)  # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
+# only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
+success, outputs = run(p::Program, inputs; kwargs...)
 ```
-
-Or, you can use a macro version of `@run`:
-
-```julia
-@run p::Program key_value_args... run_args...
-```
-
-- `key_value_args`: the inputs and outputs are provided in the form of `key = value`, rather than `Dict`.
-
-- `run_args`: the keyword arguments pass to `run(p::Program, inputs, outputs, run_args...)`.
 
 
 
@@ -111,21 +110,12 @@ p = JuliaProgram(
     end
 )
 
-inputs = Dict(
-    "a" => `in1`,
-    "b" => 2
-)
-
-outputs = Dict(
-    "out" => "will_be_replaced"
-)
-
-success, outputs = run(p, inputs, outputs;
-    touch_run_id_file = false
-) # outputs will be refreshed
+success, outputs = prog_run(p, a=`in1`, b=2, out="any", touch_run_id_file=false) # outputs will be refreshed
 
 # An alternative way to run
-@run p a=`in1` b=2 out="any" touch_run_id_file=false
+inputs = Dict("a" => `in1`, "b" => 2)
+outputs = "out" => "will_be_replaced"
+success, outputs = run(p, inputs, outputs; touch_run_id_file = false)
 ```
 
 ### Compatibility with JobSchedulers.jl
@@ -139,8 +129,8 @@ job = Job(p, inputs, outputs;
     touch_run_id_file = false
 )  # create a Job object; same arguments as `run`
 
-# An alternative way to create a Job, since JobSchedulers v0.6.7
-job = @Job p a=`in1` b=2 out="any" touch_run_id_file=false
+# An alternative way to create a Job, since JobSchedulers v0.6.8
+job = Job(p, a=`in1`, b=2, out="any", touch_run_id_file=false)
 
 submit!(job)  # submit job to queue
 

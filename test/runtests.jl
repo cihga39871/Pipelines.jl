@@ -320,40 +320,13 @@ rm("x", force=true)
 @test pj_error_res[1]
 
 
-## macro
-jp = JuliaProgram(
-	name = "Echo",
-	id_file = "id_file",
-	inputs = [
-		"input",
-		"input2" => Int,
-		"optional_arg" => 5,
-		"optional_arg2" => 0.5 => Number
-	],
-	outputs = [
-		"output" => "<input>.output"
-	],
-	main = (x,y) -> begin
-		@show x
-		@show y
-		y
-	end
-)
+## v0.7.6
+include("test_prog_run.jl")
 
-i = "iout"
-kk = :xxx
-ins, outs = @vars jp input = kk input2 = 22 optional_arg = :sym output = i
-@test ins == Dict{String, Any}("optional_arg" => :sym, "input" => kk, "input2" => 22)
-@test outs == Dict{String,Any}("output" => "iout")
-# run(jp, ins, outs; touch_run_id_file = false)
 
-b = false
-commonargs = (touch_run_id_file = b, verbose = :min)
-run_res = @run jp input = kk input2 = 22 optional_arg = :min output = i touch_run_id_file = b
-run_res = @run jp input = kk input2 = 22 optional_arg = :min output = i touch_run_id_file = b verbose = :min
-run_res = @run jp input = kk input2 = 22 optional_arg = :sym output = i commonargs...
-
-# clean up
+## clean up
 cd(homedir())
 rm(tmp, recursive=true)
 rm(working_dir, recursive=true)
+
+@info "Run test done."

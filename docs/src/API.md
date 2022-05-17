@@ -4,6 +4,7 @@
 ```@docs
 Program
 infer_outputs
+parse_program_args
 ```
 
 ## Command Program
@@ -18,10 +19,15 @@ JuliaProgram()
 ```
 
 ## Run Programs
+
+### New way (since v0.7.7)
+```@docs
+prog_run
+```
+
+### Old way
 ```@docs
 Base.run
-@run
-@vars
 ```
 
 ## Command Dependency

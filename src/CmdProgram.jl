@@ -87,12 +87,13 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 		outputs = "output" => "<input>.output",
 		cmd = `echo input input2 optional_arg optional_arg2 output`)
 
+	# running the program using `prog_run`: keyword arguments include keys of inputs and outputs
+	success, outputs = prog_run(p; input = `in1`, input2 = 2, output = "out", touch_run_id_file = false)
+
+	# an old way to `run` program: need to create Dicts of inputs and outputs first.
 	inputs = Dict("input" => `in1`,	"input2" => 2)
 	outputs = Dict("output" => "out")
 	run(p, inputs, outputs; touch_run_id_file = false)
-
-	# Run program without creating `inputs::Dict` and `outputs::Dict`
-	@run p input=`in1` input2=2 output="out" touch_run_id_file=false
 """
 function CmdProgram(;
 	name::String               = "Command Program",
@@ -180,7 +181,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `retry::Int = 0`: If failed, retry for INT times.
 
-- `dry_run::Bool = false`: do not run the command, return `(command::AbstractCmd, run_id_file::String)`.
+- `dry_run::Bool = false`: do not run the program, return `(command::AbstractCmd, run_id_file::String)` for CmdProgram, or `(inferred_outputs::Dict{String}, run_id_file::String)` for JuliaProgram.
 
 - `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
 
@@ -226,12 +227,10 @@ Return `(success::Bool, outputs::Dict{String})`
 	outputs = "c" => "out"
 	run(p, inputs, outputs; touch_run_id_file = false)
 
-	# `@run` is an alternative to `run` without generating Dict of inputs and outputs
-	@run p a=`in1` b=2 c="out" touch_run_id_file=false
+	# `prog_run` is an alternative to `run` without generating Dict of inputs and outputs
+	prog_run(p, a=`in1`, b=2, c="out", touch_run_id_file=false)
 
-# Alternative to `run`
-
-See also [`@run`](@ref)
+See also [`prog_run`](@ref)
 """
 function _run(
 	p::CmdProgram;

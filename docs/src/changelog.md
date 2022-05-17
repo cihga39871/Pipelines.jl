@@ -1,10 +1,15 @@
 # Change log
 
+## v0.7.6
+
+- Fix: replace `@run` in v0.7.5 with a new function `prog_run(p::Program; kwargs...)`. The original `@run` only works for global variables, otherwise you need to use `@eval` and complicated `$` to pass variables to AST.
+- Fix replace `@vars` in v0.7.5 with a non-exported function `parse_program_args(p::Program; args...)`. It returns `(inputs::Dict{String}, outputs::Dict{String}, kwargs::Tuple)`.
+
 ## v0.7.5
 
-- Feature: Simplify: new macro `@run program key_value_args... run_args...`: Run `program` without creating `inputs::Dict` and `outputs::Dict`. The inputs and outputs are provided in the form of `key = value`, rather than `Dict`.
+- Feature (removed in v0.7.6): Simplify: new macro `@run program key_value_args... run_args...`: Run `program` without creating `inputs::Dict` and `outputs::Dict`. The inputs and outputs are provided in the form of `key = value`, rather than `Dict`.
 
-- Feature: Simplify: new macro `@vars program::Program key_value_args...`: Return runable `(inputs::Dict, outputs::Dict)` for `program` using `key_value_args` in the form of `key = value`.
+- Feature (removed in v0.7.6): Simplify: new macro `@vars program::Program key_value_args...`: Return run-able `(inputs::Dict, outputs::Dict)` for `program` using `key_value_args` in the form of `key = value`.
 
 ## v0.7.4
 

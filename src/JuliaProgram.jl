@@ -96,14 +96,15 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 	        return Dict{String,Any}("c" => b^2)
 		end)
 
-	inputs = Dict("a" => `in1`, "b" => 2)
-	outputs = "c" => "out"
-	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
+	# running the program using `prog_run`: keyword arguments include keys of inputs and outputs
+	success, new_out = prog_run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
 
 	@assert new_out != outputs  # outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
 
-	# Run program without creating `inputs::Dict` and `outputs::Dict`
-	success, new_out = @run p a=`in1` b=2 c="out" touch_run_id_file=false
+	# an old way to `run` program: need to create Dicts of inputs and outputs first.
+	inputs = Dict("a" => `in1`, "b" => 2)
+	outputs = "c" => "out"
+	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
 """
 function JuliaProgram(;
 	name::String               = "Julia Program",
