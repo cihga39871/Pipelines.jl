@@ -116,8 +116,8 @@ echo = CmdProgram(
         "REQUIRED",                     # no default value; any data type.
         "TYPED" => String,              # no default value; String type only.
         "OPTIONAL" => 4,                # default value is 5; any data type.
-        "FULL1" => String => "abc"      # default value is abc; String type only.
-        "FULL2" => "abc" => String      # default value is abc; String type only.
+        "FULL1" => String => "abc",     # default value is abc; String type only.
+        "FULL2" => "abc" => String,     # default value is abc; String type only.
         "INTERPOLATED" => "<FULL1>.xyz" # default value is value of FULL1 * ".xyz".
     ],
     cmd = `echo REQUIRED TYPED OPTIONAL FULL`   
