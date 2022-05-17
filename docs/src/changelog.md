@@ -1,5 +1,9 @@
 # Change log
 
+## v0.7.8
+
+- Feature: `check_reserved_xxputs` does not need `xxput_types::Vector{Type}`.
+
 ## v0.7.7
 
 - Feature: now `run(p; kwargs...)` works like `prog_run(p::Program; kwargs...)`. If original `inputs, outputs` are given, and same keys in `kwargs...` are found, the latter will override the former. If program args are conflict with other arguments, an error will throw.

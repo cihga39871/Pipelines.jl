@@ -1,17 +1,10 @@
 
-const RESERVED_KEY_SET = Set(["name", "user", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run", "stdlog", "append"])
-const COMMON_KEY_DICT = Dict{String, Type}("ncpu" => Int)
+const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
 
-function check_reserved_xxputs(xxputs::Vector{String}, xxput_types::Vector{Type})
+function check_reserved_xxputs(xxputs::Vector{String})
 	for (i, key) in enumerate(xxputs)
 		if key in RESERVED_KEY_SET
 			error("Program: cannot use the reserved key ($key) in inputs or outputs. Please use another key name.")
-		end
-		# res is a type, check whether the type is ok
-		allowed_type = get(COMMON_KEY_DICT, key, Any)
-		type = xxput_types[i]
-		if !(type <: allowed_type)
-			error("Program: the key ($key) in inputs or outputs has specific meaning and is restricted to type $allowed_type. Please use another key name or specify type $allowed_type for $key.")
 		end
 	end
 end

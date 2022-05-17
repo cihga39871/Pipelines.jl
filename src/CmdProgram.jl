@@ -19,8 +19,8 @@ mutable struct CmdProgram <: Program
 
 	function CmdProgram(name, id_file, info_before, info_after, cmd_dependencies, inputs, input_types, default_inputs, validate_inputs, prerequisites, cmd, infer_outputs, outputs, output_types, default_outputs, validate_outputs, wrap_up)
 
-		check_reserved_xxputs(inputs, input_types)
-		check_reserved_xxputs(outputs, output_types)
+		check_reserved_xxputs(inputs)
+		check_reserved_xxputs(outputs)
 
 		check_function_methods(validate_inputs, (Dict, ), "validate_inputs")
 		check_function_methods(prerequisites, (Dict, Dict), "prerequisites")
