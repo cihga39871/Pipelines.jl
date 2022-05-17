@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Command Program · Pipelines.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Pipelines.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><span class="tocitem">Manual</span><ul><li class="is-active"><a class="tocitem" href>Command Program</a><ul class="internal"><li><a class="tocitem" href="#An-Example"><span>An Example</span></a></li><li><a class="tocitem" href="#Structure"><span>Structure</span></a></li><li><a class="tocitem" href="#Run"><span>Run</span></a></li><li><a class="tocitem" href="#Workflow"><span>Workflow</span></a></li></ul></li><li><a class="tocitem" href="../julia_program/">Julia Program</a></li><li><a class="tocitem" href="../command_dependency/">Command Dependency</a></li></ul></li><li><a class="tocitem" href="../API/">API</a></li><li><a class="tocitem" href="../changelog/">Change Log</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Manual</a></li><li class="is-active"><a href>Command Program</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Command Program</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/cihga39871/Pipelines.jl/blob/master/docs/src/command_program.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Command-Program"><a class="docs-heading-anchor" href="#Command-Program">Command Program</a><a id="Command-Program-1"></a><a class="docs-heading-anchor-permalink" href="#Command-Program" title="Permalink"></a></h1><p>Please read the Quick Start section in Home page first.</p><p>Pipelines are built with multiple <code>Program</code>s. <code>Program</code> is the abstract type contains <code>CmdProgram</code> and <code>JuliaProgram</code>.</p><p>A <code>CmdProgram</code> contains a command template, lists of dependencies/inputs/outputs, and predefined methods to prepare run-time environment, validate dependencies/inputs/outputs, and so on.</p><h2 id="An-Example"><a class="docs-heading-anchor" href="#An-Example">An Example</a><a id="An-Example-1"></a><a class="docs-heading-anchor-permalink" href="#An-Example" title="Permalink"></a></h2><p>We will go through an example to illustrate how to write a <code>CmdProgram</code>.</p><p>The example is a <strong>robust</strong> Bowtie2 mapping program. It shows every functionality of <code>CmdProgram</code>, but in reality, we do not need that much validation.</p><h3 id="Define-the-Name"><a class="docs-heading-anchor" href="#Define-the-Name">Define the Name</a><a id="Define-the-Name-1"></a><a class="docs-heading-anchor-permalink" href="#Define-the-Name" title="Permalink"></a></h3><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    name = &quot;Bowtie2 Mapping&quot;,# The name of CmdProgram
+    id_file = &quot;.bowtie2&quot;     # When job completed, a file &quot;.bowtie2.xxxxxx&quot; will
+                             # be created to indicate the job is finished to
+                             # avoid re-run.
+)</code></pre><h3 id="Main-Command-(Required)"><a class="docs-heading-anchor" href="#Main-Command-(Required)">Main Command (Required)</a><a id="Main-Command-(Required)-1"></a><a class="docs-heading-anchor-permalink" href="#Main-Command-(Required)" title="Permalink"></a></h3><p>In Bash script, the main code of the example:</p><pre><code class="language-bash">REF=/path/to/reference_genome
+FASTQ=/path/to/input_fastq_file
+BAM=/path/to/output_bam_file
+
+bowtie2 -x $REF -q $FASTQ | samtools sort -O bam -o $BAM</code></pre><p>The equivalent version using CmdProgram:</p><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    ...,
+    inputs = [
+        &quot;FASTQ&quot; =&gt; String,
+        &quot;REF&quot; =&gt; &quot;human_genome_hg38.fa&quot; =&gt; String
+    ],
+    outputs = &quot;BAM&quot;,
+    cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`)
+)</code></pre><p>Now, the code can be run by invoking <code>run(program_bowtie2, inputs, outputs)</code>, but to illustrate the full functionality, we will add more things to make it robust and easy to use.</p><h3 id="Command-Dependency-(Robustness)"><a class="docs-heading-anchor" href="#Command-Dependency-(Robustness)">Command Dependency (Robustness↑)</a><a id="Command-Dependency-(Robustness)-1"></a><a class="docs-heading-anchor-permalink" href="#Command-Dependency-(Robustness)" title="Permalink"></a></h3><p>We use <code>samtools</code> and <code>bowtie2</code> as command dependencies. They can be wrapped in <code>CmdDependency</code>, which is illustrated in another page. Please allow me to skip it for now.</p><h3 id="Infer-Outputs-(Convenience)"><a class="docs-heading-anchor" href="#Infer-Outputs-(Convenience)">Infer Outputs (Convenience↑)</a><a id="Infer-Outputs-(Convenience)-1"></a><a class="docs-heading-anchor-permalink" href="#Infer-Outputs-(Convenience)" title="Permalink"></a></h3><p>We can set a default method to generate <code>outputs::Dict{String}</code> from inputs, which allows us run the program without specifying outputs (<code>run(program_bowtie2, inputs)</code>.)</p><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    ...,
+    outputs = &quot;BAM&quot;,
+    infer_outputs = inputs -&gt; begin
+        Dict(&quot;BAM&quot; =&gt; to_str(inputs[&quot;FASTQ&quot;]) * &quot;.bam&quot;)
+    end,
+    ...
+)</code></pre><p>Or, the following does the same job:</p><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    ...,
+    outputs = &quot;BAM&quot; =&gt; &quot;&lt;FASTQ&gt;.bam&quot; =&gt; String,
+    ...
+)</code></pre><div class="admonition is-info"><header class="admonition-header">to_str(x) and to_cmd(x)</header><div class="admonition-body"><p><code>to_str</code> converts most types to <code>String</code>, and <code>to_cmd</code> to <code>Cmd</code>. They are tailored for parsing <code>inputs[&quot;x&quot;]</code> and <code>outputs[&quot;x&quot;]</code>.</p><p>User-defined <code>inputs, outputs::Dict{String}</code> only confine the key type (<code>String</code>), does not confine the value type because of flexibility. When writing functions using inputs/outputs, we should consider this. It can be a Number, a Cmd, a String, and even a Vector. Pipeline.jl provides <code>to_str</code> and <code>to_cmd</code> to elegantly convert those types to <code>String</code> or <code>Cmd</code> as you wish.</p><p>Other conversions are also available, such as <code>replaceext</code> (replace extension) and <code>removeext</code> (remove extension). More details are in API/Utils page.</p></div></div><h3 id="Validate-Inputs-(Robustness)"><a class="docs-heading-anchor" href="#Validate-Inputs-(Robustness)">Validate Inputs (Robustness↑)</a><a id="Validate-Inputs-(Robustness)-1"></a><a class="docs-heading-anchor-permalink" href="#Validate-Inputs-(Robustness)" title="Permalink"></a></h3><p>To make the code robust, we can check whether the inputs exists by using <code>validate_inputs</code>. It is a function takes <code>inputs::Dict{String}</code> as the argument.</p><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    ...,
+    inputs = [
+        &quot;FASTQ&quot; =&gt; String,
+        &quot;REF&quot; =&gt; &quot;human_genome_hg38.fa&quot; =&gt; String
+    ],
+    validate_inputs = inputs -&gt; begin
+        check_dependency_file(inputs[&quot;FASTQ&quot;]) &amp;&amp;
+        check_dependency_file(inputs[&quot;REF&quot;])
+    end,
+    ...
+)</code></pre><h3 id="Prerequisites-(Robustness)"><a class="docs-heading-anchor" href="#Prerequisites-(Robustness)">Prerequisites (Robustness↑)</a><a id="Prerequisites-(Robustness)-1"></a><a class="docs-heading-anchor-permalink" href="#Prerequisites-(Robustness)" title="Permalink"></a></h3><p>We also need to prepare something (<code>prerequisites</code>) before running the main command. For example, create the output directory if not exist. (<code>prerequisites</code>) is a function takes <code>inputs::Dict{String}, outputs::Dict{String}</code> as the arguments.</p><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    ...,
+    prerequisites = (inputs, outputs) -&gt; begin
+        mkpath(dirname(to_str(outputs[&quot;BAM&quot;])))
+    end
+)</code></pre><h3 id="Validate-Outputs-(Robustness)"><a class="docs-heading-anchor" href="#Validate-Outputs-(Robustness)">Validate Outputs (Robustness↑)</a><a id="Validate-Outputs-(Robustness)-1"></a><a class="docs-heading-anchor-permalink" href="#Validate-Outputs-(Robustness)" title="Permalink"></a></h3><p>After running the main command, we can validate outputs by using <code>validate_outputs</code>. It is a function takes <code>outputs::Dict{String}</code> as the argument.</p><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    ...,
+    outputs = &quot;BAM&quot;,
+    validate_outputs = outputs -&gt; begin
+        check_dependency_file(outputs[&quot;BAM&quot;])
+    end,
+    ...
+)</code></pre><h3 id="Wrap-Up-(Convenience)"><a class="docs-heading-anchor" href="#Wrap-Up-(Convenience)">Wrap Up (Convenience↑)</a><a id="Wrap-Up-(Convenience)-1"></a><a class="docs-heading-anchor-permalink" href="#Wrap-Up-(Convenience)" title="Permalink"></a></h3><p>After validating outputs, we may also do something to wrap up, such as removing temporary files. Here, we build an index for output BAM file. wrap_up function takes <code>inputs::Dict{String}, outputs::Dict{String}</code> as the arguments.</p><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    ...,
+    wrap_up = (inputs, outputs) -&gt; run(`samtools index $(outputs[&quot;BAM&quot;])`)
+)</code></pre><h3 id="The-Final-Code"><a class="docs-heading-anchor" href="#The-Final-Code">The Final Code</a><a id="The-Final-Code-1"></a><a class="docs-heading-anchor-permalink" href="#The-Final-Code" title="Permalink"></a></h3><p>All in all, the final program is like this:</p><pre><code class="language-julia">program_bowtie2 = CmdProgram(
+    name = &quot;Bowtie2 Mapping&quot;,
+    id_file = &quot;.bowtie2&quot;,
+
+    inputs = [
+        &quot;FASTQ&quot; =&gt; String,
+        &quot;REF&quot; =&gt; &quot;human_genome_hg38.fa&quot; =&gt; String
+    ],
+    validate_inputs = inputs -&gt; begin
+        check_dependency_file(inputs[&quot;FASTQ&quot;]) &amp;&amp;
+        check_dependency_file(inputs[&quot;REF&quot;])
+    end,
+
+    prerequisites = (inputs, outputs) -&gt; begin
+        mkpath(dirname(to_str(outputs[&quot;BAM&quot;])))
+    end,
+
+    outputs = [&quot;BAM&quot;],
+    infer_outputs = inputs -&gt; begin
+        Dict(&quot;BAM&quot; =&gt; str(inputs[&quot;FASTQ&quot;]) * &quot;.bam&quot;)
+    end,
+    validate_outputs = outputs -&gt; begin
+        check_dependency_file(outputs[&quot;BAM&quot;])
+    end,
+
+    cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),
+
+    wrap_up = (inputs, outputs) -&gt; run(`samtools index $(outputs[&quot;BAM&quot;])`)
+)</code></pre><h2 id="Structure"><a class="docs-heading-anchor" href="#Structure">Structure</a><a id="Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Structure" title="Permalink"></a></h2><p><code>CmdProgram</code> can be built with this method:</p><pre><code class="language-julia">CmdProgram &lt;: Program
+
+CmdProgram(;
+	name::String               = &quot;Command Program&quot;,
+	id_file::String            = &quot;&quot;,
+	info_before::String        = &quot;auto&quot;,
+	info_after::String         = &quot;auto&quot;,
+	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
+	inputs                     = Vector{String}(),
+	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
+	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
+	cmd::Base.AbstractCmd      = ``,
+	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
+	outputs                    = Vector{String}(),
+	validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
+	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
+) -&gt; CmdProgram</code></pre><p>In this way, all preparation and post-evaluation can be wrapped in a single <code>CmdProgram</code>. It is easy to maintain and use.</p><h2 id="Run"><a class="docs-heading-anchor" href="#Run">Run</a><a id="Run-1"></a><a class="docs-heading-anchor-permalink" href="#Run" title="Permalink"></a></h2><p>To run a <code>Program</code>, use one of the following methods.</p><pre><code class="language-julia">success, outputs = run(p::Program; program_kwargs..., run_kwargs...)</code></pre><ul><li><code>program_kwargs...</code> include elements in <code>p.inputs</code> and <code>p.outputs</code></li><li><code>run_kwargs...</code> are keyword arguments pass to <code>run(p::Program, inputs, outputs, run_kwargs...)</code> (see below.)</li></ul><p>The old method needs to create <code>inputs::Dict{String}</code> and <code>outputs::Dict{String}</code> first:</p><pre><code class="language-julia">success, outputs = run(
+	p::Program;
+	inputs=Dict{String}(),
+	outputs=Dict{String}(),
+	dir::AbstractString=&quot;&quot;,
+	check_dependencies::Bool=true,
+	skip_when_done::Bool=true,
+	touch_run_id_file::Bool=true,
+	verbose=true,
+	retry::Int=0,
+	dry_run::Bool=false,
+	stdout=nothing,
+	stderr=nothing,
+	stdlog=nothing,
+	append::Bool=false
+) -&gt; (success::Bool, outputs::Dict{String})
+
+success, outputs = run(p::Program, inputs, outputs; run_kwargs...)
+
+# only usable when outputs have default values.
+success, outputs = run(p::Program, inputs; run_kwargs...)</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different <code>Tasks</code> or multi-thread mode.</p></div></div><div class="admonition is-info"><header class="admonition-header">Compatibility with JobSchedulers.jl</header><div class="admonition-body"><p>Pipelines.jl is fully compatible with <a href="https://github.com/cihga39871/JobSchedulers.jl">JobSchedulers.jl</a> which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.</p><p><code>run(::Program, ...)</code> can be replaced by <code>Job(::Program, ...)</code>. The latter creates a <code>Job</code>, and you can submit the job to queue by using <code>submit!(::Job)</code>.</p></div></div><p>The explanation of arguments is in the next section.</p><h2 id="Workflow"><a class="docs-heading-anchor" href="#Workflow">Workflow</a><a id="Workflow-1"></a><a class="docs-heading-anchor-permalink" href="#Workflow" title="Permalink"></a></h2><ol><li><p>Go to the working directory. Establish redirection. (<code>dir</code>, <code>stdout</code>, <code>stderr</code>, <code>stdlog</code>, <code>append</code>).</p></li><li><p><strong>Check keywords consistency:</strong> Inputs/outputs keywords should be consistent in both <code>p::CmdProgram</code> and <code>run(p; inputs, outputs)</code>.</p><blockquote><p>For example, if inputs and outputs in <code>p::CmdProgram</code> is defined this way</p><pre><code class="language-julia">p = CmdProgram(..., inputs = [&quot;I&quot;, &quot;J&quot;], outputs = [&quot;K&quot;])</code></pre><p>The inputs and outputs in <code>run(...)</code> has to be</p><pre><code class="language-julia">run(p;
+    inputs = Dict(
+        &quot;I&quot; =&gt; something,
+        &quot;J&quot; =&gt; something
+    ),
+    outputs = Dict(&quot;K&quot; =&gt; something)
+)</code></pre></blockquote></li><li><p>Print info about starting program.</p><blockquote><p>The content can set by <code>p.info_before::String</code>.</p><p>Disable: <code>run(..., verbose=false)</code></p></blockquote></li><li><p>Check whether the program ran successfully before. If so, return <code>(true, outputs::Dict{String})</code> without running it.</p><blockquote><p><strong>How does the program know it ran before?</strong></p><p>a. <code>run(..., skip_when_down=true)</code> enables the functionality.</p><p>b. Run id file is generated. The prefix of run id file is set by <code>p.id_file</code>. After given inputs and outputs, a unique ID will be appended to the prefix. You can use <code>run(..., touch_run_id_file=false)</code> to skip creating the run id file.</p><p>c. <code>p.validate_outputs(outputs)</code> run successfully without returning <code>false</code>.</p></blockquote></li><li><p>Check command dependencies (<code>CmdDependency</code>).</p><blockquote><p>Disable: <code>run(..., check_dependencies=false)</code></p><p>Read <strong>Command Dependency</strong> portion for details.</p></blockquote></li><li><p>Remove the run id file if exists.</p></li><li><p>Validate inputs by invoking <code>p.validate_inputs(inputs)</code>.</p></li><li><p>Preparing the main command.</p><blockquote><p>If you specify <code>run(...; stdout=something, stderr=something, append::Bool)</code>, the command (<code>cmd</code>) will be wrapped with <code>pipeline(cmd; stdout=something, stderr=something, append::Bool)</code>. If <code>cmd</code> has its own file redirection, the outer wrapper may not work as you expect.</p></blockquote></li><li><p>Meet prerequisites by invoking <code>p.prerequisites(inputs, outputs)</code>.</p><blockquote><p>It is the last function before running the main command.  For example, you can create a directory if  the main command cannot create itself.</p></blockquote></li><li><p>Run the main command.</p></li><li><p>Validate outputs by invoking <code>p.validate_outputs(outputs)</code>.</p></li><li><p>Run the wrap up function by invoking <code>p.wrap_up(inputs, outputs)</code></p><blockquote><p>It is the last function to do after-command jobs. For example, you can delete intermediate files if necessary.</p></blockquote></li><li><p>Create run id file if <code>run(..., touch_run_id_file=true)</code>. Read Step 3 for details.</p></li><li><p>Print info about finishing program.</p><blockquote><p>The content can set by <code>p.info_after::String</code>.</p><p>Disable: <code>run(..., verbose=false)</code></p></blockquote></li><li><p>Return <code>(success::Bool, outputs{String})</code></p></li></ol><div class="admonition is-info"><header class="admonition-header">Dry Run</header><div class="admonition-body"><p><code>run(..., dry_run=true)</code> will return <code>(mature_command::AbstractCmd, run_id_file::String)</code> instead.</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../julia_program/">Julia Program »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 17 May 2022 20:26">Tuesday 17 May 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
