@@ -9,42 +9,23 @@ echo = CmdProgram(
         &quot;FULL&quot; =&gt; String =&gt; &quot;abc&quot; # default value is abc; String type only.
     ],
     cmd = `echo REQUIRED TYPED OPTIONAL FULL`   
-)</code></pre><p>Running the program is just like running other <code>Cmd</code>,  but here we need to specify inputs by using <code>Dict{String =&gt; value}</code> (<code>Vector{String =&gt; value}</code> is also supported.)</p><pre><code class="language-julia">inputs = Dict(
-    &quot;REQUIRED&quot; =&gt; &quot;Pipelines.jl&quot;,
-    &quot;TYPED&quot; =&gt; &quot;is&quot;,
-    &quot;FULL&quot; =&gt; &quot;everyone!&quot;
-)
-run(echo, inputs)</code></pre><p>To make life easier, you can also use the macro version of <code>@run</code>:</p><pre><code class="language-julia">@run(echo, REQUIRED = &quot;Pipelines&quot;, TYPED = &quot;are&quot;, FULL = &quot;to build.&quot;, OPTIONAL = :easy)</code></pre><div class="admonition is-info"><header class="admonition-header">Program will not run twice by default!</header><div class="admonition-body"><p>If you run a program with the same inputs again, the program will just return the same result, display a warning message without running the command twice.</p><pre><code class="language-julia">run(echo, inputs)</code></pre><p>This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:</p><pre><code class="language-julia"># Method 1: stop checking finished program
-run(echo, inputs; skip_when_done = false)
+)</code></pre><p>Running the program is just like running other <code>Cmd</code>,  but here we need to specify inputs in keyward arguments. Caution: use <code>;</code> to split positional and keyward arguments, and do not use <code>,</code>.</p><pre><code class="language-julia">prog_run(echo; REQUIRED = &quot;Pipelines&quot;, TYPED = &quot;are&quot;, FULL = &quot;to build.&quot;, OPTIONAL = :easy)</code></pre><div class="admonition is-info"><header class="admonition-header">Program will not run twice by default!</header><div class="admonition-body"><p>If you run a program with the same inputs again, the program will just return the same result, display a warning message without running the command twice.</p><pre><code class="language-julia">prog_run(echo; REQUIRED = &quot;Pipelines&quot;, TYPED = &quot;are&quot;, FULL = &quot;to build.&quot;, OPTIONAL = :easy)</code></pre><p>This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:</p><pre><code class="language-julia"># Method 1: stop checking finished program using skip_when_done = false
+prog_run(echo; input_args..., skip_when_done = false)
 
-# Method 2: delete the run_id_file before running again:
-cmd, run_id_file = run(echo, inputs; dry_run = true) # Dry-run returns the command and run id file without running it.
-cmd2, run_id_file2 = @run(echo, REQUIRED = &quot;Pipelines&quot;, TYPED = &quot;are&quot;, FULL = &quot;to build.&quot;, OPTIONAL = :easy, dry_run = true)
+# Method 2: delete the run_id_file before running again
+cmd, run_id_file = prog_run(echo; input_args..., dry_run = true) # Dry-run returns the command and run id file without running it.
 rm(run_id_file)  # remove the run_id_file
-rm(run_id_file2)  # remove the second run_id_file
 
-# Method 3: Do not generate run_id_file after a successful run.
-run(echo, inputs; touch_run_id_file=false)</code></pre></div></div><h3 id="Program-with-Outputs"><a class="docs-heading-anchor" href="#Program-with-Outputs">Program with Outputs</a><a id="Program-with-Outputs-1"></a><a class="docs-heading-anchor-permalink" href="#Program-with-Outputs" title="Permalink"></a></h3><p>Unlike the first example, many programs write files as outputs. Pipelines.jl has an elegant way to handle it.</p><p>The following program prints values simultaneously, sort them, and save to a file.</p><pre><code class="language-julia">prog = CmdProgram(
+# Method 3: Do not generate run_id_file after a successful run
+prog_run(echo; input_args..., touch_run_id_file=false)</code></pre></div></div><h3 id="Program-with-Outputs"><a class="docs-heading-anchor" href="#Program-with-Outputs">Program with Outputs</a><a id="Program-with-Outputs-1"></a><a class="docs-heading-anchor-permalink" href="#Program-with-Outputs" title="Permalink"></a></h3><p>Unlike the first example, many programs write files as outputs. Pipelines.jl has an elegant way to handle it.</p><p>The following program prints values simultaneously, sort them, and save to a file.</p><pre><code class="language-julia">prog = CmdProgram(
     inputs = [&quot;INPUT1&quot;, &quot;INPUT2&quot;, &quot;INPUT3&quot;],
     outputs = &quot;OUTPUT_FILE&quot;,
     cmd = pipeline(`echo INPUT1 INPUT2` &amp; `echo INPUT3`, `sort`, &quot;OUTPUT_FILE&quot;)
 )
 
-inputs = Dict(
-    &quot;INPUT1&quot; =&gt; &quot;Hello,&quot;,
-    &quot;INPUT2&quot; =&gt; `Pipeline.jl`,
-    &quot;INPUT3&quot; =&gt; 39871
-)
-outputs = &quot;OUTPUT_FILE&quot; =&gt; &quot;out.txt&quot; # save output to file
+# inputs and outputs can be mixed together:
+prog_run(prog; INPUT1 = &quot;Good&quot;, INPUT2 = &quot;Morning&quot;, INPUT3 = &quot;Human&quot;, OUTPUT_FILE = &quot;morning.txt&quot;)
 
-run(prog, inputs, outputs) # will return (success::Bool, outputs)
-
-# If using @run, inputs and outputs can be mixed together:
-@run(prog, INPUT1 = &quot;Good&quot;, INPUT2 = &quot;Morning&quot;, INPUT3 = &quot;Human&quot;, OUTPUT_FILE = &quot;morning.txt&quot;)
-
-run(`cat out.txt`) # print the content of out.txt
-# 39871
-# Hello, Pipeline.jl
 run(`cat morning.txt`) # print the content of out.txt
 # Good Morning
 # Human</code></pre><h3 id="Default-values"><a class="docs-heading-anchor" href="#Default-values">Default values</a><a id="Default-values-1"></a><a class="docs-heading-anchor-permalink" href="#Default-values" title="Permalink"></a></h3><p>Default values and data types can be set for keywords of <code>inputs</code> and <code>outputs</code> in this way:</p><pre><code class="language-julia">echo = CmdProgram(
@@ -52,8 +33,8 @@ run(`cat morning.txt`) # print the content of out.txt
         &quot;REQUIRED&quot;,                     # no default value; any data type.
         &quot;TYPED&quot; =&gt; String,              # no default value; String type only.
         &quot;OPTIONAL&quot; =&gt; 4,                # default value is 5; any data type.
-        &quot;FULL1&quot; =&gt; String =&gt; &quot;abc&quot;      # default value is abc; String type only.
-        &quot;FULL2&quot; =&gt; &quot;abc&quot; =&gt; String      # default value is abc; String type only.
+        &quot;FULL1&quot; =&gt; String =&gt; &quot;abc&quot;,     # default value is abc; String type only.
+        &quot;FULL2&quot; =&gt; &quot;abc&quot; =&gt; String,     # default value is abc; String type only.
         &quot;INTERPOLATED&quot; =&gt; &quot;&lt;FULL1&gt;.xyz&quot; # default value is value of FULL1 * &quot;.xyz&quot;.
     ],
     cmd = `echo REQUIRED TYPED OPTIONAL FULL`   
@@ -70,4 +51,5 @@ prog = CmdProgram(
         &quot;OUTPUT_FILE&quot; =&gt; string(now(), &quot;__&quot;, inputs[&quot;INPUT1&quot;], &quot;.txt&quot;)
     )
 )
-success, outputs = run(prog, &quot;INPUT1&quot; =&gt; 5)</code></pre><p>We can also generate default outputs without running the program:</p><pre><code class="language-julia">outputs = infer_outputs(prog, inputs)</code></pre><h3 id="Julia-Program"><a class="docs-heading-anchor" href="#Julia-Program">Julia Program</a><a id="Julia-Program-1"></a><a class="docs-heading-anchor-permalink" href="#Julia-Program" title="Permalink"></a></h3><p>Pipelines also defined <code>JuliaProgram</code> type for pure Julia functions. It is like <code>CmdProgram</code> and remain most compatibility. More details are in the Julia Program, Manual Page.</p><h3 id="Compatibility-with-JobSchedulers.jl"><a class="docs-heading-anchor" href="#Compatibility-with-JobSchedulers.jl">Compatibility with JobSchedulers.jl</a><a id="Compatibility-with-JobSchedulers.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Compatibility-with-JobSchedulers.jl" title="Permalink"></a></h3><p>Pipelines.jl is fully compatible with <a href="https://github.com/cihga39871/JobSchedulers.jl">JobSchedulers.jl</a> which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.</p><p><code>run(::Program, ...)</code> can be replaced by <code>Job(::Program, ...)</code>. The latter creates a <code>Job</code>, and you can submit the job to queue by using <code>submit!(::Job)</code>.</p><h2 id="Future-Development"><a class="docs-heading-anchor" href="#Future-Development">Future Development</a><a id="Future-Development-1"></a><a class="docs-heading-anchor-permalink" href="#Future-Development" title="Permalink"></a></h2><ul><li>Support running competitive tasks with <strong>locks</strong>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="command_program/">Command Program »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 17 May 2022 16:37">Tuesday 17 May 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+success, outputs = prog_run(prog; INPUT1 = 5)</code></pre><p>We can also generate default outputs without running the program:</p><pre><code class="language-julia">inputs = Dict(&quot;INPUT1&quot; =&gt; 5)
+outputs = infer_outputs(prog, inputs)</code></pre><h3 id="Julia-Program"><a class="docs-heading-anchor" href="#Julia-Program">Julia Program</a><a id="Julia-Program-1"></a><a class="docs-heading-anchor-permalink" href="#Julia-Program" title="Permalink"></a></h3><p>Pipelines also defined <code>JuliaProgram</code> type for pure Julia functions. It is like <code>CmdProgram</code> and remain most compatibility. More details are in the Julia Program, Manual Page.</p><h3 id="Compatibility-with-JobSchedulers.jl"><a class="docs-heading-anchor" href="#Compatibility-with-JobSchedulers.jl">Compatibility with JobSchedulers.jl</a><a id="Compatibility-with-JobSchedulers.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Compatibility-with-JobSchedulers.jl" title="Permalink"></a></h3><p>Pipelines.jl is fully compatible with <a href="https://github.com/cihga39871/JobSchedulers.jl">JobSchedulers.jl</a> which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.</p><p><code>prog_run(::Program, ...)</code> can be replaced by <code>Job(::Program, ...)</code>. The latter creates a <code>Job</code>, and you can submit the job to queue by using <code>submit!(::Job)</code>.</p><h2 id="Future-Development"><a class="docs-heading-anchor" href="#Future-Development">Future Development</a><a id="Future-Development-1"></a><a class="docs-heading-anchor-permalink" href="#Future-Development" title="Permalink"></a></h2><ul><li>Support running competitive tasks with <strong>locks</strong>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="command_program/">Command Program »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 17 May 2022 17:01">Tuesday 17 May 2022</span>. Using Julia version 1.5.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
