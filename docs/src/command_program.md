@@ -219,7 +219,7 @@ success, outputs = run(p::Program; program_kwargs..., run_kwargs...)
 ```
 
 - `program_kwargs...` include elements in `p.inputs` and `p.outputs`
-- `run_kwargs...` are keyword arguments pass to `run(p::Program, inputs, outputs, run_kwargs...)` (see below.)
+- `run_kwargs...` are keyword arguments pass to `run(p::Program, inputs, outputs; run_kwargs...)` (see below.)
 
 The old method needs to create `inputs::Dict{String}` and `outputs::Dict{String}` first:
 
