@@ -61,7 +61,7 @@ echo = CmdProgram(
 Running the program is just like running other `Cmd`,  but here we need to specify inputs in keyward arguments. Caution: use `;` to split positional and keyward arguments, and do not use `,`.
 
 ```julia
-prog_run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy))
+prog_run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
 ```
 
 !!! note "Program will not run twice by default!"
