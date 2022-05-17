@@ -58,44 +58,31 @@ echo = CmdProgram(
 )
 ```
 
-Running the program is just like running other `Cmd`,  but here we need to specify inputs by using `Dict{String => value}` (`Vector{String => value}` is also supported.)
+Running the program is just like running other `Cmd`,  but here we need to specify inputs in keyward arguments. Caution: use `;` to split positional and keyward arguments, and do not use `,`.
 
 ```julia
-inputs = Dict(
-    "REQUIRED" => "Pipelines.jl",
-    "TYPED" => "is",
-    "FULL" => "everyone!"
-)
-run(echo, inputs)
-```
-
-To make life easier, you can also use the macro version of `@run`:
-
-```julia
-@run(echo, REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
+prog_run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy))
 ```
 
 !!! note "Program will not run twice by default!"
     If you run a program with the same inputs again, the program will just return the same result, display a warning message without running the command twice.
 
     ```julia
-    run(echo, inputs)
+    prog_run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
     ```
 
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
 
     ```julia
-    # Method 1: stop checking finished program
-    run(echo, inputs; skip_when_done = false)
+    # Method 1: stop checking finished program using skip_when_done = false
+    prog_run(echo; input_args..., skip_when_done = false)
 
-    # Method 2: delete the run_id_file before running again:
-    cmd, run_id_file = run(echo, inputs; dry_run = true) # Dry-run returns the command and run id file without running it.
-    cmd2, run_id_file2 = @run(echo, REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy, dry_run = true)
+    # Method 2: delete the run_id_file before running again
+    cmd, run_id_file = prog_run(echo; input_args..., dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
-    rm(run_id_file2)  # remove the second run_id_file
 
-    # Method 3: Do not generate run_id_file after a successful run.
-    run(echo, inputs; touch_run_id_file=false)
+    # Method 3: Do not generate run_id_file after a successful run
+    prog_run(echo; input_args..., touch_run_id_file=false)
     ```
 
 ### Program with Outputs
@@ -111,21 +98,9 @@ prog = CmdProgram(
     cmd = pipeline(`echo INPUT1 INPUT2` & `echo INPUT3`, `sort`, "OUTPUT_FILE")
 )
 
-inputs = Dict(
-    "INPUT1" => "Hello,",
-    "INPUT2" => `Pipeline.jl`,
-    "INPUT3" => 39871
-)
-outputs = "OUTPUT_FILE" => "out.txt" # save output to file
+# inputs and outputs can be mixed together:
+prog_run(prog; INPUT1 = "Good", INPUT2 = "Morning", INPUT3 = "Human", OUTPUT_FILE = "morning.txt")
 
-run(prog, inputs, outputs) # will return (success::Bool, outputs)
-
-# If using @run, inputs and outputs can be mixed together:
-@run(prog, INPUT1 = "Good", INPUT2 = "Morning", INPUT3 = "Human", OUTPUT_FILE = "morning.txt")
-
-run(`cat out.txt`) # print the content of out.txt
-# 39871
-# Hello, Pipeline.jl
 run(`cat morning.txt`) # print the content of out.txt
 # Good Morning
 # Human
@@ -173,12 +148,13 @@ prog = CmdProgram(
         "OUTPUT_FILE" => string(now(), "__", inputs["INPUT1"], ".txt")
     )
 )
-success, outputs = run(prog, "INPUT1" => 5)
+success, outputs = prog_run(prog; INPUT1 = 5)
 ```
 
 We can also generate default outputs without running the program:
 
 ```julia
+inputs = Dict("INPUT1" => 5)
 outputs = infer_outputs(prog, inputs)
 ```
 
@@ -190,7 +166,7 @@ Pipelines also defined `JuliaProgram` type for pure Julia functions. It is like 
 
 Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
 
-`run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
+`prog_run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
 
 ## Future Development
 
