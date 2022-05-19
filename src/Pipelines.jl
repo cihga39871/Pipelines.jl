@@ -5,6 +5,8 @@ using UUIDs
 using Logging
 using OrderedCollections  # sorting dict in generate_run_uuid
 
+include("quote_function.jl")
+
 include("utils.jl")
 export do_nothing, isok,
 str, to_str, to_cmd,
