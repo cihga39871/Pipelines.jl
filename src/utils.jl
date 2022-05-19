@@ -133,7 +133,15 @@ function convert_data_type(value, data_type::Type)
 	end
 end
 
-## convert inputs/outputs to Dict{String} in `run(p, inputs, outputs)`
+
+"""
+	to_xxput_dict(p::Pair{String, V}) where V
+	to_xxput_dict(p::Pair)
+	to_xxput_dict(v::Vector{V}) where V <: Pair
+	to_xxput_dict(d::Dict)
+
+Convert inputs/outputs to Dict{String} in `run(p, inputs, outputs)`
+"""
 function to_xxput_dict(p::Pair{String, V}) where V
 	Dict(p.first => p.second)
 end

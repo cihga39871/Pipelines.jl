@@ -18,6 +18,12 @@ prepare_cmd
 JuliaProgram()
 ```
 
+## Quote for Program Args
+```@docs
+quote_expr
+quote_function
+```
+
 ## Run Programs
 
 ```@docs
@@ -28,6 +34,7 @@ Base.run
 ```@docs
 CmdDependency
 check_dependency
+status_dependency
 check_dependency_dir(path::AbstractString; exit_when_false=true)
 check_dependency_file(path::AbstractString; exit_when_false=true)
 ```
@@ -53,4 +60,16 @@ isok
 redirect_to_files
 restore_stdout
 restore_stderr
+```
+
+## Internal
+```@docs
+RESERVED_KEY_SET
+parse_default
+to_xxput_dict
+try_function
+StackTraceVector
+keyword_interpolation
+xxputs_completion_and_check
+parse_program_args
 ```

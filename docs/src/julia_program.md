@@ -10,9 +10,9 @@ Pipelines are built with multiple `Program`s. `Program` is the abstract type con
 
 | Diff                 | `cp :: CmdProgram`                                           | `jp :: JuliaProgram`                                         |
 | :------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
-| Unique Field         | `cp` has a command template: `cp.cmd::AbstractCmd`           | `jp` has a main Julia function: `jp.main::Function`          |
-| Method to Run        | Replace keywords in `cp.cmd` with values in user defined `inputs` and `outputs::Dict{String}` | Simply evoke `jp.main(inputs, outputs::Dict{String})`        |
-| **Returned Outputs** | `outputs ` **provided in** `run(...)` **does not change**    | `outputs` **will only be overwritten by the returned value of** `jp.main` when the returned value is a `Dict{String}` and passes `p.validate_outputs`. |
+| Unique Field         | `cp` has a command template: `cp.cmd::AbstractCmd`           | `jp` has a main Julia code: `jp.main` that can be defined using `quote .. end` . |
+| Method to Run        | Replace keywords in `cp.cmd` with values in user defined `inputs` and `outputs}` | If `main` is a `Expr`, the variables mentioned in inputs and outputs will be replaced to the `inputs["VAR"]` format, and then a Julia function returning `outputs::Dict{String}` is created and called. If `main` isa `Function`, it just invokes `jp.main(inputs::Dict{String}, outputs::Dict)`. |
+| **Returned Outputs** | `outputs ` **provided in** `run(...)` **does not change**    | `outputs` **will only be overwritten by the returned value of** `jp.main` when the returned value is a `Dict` and passes `p.validate_outputs`. |
 | Dry Run              | Return `(replaced_cmd::AbstractCmd, run_id_file::String)`    | Return `(fake_outputs::Dict{String}, run_id_file::String)`   |
 
 ## Structure
@@ -23,19 +23,19 @@ Pipelines are built with multiple `Program`s. `Program` is the abstract type con
 JuliaProgram <: Program
 
 JuliaProgram(;
-    name::String               = "Unnamed Command Program",
-    id_file::String            = "",
-    info_before::String        = "auto",
-    info_after::String         = "auto",
+    name::String                            = "Command Program",
+    id_file::String                         = "",
+    info_before::String                     = "auto",
+    info_after::String                      = "auto",
     cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-    inputs                     = Vector{String}(),
-    validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
-    prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-    main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-    infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-    outputs                    = Vector{String}(),
-    validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String},
-    wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
+    inputs                                  = Vector{String}(),
+    validate_inputs::Expr                   = do_nothing,  # vars of inputs
+    infer_outputs::Expr                     = do_nothing,  # vars of inputs
+    prerequisites::Expr                     = do_nothing,  # vars of inputs and outputs
+    main::Expr                              = do_nothing,  # vars of inputs and outputs
+    outputs                                 = Vector{String}(),
+    validate_outputs::Expr                  = do_nothing,  # vars of outputs
+    wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
 ) -> JuliaProgram
 ```
 
@@ -86,9 +86,9 @@ success, outputs = run(p::Program, inputs; kwargs...)
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-
+    
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`. See example below.
-
+    
     Also, like `@run` and `run`, `@Job` is also an alternative to `Job(::Program, ...)` since JobSchedulers v0.6.7.
 
 ## Example

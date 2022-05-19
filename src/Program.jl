@@ -1,4 +1,7 @@
 
+"""
+Reserved keys that cannot be used in inputs and outputs.
+"""
 const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
 
 function check_reserved_xxputs(xxputs::Vector{String})
@@ -384,26 +387,27 @@ Return `(success::Bool, outputs::Dict{String})`
 		inputs = ["a",
 		          "b" => Int],
 		outputs = "c" => "<a>.<b>",
-		main = (inputs, outputs) -> begin
-			a = inputs["a"]
-			b = inputs["b"]
+		main = quote
 			println("inputs are ", a, " and ", b)
 			println("You can also use info in outputs: ", outputs["c"])
 	        println("The returned value will be assigned to a new outputs")
-	        return Dict{String,Any}("c" => b^2)
+			println("It is ok to use inputs and outputs directly:")
+			@show inputs
+			@show outputs
+			c = b^2
 		end)
 
 	# running the program using `run`: keyword arguments include keys of inputs and outputs
 	success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
 
-	# for CmdProgram, outputs are inferred before running the main command, however,
-	# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
-	@assert new_out != outputs
-
 	# an old way to `run` program: need to create inputs and outputs first.
 	inputs = Dict("a" => `in1`, "b" => 2)
 	outputs = "c" => "out"
 	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
+
+	# for CmdProgram, outputs are inferred before running the main command, however,
+	# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
+	@assert new_out != outputs
 """
 function prog_run(p::Program; args...)
 	run(p; args...)

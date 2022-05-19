@@ -44,7 +44,7 @@ program_bowtie2 = CmdProgram(
         "FASTQ" => String,
         "REF" => "human_genome_hg38.fa" => String
     ],
-    outputs = "BAM",
+    outputs = "BAM" => String,
     cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`)
 )
 ```
@@ -62,9 +62,9 @@ We can set a default method to generate `outputs::Dict{String}` from inputs, whi
 ```julia
 program_bowtie2 = CmdProgram(
     ...,
-    outputs = "BAM",
-    infer_outputs = inputs -> begin
-        Dict("BAM" => to_str(inputs["FASTQ"]) * ".bam")
+    outputs = "BAM" => String,
+    infer_outputs = quote
+        Dict("BAM" => to_str(FASTQ) * ".bam")
     end,
     ...
 )
@@ -101,9 +101,8 @@ program_bowtie2 = CmdProgram(
         "FASTQ" => String,
         "REF" => "human_genome_hg38.fa" => String
     ],
-    validate_inputs = inputs -> begin
-        check_dependency_file(inputs["FASTQ"]) &&
-        check_dependency_file(inputs["REF"])
+    validate_inputs = quote
+        check_dependency_file(FASTQ) && check_dependency_file(REF)
     end,
     ...
 )
@@ -116,8 +115,8 @@ We also need to prepare something (`prerequisites`) before running the main comm
 ```julia
 program_bowtie2 = CmdProgram(
     ...,
-    prerequisites = (inputs, outputs) -> begin
-        mkpath(dirname(to_str(outputs["BAM"])))
+    prerequisites = quote
+        mkpath(dirname(to_str(BAM)))
     end
 )
 ```
@@ -130,8 +129,8 @@ After running the main command, we can validate outputs by using `validate_outpu
 program_bowtie2 = CmdProgram(
     ...,
     outputs = "BAM",
-    validate_outputs = outputs -> begin
-        check_dependency_file(outputs["BAM"])
+    validate_outputs = quote
+        check_dependency_file(BAM)
     end,
     ...
 )
@@ -144,7 +143,9 @@ After validating outputs, we may also do something to wrap up, such as removing 
 ```julia
 program_bowtie2 = CmdProgram(
     ...,
-    wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
+    wrap_up = quote
+		run(`samtools index $BAM`)  # dollar sign is necessary in quote, unlike Pipelines(;cmd = ...) cannot use dollar sign.
+	end
 )
 ```
 
@@ -161,26 +162,29 @@ program_bowtie2 = CmdProgram(
         "FASTQ" => String,
         "REF" => "human_genome_hg38.fa" => String
     ],
-    validate_inputs = inputs -> begin
-        check_dependency_file(inputs["FASTQ"]) &&
-        check_dependency_file(inputs["REF"])
+
+	outputs = ["BAM" => String],
+	infer_outputs = quote
+        Dict("BAM" => to_str(FASTQ) * ".bam")
     end,
 
-    prerequisites = (inputs, outputs) -> begin
-        mkpath(dirname(to_str(outputs["BAM"])))
+	validate_inputs = quote
+        check_dependency_file(FASTQ) && check_dependency_file(REF)
     end,
 
-    outputs = ["BAM"],
-    infer_outputs = inputs -> begin
-        Dict("BAM" => str(inputs["FASTQ"]) * ".bam")
-    end,
-    validate_outputs = outputs -> begin
-        check_dependency_file(outputs["BAM"])
+	prerequisites = quote
+        mkpath(dirname(to_str(BAM)))
     end,
 
-    cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),
+	validate_outputs = quote
+        check_dependency_file(BAM)
+    end,
 
-    wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
+    cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),  # do not use dollar sign here.
+
+    wrap_up = quote
+		run(`samtools index $BAM`)  # unlike cmd = ..., dollar sign is necessary in all quotes!
+	end
 )
 ```
 
@@ -192,19 +196,19 @@ program_bowtie2 = CmdProgram(
 CmdProgram <: Program
 
 CmdProgram(;
-	name::String               = "Command Program",
-	id_file::String            = "",
-	info_before::String        = "auto",
-	info_after::String         = "auto",
+	name::String                            = "Command Program",
+	id_file::String                         = "",
+	info_before::String                     = "auto",
+	info_after::String                      = "auto",
 	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-	inputs                     = Vector{String}(),
-	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
-	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
-	cmd::Base.AbstractCmd      = ``,
-	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
-	outputs                    = Vector{String}(),
-	validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
-	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
+	inputs                                  = Vector{String}(),
+	validate_inputs::Expr                   = do_nothing,  # vars of inputs
+	infer_outputs::Expr                     = do_nothing,  # vars of inputs
+	prerequisites::Expr                     = do_nothing,  # vars of inputs and outputs
+	cmd::Base.AbstractCmd                   = ``,
+	outputs                                 = Vector{String}(),
+	validate_outputs::Expr                  = do_nothing,  # vars of outputs
+	wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
 ) -> CmdProgram
 ```
 
@@ -266,7 +270,7 @@ The explanation of arguments is in the next section.
 
 1. Go to the working directory. Establish redirection. (`dir`, `stdout`, `stderr`, `stdlog`, `append`).
 
-2. **Check keywords consistency:** Inputs/outputs keywords should be consistent in both `p::CmdProgram` and `run(p; inputs, outputs)`.
+2. **Check keywords consistency:** Inputs/outputs keywords should be consistent in both `p::CmdProgram` and `run(p; inputs..., outputs...)`.
 
    > For example, if inputs and outputs in `p::CmdProgram` is defined this way
    >
@@ -274,16 +278,10 @@ The explanation of arguments is in the next section.
    > p = CmdProgram(..., inputs = ["I", "J"], outputs = ["K"])
    > ```
    >
-   > The inputs and outputs in `run(...)` has to be
+   > You have to provide all I, J and K:
    >
    > ```julia
-   > run(p;
-   >     inputs = Dict(
-   >         "I" => something,
-   >         "J" => something
-   >     ),
-   >     outputs = Dict("K" => something)
-   > )
+   > run(p; I = something, J = something, K = something)
    > ```
 
 3. Print info about starting program.

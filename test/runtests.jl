@@ -321,7 +321,7 @@ rm("x", force=true)
 
 
 ## v0.7.6
-include("test_prog_run.jl")
+include("test_v0.8.jl")
 
 
 ## clean up

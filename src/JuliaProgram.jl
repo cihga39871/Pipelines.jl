@@ -37,19 +37,19 @@ end
 	JuliaProgram <: Program
 
 	JuliaProgram(;
-		name::String               = "Unnamed Command Program",
-		id_file::String            = "",
-		info_before::String        = "auto",
-		info_after::String         = "auto",
+		name::String                            = "Command Program",
+		id_file::String                         = "",
+		info_before::String                     = "auto",
+		info_after::String                      = "auto",
 		cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-		inputs                     = Vector{String}(),
-		validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
-		prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-		main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-		outputs                    = Vector{String}(),
-		validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
-		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
+		inputs                                  = Vector{String}(),
+		validate_inputs::Expr                   = do_nothing,  # vars of inputs
+		infer_outputs::Expr                     = do_nothing,  # vars of inputs
+		prerequisites::Expr                     = do_nothing,  # vars of inputs and outputs
+		main::Expr                              = do_nothing,  # vars of inputs and outputs
+		outputs                                 = Vector{String}(),
+		validate_outputs::Expr                  = do_nothing,  # vars of outputs
+		wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
 	) -> JuliaProgram
 
 Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs...).`
@@ -68,32 +68,40 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
 - `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
 
-  `keyword` is an argument name, can be `String` or `Symbol`.
-
-  `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
-
-  `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
+  > `keyword` is an argument name, needs to be a `String`.
+  >
+  > `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
+  >
+  > `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
 
   *HOW DOES THIS WORK?*
 
   > `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be set in `inputs::Vector{String}` and `outputs::Vector{String}`.
   > Caution: the returned value of `p.main` will be assigned to new `outputs` when the returned value is `Dict{String}` with proper keys. Otherwise, a warning will show and the returned value will be the original `outputs::Dict`.
 
-- `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
+- `validate_inputs::Expr`: A quoted code to validate inputs. Elements in `inputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 
-- `prerequisites`: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes *two* arguments `Dict{String}` whose keys are the same as `inputs` and `outputs`, respectively.
+- `infer_outputs::Expr`: A quoted code to infer outputs from inputs. Elements in `inputs` can be directly used as variables. Has to return a `Dict{String}("OUTPUT_VAR" => value)`. See details in [`quote_expr`](@ref)
 
-- `main::Function`: The main julia function. It takes *two* arguments `Dict{String}` whose keys are the same as `inputs` and `outputs`, respectively.
+- `prerequisites::Expr`: A quoted code to run just before the main command. It prepares necessary things, such as creating directories. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
 
-  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the returned value is `Dict{String}` with proper keys.
+- `main::Expr`: The main julia code. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
 
-- `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String}` whose keys are the same as `inputs`.
+  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the variables in outputs are defined correctly, since it will return `outputs::Dict{String,Any}`.
 
-- `validate_outputs::Function`: A function to validate outputs. It takes *one* argument `Dict{String}` whose keys are the same as `outputs`. If validation fail, throw error or return false.
+- `validate_outputs::Expr`: A quoted code to validate outputs. Elements in `outputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 
-  > Caution: the returned value of `p.main` will be assigned to new `outputs` when the returned value is `Dict{String}` with proper keys. Otherwise, a warning will show and the returned value will be the original `outputs::Dict`.
+- `wrap_up::Expr`: the last quoted code to run. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
 
-- `wrap_up::Function`: the last function to run. It takes *two* arguments `Dict{String}` whose keys are the same as `inputs` and `outputs`, respectively.
+> **Compatibility of Pipelines < v0.8**:
+>
+> You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
+>
+> From Pipelines v0.8, all `Expr` provided will converted to `Function` automatically.
+
+> **Debug: variable not found**
+>
+> Please refer to [`quote_expr`](@ref), section 'quote variables in other scopes.'
 
 # Example
 
@@ -102,19 +110,17 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 		inputs = ["a",
 		          "b" => Int],
 		outputs = "c" => "<a>.<b>",
-		main = (inputs, outputs) -> begin
-			a = inputs["a"]
-			b = inputs["b"]
+		main = quote
 			println("inputs are ", a, " and ", b)
-			println("You can also use info in outputs: ", outputs["c"])
+			println("You can also use info in outputs: ", c)
 	        println("The returned value will be assigned to a new outputs")
-	        return Dict{String,Any}("c" => b^2)
+			c = b^2
 		end)
 
-	# running the program using `prog_run`: keyword arguments include keys of inputs and outputs
-	success, new_out = prog_run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
+	# running the program: keyword arguments include keys of inputs and outputs
+	success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
 
-	@assert new_out != outputs  # outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
+	@assert new_out != infer_outputs(p; a = `in1`, b = 2, c = "out")  # outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
 
 	# an old way to `run` program: need to create Dicts of inputs and outputs first.
 	inputs = Dict("a" => `in1`, "b" => 2)
@@ -122,22 +128,30 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
 """
 function JuliaProgram(;
-	name::String               = "Julia Program",
-	id_file::String            = "",
-	info_before::String        = "auto",
-	info_after::String         = "auto",
+	name::String                            = "Julia Program",
+	id_file::String                         = "",
+	info_before::String                     = "auto",
+	info_after::String                      = "auto",
 	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-	inputs                     = Vector{String}(),
-	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
-	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-	main::Function             = do_nothing,  # positional arguments: inputs, outputs::Dict{String},
-	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-	outputs                    = Vector{String}(),
-	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
-	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
+	inputs                                  = Vector{String}(),
+	validate_inputs::Union{Function,Expr}   = do_nothing,  # vars of inputs
+	infer_outputs::Union{Function,Expr}     = do_nothing,  # vars of inputs
+	prerequisites::Union{Function,Expr}     = do_nothing,  # vars of inputs and outputs
+	main::Union{Function,Expr}              = do_nothing,  # vars of inputs and outputs
+	outputs                                 = Vector{String}(),
+	validate_outputs::Union{Function,Expr}  = do_nothing,  # vars of outputs
+	wrap_up::Union{Function,Expr}           = do_nothing   # vars of inputs and outputs
 )
 	inputs, input_types, default_inputs = parse_default(inputs)
 	outputs, output_types, default_outputs = parse_default(outputs)
+
+	validate_inputs = quote_function(validate_inputs, inputs)
+	infer_outputs = quote_function(infer_outputs, inputs)
+	prerequisites = quote_function(prerequisites, inputs, outputs)
+	validate_outputs = quote_function(validate_outputs, outputs)
+	wrap_up = quote_function(wrap_up, inputs, outputs)
+
+	main = quote_function(main, inputs, outputs; specific_return = :(outputs))
 
 	JuliaProgram(
 		name,

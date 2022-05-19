@@ -36,19 +36,19 @@ end
 	CmdProgram <: Program
 
 	CmdProgram(;
-		name::String               = "Command Program",
-		id_file::String            = "",
-		info_before::String        = "auto",
-		info_after::String         = "auto",
+		name::String                            = "Command Program",
+		id_file::String                         = "",
+		info_before::String                     = "auto",
+		info_after::String                      = "auto",
 		cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-		inputs                     = Vector{String}(),
-		validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
-		prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
-		cmd::Base.AbstractCmd      = ``,
-		infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String, ValidInputTypes}
-		outputs                    = Vector{String}(),
-		validate_outputs::Function = do_nothing  # positional arguments: outputs::Dict{String, ValidInputTypes},
-		wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String, ValidInputTypes}
+		inputs                                  = Vector{String}(),
+		validate_inputs::Expr                   = do_nothing,  # vars of inputs
+		infer_outputs::Expr                     = do_nothing,  # vars of inputs
+		prerequisites::Expr                     = do_nothing,  # vars of inputs and outputs
+		cmd::Base.AbstractCmd                   = ``,
+		outputs                                 = Vector{String}(),
+		validate_outputs::Expr                  = do_nothing,  # vars of outputs
+		wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
 	) -> CmdProgram
 
 Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs...).`
@@ -67,28 +67,39 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
 
-  `keyword` is an argument name, can be `String` or `Symbol`.
 
-  `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
-
-  `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
+  > `keyword` is an argument name, needs to be a `String`.
+  >
+  > `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
+  >
+  > `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
 
   *HOW DOES THIS WORK?*
 
   > `CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords are set in `inputs` and `outputs`.
   > `keyword`s will be replaced before running the program. Users need to provide a dictionary of `keyword::String => value` in `run(::Program, inputs::Dict{String}, outputs::Dict{String})`.
 
-- `validate_inputs::Function`: A function to validate inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`. If validation fail, throw error or return false.
+- `validate_inputs::Expr`: A quoted code to validate inputs. Elements in `inputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 
-- `prerequisites`: A function to run just before the main command. It prepares necessary things, such as creating directories. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
+- `infer_outputs::Expr`: A quoted code to infer outputs from inputs. Elements in `inputs` can be directly used as variables. Has to return a `Dict{String}("OUTPUT_VAR" => value)`. See details in [`quote_expr`](@ref)
+
+- `prerequisites::Expr`: A quoted code to run just before the main command. It prepares necessary things, such as creating directories. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
 
 - `cmd::AbstractCmd`: The main command template. In the template, keywords in `inputs::Vector{String}` and `outputs::Vector{String}` will be replaced when envoking `run(::CmdProgram, inputs::Dict{String, ValidInputTypes}, outputs::Dict{String, ValidInputTypes})`.
 
-- `infer_outputs::Function`: A function to infer outputs from inputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `inputs`.
+- `validate_outputs::Expr`: A quoted code to validate outputs. Elements in `outputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 
-- `validate_outputs::Function`: A function to validate outputs. It takes *one* argument `Dict{String, ValidInputTypes}` whose keys are the same as `outputs`. If validation fail, throw error or return false.
+- `wrap_up::Expr`: the last quoted code to run. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
 
-- `wrap_up::Function`: the last function to run. It takes *two* arguments `Dict{String, ValidInputTypes}` whose keys are the same as `inputs` and `outputs`, respectively.
+> **Compatibility of Pipelines < v0.8**:
+>
+> You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
+>
+> From Pipelines v0.8, all `Expr` provided will converted to `Function` automatically.
+
+> **Debug: variable not found**
+>
+> Please refer to [`quote_expr`](@ref), section 'quote variables in other scopes.'
 
 # Example
 
@@ -99,33 +110,45 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 		          "optional_arg" => 5,
 		          "optional_arg2" => 0.5 => Number],
 		outputs = "output" => "<input>.output",
+		validate_inputs = quote
+			@show optional_arg
+			optional_arg2 isa Float64 && inputs isa Dict
+		end,
 		cmd = `echo input input2 optional_arg optional_arg2 output`)
 
-	# running the program using `prog_run`: keyword arguments include keys of inputs and outputs
-	success, outputs = prog_run(p; input = `in1`, input2 = 2, output = "out", touch_run_id_file = false)
+	# running the program: keyword arguments include keys of inputs and outputs
+	success, outputs = run(p; input = `in1`, input2 = 2, output = "out", touch_run_id_file = false)
 
 	# an old way to `run` program: need to create Dicts of inputs and outputs first.
 	inputs = Dict("input" => `in1`,	"input2" => 2)
 	outputs = Dict("output" => "out")
 	run(p, inputs, outputs; touch_run_id_file = false)
+
+See also: [`CmdProgram`](@ref), [`JuliaProgram`](@ref), [`quote_expr`](@ref)
 """
 function CmdProgram(;
-	name::String               = "Command Program",
-	id_file::String            = "",
-	info_before::String        = "auto",
-	info_after::String         = "auto",
+	name::String                            = "Command Program",
+	id_file::String                         = "",
+	info_before::String                     = "auto",
+	info_after::String                      = "auto",
 	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-	inputs                     = Vector{String}(),
-	validate_inputs::Function  = do_nothing,  # positional arguments: inputs::Dict{String}
-	prerequisites::Function    = do_nothing,  # positional arguments: inputs, outputs::Dict{String}
-	cmd::Base.AbstractCmd      = ``,
-	infer_outputs::Function    = do_nothing,  # positional arguments: inputs::Dict{String}
-	outputs                    = Vector{String}(),
-	validate_outputs::Function = do_nothing,  # positional arguments: outputs::Dict{String}
-	wrap_up::Function          = do_nothing  # positional arguments: inputs, outputs::Dict{String}
+	inputs                                  = Vector{String}(),
+	validate_inputs::Union{Function,Expr}   = do_nothing,  # vars of inputs
+	infer_outputs::Union{Function,Expr}     = do_nothing,  # vars of inputs
+	prerequisites::Union{Function,Expr}     = do_nothing,  # vars of inputs and outputs
+	cmd::Base.AbstractCmd                   = ``,
+	outputs                                 = Vector{String}(),
+	validate_outputs::Union{Function,Expr}  = do_nothing,  # vars of outputs
+	wrap_up::Union{Function,Expr}           = do_nothing   # vars of inputs and outputs
 )
 	inputs, input_types, default_inputs = parse_default(inputs)
 	outputs, output_types, default_outputs = parse_default(outputs)
+
+	validate_inputs = quote_function(validate_inputs, inputs)
+	infer_outputs = quote_function(infer_outputs, inputs)
+	prerequisites = quote_function(prerequisites, inputs, outputs)
+	validate_outputs = quote_function(validate_outputs, outputs)
+	wrap_up = quote_function(wrap_up, inputs, outputs)
 
 	CmdProgram(
 		name,

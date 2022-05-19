@@ -133,7 +133,7 @@ If the default value is a `String`, it can be interpolated by using `<keyword>`,
 
 > This step is prior to adding default values of outputs, and string interpolation using `<>`.
 
-We also provide a parameter (`infer_outputs::Function`) in `CmdProgram` to generate complex `outputs::Dict{String}` from `inputs::Dict{String}`. The argument (`inputs`) and returned value of the function has to be a `Dict{String}`.
+We also provide a parameter (`infer_outputs::Expr`) in `CmdProgram` to generate complex `outputs::Dict{String}` from `inputs`. You can use elements in inputs as variables in `Expr`. The `Expr`ession will automatically converted to function. Please make sure the returned value of the function has to be a `Dict{String}` with keys of `outputs`.
 
 ```julia
 
@@ -144,11 +144,13 @@ prog = CmdProgram(
     ],
     outputs = "OUTPUT_FILE",
     cmd = pipeline(`echo INPUT1 INPUT2`, `sort`, "OUTPUT_FILE"),
-    infer_outputs = inputs -> Dict(
-        "OUTPUT_FILE" => joinpath(pwd(), string("out_", inputs["INPUT1"], ".txt"))
-    )
+    infer_outputs = quote
+        Dict("OUTPUT_FILE" => joinpath(pwd(), string("out_", INPUT1, ".txt")))
+    end
 )
 success, outputs = run(prog; INPUT1 = 5)
+# (true, Dict{String, Any}("OUTPUT_FILE" => "/home/jiacheng/projects/Pipelines.jl/out_5.txt"))
+
 ```
 
 We can also generate default outputs without running the program:
@@ -159,7 +161,25 @@ outputs = infer_outputs(prog; INPUT1 = 5)
 
 ### Julia Program
 
-Pipelines also defined `JuliaProgram` type for pure Julia functions. It is like `CmdProgram` and remain most compatibility. More details are in the Julia Program, Manual Page.
+Pipelines also defined `JuliaProgram` type for pure Julia functions. It is like `CmdProgram` and remain most compatibility. Main difference is that it uses argument `main::Expr` to replace `cmd::AbstractCmd` in arguments. More details are in the Julia Program, Manual Page.
+
+```julia
+prog = JuliaProgram(
+    inputs = ["A", "B"],
+    outputs = ["OUT"],
+    infer_outputs = quote
+        Dict("OUT" => A + B)
+    end,
+    main = quote
+        @show A
+        @show B
+        OUT = A + B
+    end
+)
+
+run(prog; A = 3, B = 5)
+# (true, Dict{String, Any}("OUT" => 8))
+```
 
 ### Compatibility with JobSchedulers.jl
 
