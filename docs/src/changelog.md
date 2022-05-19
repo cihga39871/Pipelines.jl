@@ -2,7 +2,7 @@
 
 ## v0.8.0
 
-- Feature: `quote_function` allows user to use 'elements of inputs and outputs as variables' when defining Program. To use the feature, users can pass `quote ... end` to Program's arguments that requires `Function` before, such as `main`, `validate_inputs`. From Pipelines v0.8, all `Expr` provided will converted to `Function` automatically. See details in `quote_expr`.
+- Feature: `quote_function` allows user to use 'elements of inputs and outputs as variables' when defining Program. To use the feature, users can pass `quote ... end` to Program's arguments that requires `Function` before, such as `main`, `validate_inputs`. From Pipelines v0.8, all `Expr` provided will be converted to `Function` automatically. See details in `quote_expr`.
 
 ## v0.7.8
 

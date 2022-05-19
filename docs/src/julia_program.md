@@ -86,11 +86,9 @@ success, outputs = run(p::Program, inputs; kwargs...)
 !!! note "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-    
+
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`. See example below.
     
-    Also, like `@run` and `run`, `@Job` is also an alternative to `Job(::Program, ...)` since JobSchedulers v0.6.7.
-
 ## Example
 ```julia
 using Pipelines

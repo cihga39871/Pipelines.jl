@@ -95,7 +95,7 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 >
 > You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
 >
-> From Pipelines v0.8, all `Expr` provided will converted to `Function` automatically.
+> From Pipelines v0.8, all `Expr` provided will be converted to `Function` automatically.
 
 > **Debug: variable not found**
 >
