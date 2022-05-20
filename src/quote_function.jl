@@ -22,60 +22,61 @@ Elements in `inputs` or `outputs` can be directly used as variables for those ar
 ### Example
 
 ```julia
-	prog = JuliaProgram(
-		inputs = ["A", "B"],
-		outputs = ["OUT"],
-		validate_inputs = quote
-			@show A
-			@show inputs
-			A isa Number
-		end,
-		infer_outputs = quote
-			Dict("OUT" => A + B)
-		end,
-		main = quote
-			@show A
-			@show B
-			OUT = A + B
-		end,
-		validate_outputs = quote
-			@show OUT
-			OUT isa Number
-		end
-	)
+prog = JuliaProgram(
+	inputs = ["A", "B"],
+	outputs = ["OUT"],
+	validate_inputs = quote
+		@show A
+		@show inputs
+		A isa Number
+	end,
+	infer_outputs = quote
+		Dict("OUT" => A + B)
+	end,
+	main = quote
+		@show A
+		@show B
+		OUT = A + B
+	end,
+	validate_outputs = quote
+		@show OUT
+		OUT isa Number
+	end
+)
 
-	run(prog; A = 3, B = 5, touch_run_id_file = false)
-	# (true, Dict{String, Any}("OUT" = 8))
+run(prog; A = 3, B = 5, touch_run_id_file = false)
+# (true, Dict{String, Any}("OUT" = 8))
 ```
 
-### Caution: `quote` variables in other scopes
+!!! warning "`quote` variables in other scopes"
+    1. A local variable in other scopes should be referenced using `\$` in `expr`ession. (No need to use `\$` for global variables.)
 
-1. A local variable in other scopes should be referenced using `\$` in `expr`ession. (No need to use `\$` for global variables.)
+    2. A local `::Symbol` variable (`sym`) should be referenced using `\$(QuoteNode(sym))` in `expr`ession.
 
-2. A local `::Symbol` variable (`sym`) should be referenced using `\$(QuoteNode(sym))` in `expr`ession. Eg:
-
+    ### Example:
+	```julia
 	inputs = ["A", "B"]
 	g_var = 3
 	g_sym = :globalsymbol
 
 	function gen_expr()
-		l_var = 5
-		l_sym = :abc
-		expr = quote
-			@show inputs
-			@show g_var
-			@show g_sym
-			@show \$(QuoteNode(l_sym))
-			@show \$l_var + 2
-			A + B
-		end
+	    l_var = 5
+	    l_sym = :abc
+	    expr = quote
+	        @show inputs
+	        @show g_var
+	        @show g_sym
+	        @show \$(QuoteNode(l_sym))
+	        @show \$l_var + 2
+	        A + B
+	    end
 	end
 
 	expr = gen_expr()
+	```
 
-> **Compatibility of Pipelines < v0.8**:
->
-> You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
+!!! compat "Compatibility of Pipelines < v0.8"
+    You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
 
 See also: [`CmdProgram`](@ref), [`JuliaProgram`](@ref), [`quote_function`](@ref)
 """
@@ -84,25 +85,64 @@ function quote_expr end
 """
     quote_function(expr::Expr, inputs::Vector{String}; specific_return = nothing)
 
-Return function(inputs::Dict{String})
+Return `Function` with one argument: `inputs::Dict{String}`
 
-    quote_function(expr::Expr, inputs::Vector{String}, outputs::Vector{String})
+```julia
+quote_function(expr::Expr, inputs::Vector{String}, outputs::Vector{String}; specific_return = nothing)
+```
 
-Return function(inputs::Dict{String}, outputs::Dict{String}; specific_return = nothing)
+Return `Function` with two arguments: `inputs::Dict{String}, outputs::Dict{String}`
+
+```julia
+quote_function(f::Function, x; specific_return) = f
+quote_function(f::Function, x, y; specific_return) = f
+```
+
+Directly return `f::Function` without any process.
 
 ### Description
 
-Generate function using `expr`. The elements of `inputs` and `outputs` in `expr` will be replaced by `inputs["element"]`. Also, in `expr`, the type of inputs and outputs are regarded as a `Dict{String}`.
+When building `Program`, `Expr` are automatically converted to `Function` using `quote_function`. The elements of `inputs` and/or `outputs` in `expr` will be replaced by `inputs["element"]` and/or `outputs["elements"]`, respectively. Also, in the generated function, the arguments (inputs and outputs) are regarded as `Dict{String}`.
 
 - `specific_return`: an `Expr` appended to `expr`.
 
-### Caution
+In `expr::Expr`, elements in `inputs` or `outputs` can be directly used as variables for those arguments. See the table below.
 
-1. A local variable in other scopes should be referenced using `\$` in `expr`ession. (No need to use `\$` for global variables.)
+| Argument                 | Elements as variables | Default returned value                             |
+| :----------------------- | :-------------------- | :------------------------------------------------- |
+| validate_inputs          | inputs                | the last expression                                |
+| infer_outputs            | inputs                | the last expression, can converted to Dict{String} |
+| prerequisites            | inputs, outputs       | the last expression                                |
+| main (JuliaProgram only) | inputs, outputs       | outputs::Dict{String}                              |
+| validate_outputs         | outputs               | the last expression                                |
+| wrap_up                  | inputs, outputs       | the last expression                                |
 
-2. A local `::Symbol` variable (`sym`) should be referenced using `\$(QuoteNode(sym))` in `expr`ession.
+### Usage in Program building
 
-### Example
+```julia
+function JuliaProgram(; kwargs...)
+	...
+	# inputs isa Vector{String}
+	# outputs isa Vector{String}
+
+	validate_inputs = quote_function(validate_inputs, inputs)
+	infer_outputs = quote_function(infer_outputs, inputs)
+	prerequisites = quote_function(prerequisites, inputs, outputs)
+	validate_outputs = quote_function(validate_outputs, outputs)
+	wrap_up = quote_function(wrap_up, inputs, outputs)
+
+	main = quote_function(main, inputs, outputs; specific_return = :(outputs))
+	...
+end
+```
+
+!!! warning "`quote` variables in other scopes"
+    1. A local variable in other scopes should be referenced using `\$` in `expr`ession. (No need to use `\$` for global variables.)
+
+    2. A local `::Symbol` variable (`sym`) should be referenced using `\$(QuoteNode(sym))` in `expr`ession.
+
+    ### Example:
+	```julia
 	inputs = ["A", "B"]
 	g_var = 3
 	g_sym = :globalsymbol
@@ -134,16 +174,16 @@ Generate function using `expr`. The elements of `inputs` and `outputs` in `expr`
 
 	x
 	# 150
-```
+	```
 """
 function quote_function(expr::Expr, inputs::Vector{String}; specific_return = nothing)
-    dictreplace_all!(expr, inputs, :inputs)
+    expr = dictreplace_all!(expr, inputs, :inputs)
 	if isnothing(specific_return)
 		@eval function(inputs)
 			$expr
 		end
 	else
-		dictreplace_all!(specific_return, inputs, :inputs)
+		specific_return = dictreplace_all!(specific_return, inputs, :inputs)
 		@eval function(inputs)
 			$expr
 			$specific_return
@@ -151,15 +191,15 @@ function quote_function(expr::Expr, inputs::Vector{String}; specific_return = no
 	end
 end
 function quote_function(expr::Expr, inputs::Vector{String}, outputs::Vector{String}; specific_return = nothing)
-	dictreplace_all!(expr, inputs, :inputs)
-    dictreplace_all!(expr, outputs, :outputs)
+	expr = dictreplace_all!(expr, inputs, :inputs)
+    expr = dictreplace_all!(expr, outputs, :outputs)
 	if isnothing(specific_return)
 		@eval function(inputs, outputs)
 			$expr
 		end
 	else
-		dictreplace_all!(specific_return, inputs, :inputs)
-		dictreplace_all!(specific_return, outputs, :outputs)
+		specific_return = dictreplace_all!(specific_return, inputs, :inputs)
+		specific_return = dictreplace_all!(specific_return, outputs, :outputs)
 		@eval function(inputs, outputs)
 			$expr
 			$specific_return
@@ -169,10 +209,10 @@ end
 quote_function(f::Function, x::Vector{String}; specific_return = nothing) = f
 quote_function(f::Function, x::Vector{String}, y::Vector{String}; specific_return = nothing) = f
 
-dictreplace!(ex, s, v) = ex
-dictreplace!(ex::Symbol, s, v) = s == ex ? v : ex
-function dictreplace!(ex::AbstractString, s, v)
-	if '$' in ex
+dictreplace!(ex, s::Symbol, v::Expr) = ex
+dictreplace!(ex::Symbol, s::Symbol, v::Expr) = s == ex ? v : ex
+function dictreplace!(ex::AbstractString, s::Symbol, v::Expr)
+	if '$' in ex && occursin(string(s), ex)
 		ex = Meta.parse(string('"', ex, '"'))  # expose the Expr of $(...)
 		ex = dictreplace!(ex, s, v)
 		ex = string(ex)[2:end-1]  # has to convert to string, otherwise @eval throws error.
@@ -181,16 +221,16 @@ function dictreplace!(ex::AbstractString, s, v)
 		ex
 	end
 end
-function dictreplace!(ex::Expr, s, v)
+function dictreplace!(ex::Expr, s::Symbol, v::Expr)
 	for i in 1:length(ex.args)
 		ex.args[i] = dictreplace!(ex.args[i], s, v)
 	end
 	ex
 end
 
-function dictreplace_all!(expr, kys, dsym)
+function dictreplace_all!(expr, kys, dsym::Symbol)
     for k in kys
-        dictreplace!(expr, Symbol(k), :($(dsym)[$k]))
+        expr = dictreplace!(expr, Symbol(k), :($(dsym)[$k]))
     end
 	expr
 end

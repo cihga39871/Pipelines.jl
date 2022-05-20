@@ -86,7 +86,7 @@ program_bowtie2 = CmdProgram(
     `to_str` converts most types to `String`, and `to_cmd` to `Cmd`. They are tailored for parsing variables of `inputs` and `outputs`, especially when the type is not known. (Here, we do not need it because the input type has to be String.)
 
     User-defined `inputs, outputs::Dict{String}` only confine the key type (`String`), does not confine the value type because of flexibility. When writing functions using inputs/outputs, we should consider this. It can be a Number, a Cmd, a String, and even a Vector. Pipeline.jl provides `to_str` and `to_cmd` to elegantly convert those types to `String` or `Cmd` as you wish.
-
+    
     Other conversions are also available, such as `replaceext` (replace extension) and `removeext` (remove extension). More details are in API/Utils page.
 
 
@@ -107,6 +107,9 @@ program_bowtie2 = CmdProgram(
     ...
 )
 ```
+
+!!! note "quote ... end"
+    `quote` creates a piece of code as `Expr`ession. See more at [`quote_expr`](@ref).
 
 ### Prerequisites (Robustness↑)
 
@@ -214,26 +217,19 @@ CmdProgram(;
 
 In this way, all preparation and post-evaluation can be wrapped in a single `CmdProgram`. It is easy to maintain and use.
 
-> Though arguments that accept `Expr` also accept `Function` (an old method), it is not convenient because you have to use `inputs["VAR"]` and `outputs["VAR"]`. If you insist to use `Function`, details can be found at the manual of Pipelines 0.7.6. 
+!!! compat "Expr and Function"
+    `Expr` is automatically converted to `Function` using [`quote_function`](@ref). The elements of `inputs` and/or `outputs` in `expr` will be replaced by `inputs["VAR"]` and/or `outputs["VAR"]`, respectively.  
+    
+    Though arguments that accept `Expr` also accept `Function`, it is not convenient because you have to use `inputs["VAR"]` and `outputs["VAR"]`. If you insist to use `Function`, details can be found at the manual of Pipelines 0.7.6. 
 
 ## Run
 
-To run a `Program`, use one of the following methods.
-
-```julia
-success, outputs = run(p::Program; program_kwargs..., run_kwargs...)
-```
-
-- `program_kwargs...` include elements in `p.inputs` and `p.outputs`
-- `run_kwargs...` are keyword arguments pass to `run(p::Program, inputs, outputs; run_kwargs...)` (see below.)
-
-The old method needs to create `inputs::Dict{String}` and `outputs::Dict{String}` first:
+To run a `Program`, use the following methods.
 
 ```julia
 success, outputs = run(
 	p::Program;
-	inputs=Dict{String}(),
-	outputs=Dict{String}(),
+	program_kwargs...,
 	dir::AbstractString="",
 	check_dependencies::Bool=true,
 	skip_when_done::Bool=true,
@@ -246,24 +242,22 @@ success, outputs = run(
 	stdlog=nothing,
 	append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
-
-success, outputs = run(p::Program, inputs, outputs; run_kwargs...)
-
-# only usable when outputs have default values.
-success, outputs = run(p::Program, inputs; run_kwargs...)
 ```
 
+- `program_kwargs...` include elements in `p.inputs` and `p.outputs`
+- Other keyword arguments are related to run. Details can be found at [`run`](@ref).
 
 
-!!! note
+
+!!! warning "Thread safety"
     Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different `Tasks` or multi-thread mode.
 
 
 
-!!! note "Compatibility with JobSchedulers.jl"
+!!! compat "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
-
+    
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
 
 The explanation of arguments is in the next section.
@@ -328,7 +322,7 @@ The explanation of arguments is in the next section.
 
     > It is the last code to do after-command jobs. For example, you can delete intermediate files if necessary.
 
-13. Create run id file if `run(..., touch_run_id_file=true)`. Read Step 3 for details.
+13. Create run id file if `run(..., touch_run_id_file=true)`. Read Step 4 for details.
 
 14. Print info about finishing program.
 

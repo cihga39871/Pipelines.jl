@@ -1,5 +1,31 @@
 
 """
+```julia
+julia> Pipelines.RESERVED_KEY_SET
+Set{String} with 21 elements:
+  "name"
+  "user"
+  "ncpu"
+  "mem"
+  "schedule_time"
+  "wall_time"
+  "priority"
+  "dependency"
+  "stdout"
+  "stderr"
+  "stdlog"
+  "append"
+  "dir"
+  "inputs"
+  "outputs"
+  "check_dependencies"
+  "skip_when_done"
+  "touch_run_id_file"
+  "verbose"
+  "retry"
+  "dry_run"
+```
+
 Reserved keys that cannot be used in inputs and outputs.
 """
 const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
@@ -330,8 +356,6 @@ Return `(success::Bool, outputs::Dict{String})`
 
   > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
 
-  > If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` ***only*** when the returned value is a `Dict{String}` and passes `p.validate_outputs`.
-
 # Keyword Arguments:
 
 - elements in `p.inputs` and `p.outputs`. They will merge to positional arguments `inputs` and `outputs`.
@@ -352,7 +376,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If `p isa CmdProgram` and the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
 
-!!! note
+!!! warning "Thread safety"
 	Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
 
 ### Workflow
@@ -418,7 +442,7 @@ end
 
 Classify `args...` to inputs and outputs of `p` or other keyword arguments.
 
-Return (inputs::Dict{String}, outputs::Dict{String}, other_kwargs::Tuple)
+Return `(inputs::Dict{String}, outputs::Dict{String}, other_kwargs::Tuple)`
 """
 function parse_program_args(p::Program; args...)
     inputs = Dict{String,Any}()

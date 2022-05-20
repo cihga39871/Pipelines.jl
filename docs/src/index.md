@@ -71,17 +71,17 @@ run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = 
     input_args = (REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
     run(echo; input_args...)
     ```
-
+    
     This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
-
+    
     ```julia
     # Method 1: stop checking finished program using skip_when_done = false
     run(echo; input_args..., skip_when_done = false)
-
+    
     # Method 2: delete the run_id_file before running again
     cmd, run_id_file = run(echo; input_args..., dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
-
+    
     # Method 3: Do not generate run_id_file after a successful run
     run(echo; input_args..., touch_run_id_file=false)
     ```
@@ -116,7 +116,7 @@ echo = CmdProgram(
     inputs = [
         "REQUIRED",                     # no default value; any data type.
         "TYPED" => String,              # no default value; String type only.
-        "OPTIONAL" => 4,                # default value is 5; any data type.
+        "OPTIONAL" => 5,                # default value is 5; any data type.
         "FULL1" => String => "abc",     # default value is abc; String type only.
         "FULL2" => "abc" => String,     # default value is abc; String type only.
         "INTERPOLATED" => "<FULL1>.xyz" # default value is value of FULL1 * ".xyz".
@@ -136,7 +136,6 @@ If the default value is a `String`, it can be interpolated by using `<keyword>`,
 We also provide a parameter (`infer_outputs::Expr`) in `CmdProgram` to generate complex `outputs::Dict{String}` from `inputs`. You can use elements in inputs as variables in `Expr`. The `Expr`ession will automatically converted to function. Please make sure the returned value of the function has to be a `Dict{String}` with keys of `outputs`.
 
 ```julia
-
 prog = CmdProgram(
     inputs = [
         "INPUT1" => Int,
