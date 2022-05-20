@@ -49,7 +49,7 @@ program_bowtie2 = CmdProgram(
 )
 ```
 
-Now, the code can be run by invoking `run(program_bowtie2, inputs, outputs)`, but to illustrate the full functionality, we will add more things to make it robust and easy to use.
+Now, the code can be run by invoking `run(program_bowtie2; FASTQ = "x", REF = "y", BAM = "Z")`, but to illustrate the full functionality, we will add more things to make it robust and easy to use.
 
 ### Command Dependency (Robustness↑)
 
@@ -57,7 +57,7 @@ We use `samtools` and `bowtie2` as command dependencies. They can be wrapped in 
 
 ### Infer Outputs (Convenience↑)
 
-We can set a default method to generate `outputs::Dict{String}` from inputs, which allows us run the program without specifying outputs (`run(program_bowtie2, inputs)`.)
+We can set a default method to generate `outputs::Dict{String}` from inputs, which allows us run the program without specifying outputs: `run(program_bowtie2, FASTQ = "x", REF = "y")`.
 
 ```julia
 program_bowtie2 = CmdProgram(
@@ -83,7 +83,7 @@ program_bowtie2 = CmdProgram(
 
 
 !!! note "to_str(x) and to_cmd(x)"
-    `to_str` converts most types to `String`, and `to_cmd` to `Cmd`. They are tailored for parsing `inputs["x"]` and `outputs["x"]`.
+    `to_str` converts most types to `String`, and `to_cmd` to `Cmd`. They are tailored for parsing variables of `inputs` and `outputs`, especially when the type is not known. (Here, we do not need it because the input type has to be String.)
 
     User-defined `inputs, outputs::Dict{String}` only confine the key type (`String`), does not confine the value type because of flexibility. When writing functions using inputs/outputs, we should consider this. It can be a Number, a Cmd, a String, and even a Vector. Pipeline.jl provides `to_str` and `to_cmd` to elegantly convert those types to `String` or `Cmd` as you wish.
 
@@ -92,7 +92,7 @@ program_bowtie2 = CmdProgram(
 
 ### Validate Inputs (Robustness↑)
 
-To make the code robust, we can check whether the inputs exists by using `validate_inputs`. It is a function takes `inputs::Dict{String}` as the argument.
+To make the code robust, we can check whether the inputs exists by using `validate_inputs`. It has access to variables in `inputs`, but not `outputs`.
 
 ```julia
 program_bowtie2 = CmdProgram(
@@ -110,20 +110,20 @@ program_bowtie2 = CmdProgram(
 
 ### Prerequisites (Robustness↑)
 
-We also need to prepare something (`prerequisites`) before running the main command. For example, create the output directory if not exist. (`prerequisites`) is a function takes `inputs::Dict{String}, outputs::Dict{String}` as the arguments.
+We may need to prepare something (`prerequisites`) before running the main command. For example, create the output directory if not exist. `prerequisites` has access to variables in both `inputs` and `outputs`.
 
 ```julia
 program_bowtie2 = CmdProgram(
     ...,
     prerequisites = quote
-        mkpath(dirname(to_str(BAM)))
+        mkpath(dirname(BAM))
     end
 )
 ```
 
 ### Validate Outputs (Robustness↑)
 
-After running the main command, we can validate outputs by using `validate_outputs`. It is a function takes `outputs::Dict{String}` as the argument.
+After running the main command, we can validate outputs by using `validate_outputs`. It has access to variables in `outputs`.
 
 ```julia
 program_bowtie2 = CmdProgram(
@@ -138,14 +138,14 @@ program_bowtie2 = CmdProgram(
 
 ### Wrap Up (Convenience↑)
 
-After validating outputs, we may also do something to wrap up, such as removing temporary files. Here, we build an index for output BAM file. wrap_up function takes `inputs::Dict{String}, outputs::Dict{String}` as the arguments.
+After validating outputs, we may also do something to wrap up, such as removing temporary files. Here, we build an index for output BAM file. `wrap_up` has access to variables in both `inputs` and `outputs`.
 
 ```julia
 program_bowtie2 = CmdProgram(
     ...,
     wrap_up = quote
-		run(`samtools index $BAM`)  # dollar sign is necessary in quote, unlike Pipelines(;cmd = ...) cannot use dollar sign.
-	end
+        run(`samtools index $BAM`)  # dollar sign is necessary in the command in a quote block, unlike Pipelines(;cmd = ...).
+    end
 )
 ```
 
@@ -163,28 +163,28 @@ program_bowtie2 = CmdProgram(
         "REF" => "human_genome_hg38.fa" => String
     ],
 
-	outputs = ["BAM" => String],
+    outputs = ["BAM" => String],
 	infer_outputs = quote
         Dict("BAM" => to_str(FASTQ) * ".bam")
     end,
 
-	validate_inputs = quote
+    validate_inputs = quote
         check_dependency_file(FASTQ) && check_dependency_file(REF)
     end,
 
-	prerequisites = quote
-        mkpath(dirname(to_str(BAM)))
+    prerequisites = quote
+        mkpath(dirname(BAM))
     end,
 
-	validate_outputs = quote
+    validate_outputs = quote
         check_dependency_file(BAM)
     end,
 
     cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),  # do not use dollar sign here.
 
     wrap_up = quote
-		run(`samtools index $BAM`)  # unlike cmd = ..., dollar sign is necessary in all quotes!
-	end
+        run(`samtools index $BAM`)  # unlike cmd = ..., dollar sign is necessary in all quotes!
+    end
 )
 ```
 
@@ -213,6 +213,8 @@ CmdProgram(;
 ```
 
 In this way, all preparation and post-evaluation can be wrapped in a single `CmdProgram`. It is easy to maintain and use.
+
+> Though arguments that accept `Expr` also accept `Function` (an old method), it is not convenient because you have to use `inputs["VAR"]` and `outputs["VAR"]`. If you insist to use `Function`, details can be found at the manual of Pipelines 0.7.6. 
 
 ## Run
 
@@ -300,7 +302,7 @@ The explanation of arguments is in the next section.
    >
    > c. `p.validate_outputs(outputs)` run successfully without returning `false`.
 
-5. Check command dependencies (`CmdDependency`).
+5. Check command dependencies (`CmdDependency`.)
 
    > Disable: `run(..., check_dependencies=false)`
    >
@@ -308,23 +310,23 @@ The explanation of arguments is in the next section.
 
 6. Remove the run id file if exists.
 
-7. Validate inputs by invoking `p.validate_inputs(inputs)`.
+7. Validate inputs (`p.validate_inputs`.)
 
 8. Preparing the main command.
 
    > If you specify `run(...; stdout=something, stderr=something, append::Bool)`, the command (`cmd`) will be wrapped with `pipeline(cmd; stdout=something, stderr=something, append::Bool)`. If `cmd` has its own file redirection, the outer wrapper may not work as you expect.
 
-9. Meet prerequisites by invoking `p.prerequisites(inputs, outputs)`.
+9. Meet prerequisites (`p.prerequisites`.)
 
    > It is the last function before running the main command.  For example, you can create a directory if  the main command cannot create itself.
 
 10. Run the main command.
 
-11. Validate outputs by invoking `p.validate_outputs(outputs)`.
+11. Validate outputs (`p.validate_outputs`.)
 
-12. Run the wrap up function by invoking `p.wrap_up(inputs, outputs)`
+12. Run the wrap up code (`p.wrap_up`.)
 
-    > It is the last function to do after-command jobs. For example, you can delete intermediate files if necessary.
+    > It is the last code to do after-command jobs. For example, you can delete intermediate files if necessary.
 
 13. Create run id file if `run(..., touch_run_id_file=true)`. Read Step 3 for details.
 
@@ -332,9 +334,10 @@ The explanation of arguments is in the next section.
 
     > The content can set by `p.info_after::String`.
     >
-    > Disable: `run(..., verbose=false)`
+    > Disable: `run(..., verbose=false)`.
+    > Simple output: `run(..., verbose=:min)`
 
-15. Return `(success::Bool, outputs{String})`
+15. Return `(success::Bool, outputs::Dict{String})`
 
 !!! note "Dry Run"
     `run(..., dry_run=true)` will return `(mature_command::AbstractCmd, run_id_file::String)` instead.
