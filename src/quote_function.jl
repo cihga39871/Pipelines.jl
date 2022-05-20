@@ -15,7 +15,7 @@ Elements in `inputs` or `outputs` can be directly used as variables for those ar
 | validate_inputs          | inputs                | the last expression                                |
 | infer_outputs            | inputs                | the last expression, can converted to Dict{String} |
 | prerequisites            | inputs, outputs       | the last expression                                |
-| main (JuliaProgram only) | inputs, outputs       | outputs                                            |
+| main (JuliaProgram only) | inputs, outputs       | outputs::Dict{String}                              |
 | validate_outputs         | outputs               | the last expression                                |
 | wrap_up                  | inputs, outputs       | the last expression                                |
 
