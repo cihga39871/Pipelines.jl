@@ -377,7 +377,7 @@ Return `(success::Bool, outputs::Dict{String})`
 - `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If `p isa CmdProgram` and the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
 
 !!! warning "Thread safety"
-	Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
 
 ### Workflow
 
@@ -406,32 +406,34 @@ Return `(success::Bool, outputs::Dict{String})`
 
 # Example
 
-	p = JuliaProgram(
-		id_file = "id_file",
-		inputs = ["a",
-		          "b" => Int],
-		outputs = "c" => "<a>.<b>",
-		main = quote
-			println("inputs are ", a, " and ", b)
-			println("You can also use info in outputs: ", outputs["c"])
-	        println("The returned value will be assigned to a new outputs")
-			println("It is ok to use inputs and outputs directly:")
-			@show inputs
-			@show outputs
-			c = b^2
-		end)
+```julia
+p = JuliaProgram(
+	id_file = "id_file",
+	inputs = ["a",
+	          "b" => Int],
+	outputs = "c" => "<a>.<b>",
+	main = quote
+		println("inputs are ", a, " and ", b)
+		println("You can also use info in outputs: ", outputs["c"])
+        println("The returned value will be assigned to a new outputs")
+		println("It is ok to use inputs and outputs directly:")
+		@show inputs
+		@show outputs
+		c = b^2
+	end)
 
-	# running the program using `run`: keyword arguments include keys of inputs and outputs
-	success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
+# running the program using `run`: keyword arguments include keys of inputs and outputs
+success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
 
-	# an old way to `run` program: need to create inputs and outputs first.
-	inputs = Dict("a" => `in1`, "b" => 2)
-	outputs = "c" => "out"
-	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
+# an old way to `run` program: need to create inputs and outputs first.
+inputs = Dict("a" => `in1`, "b" => 2)
+outputs = "c" => "out"
+success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
 
-	# for CmdProgram, outputs are inferred before running the main command, however,
-	# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
-	@assert new_out != outputs
+# for CmdProgram, outputs are inferred before running the main command, however,
+# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
+@assert new_out != outputs
+```
 """
 function prog_run(p::Program; args...)
 	run(p; args...)
