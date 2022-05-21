@@ -1,23 +1,3 @@
-
-"""
-Reserved keys that cannot be used in inputs and outputs.
-"""
-const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
-
-function check_reserved_xxputs(xxputs::Vector{String})
-	for (i, key) in enumerate(xxputs)
-		if key in RESERVED_KEY_SET
-			error("Program: cannot use the reserved key ($key) in inputs or outputs. Please use another key name.")
-		end
-	end
-end
-
-function check_function_methods(f::Function, t::Tuple, name = string(f))
-	if !hasmethod(f, t)
-		error("Program: function `$name` does not have the required method: $t. See more at the documents of `JuliaProgram` or `CmdProgram`.")
-	end
-end
-
 """
 # Summary
 
@@ -29,6 +9,32 @@ end
 	JuliaProgram
 """
 abstract type Program end
+
+
+function Base.getproperty(p::Program, sym::Symbol)
+	if sym === :inputs
+		String[arg.name for arg in getfield(p, :arg_inputs)]
+	elseif sym === :default_inputs
+		Any[arg.default for arg in getfield(p, :arg_inputs)]
+	elseif sym === :input_types
+		Type[arg.type for arg in getfield(p, :arg_inputs)]
+	elseif sym === :outputs
+		String[arg.name for arg in getfield(p, :arg_outputs)]
+	elseif sym === :default_outputs
+		Any[arg.default for arg in getfield(p, :arg_outputs)]
+	elseif sym === :output_types
+		Type[arg.type for arg in getfield(p, :arg_outputs)]
+	else
+		getfield(p, sym)
+	end
+end
+
+
+function check_function_methods(f::Function, t::Tuple, name = string(f))
+	if !hasmethod(f, t)
+		error("Program: function `$name` does not have the required method: $t. See more at the documents of `JuliaProgram` or `CmdProgram`.")
+	end
+end
 
 """
 	infer_outputs(p::Program; input_kwargs...)
@@ -118,73 +124,49 @@ function status_dependency(m::Module = @__MODULE__; exit_when_fail = false, verb
 	check_dependency(m; exit_when_fail = exit_when_fail, verbose = verbose)
 end
 
-function generate_run_uuid(inputs::Dict{String}, outputs::Dict{String})
+function generate_run_uuid(p::Program, inputs::Dict{String}, outputs::Dict{String})
 	out_uuid = UUID4
-	for d in (inputs, outputs)
-		sd = sort(OrderedDict(d))
-		for (k,v) in sd
-			out_uuid = uuid5(out_uuid, string(k, ":", v))
-		end
+	in_names = sort!([arg.name for arg in p.arg_inputs])
+	out_names = sort!([arg.name for arg in p.arg_outputs])
+	for name in in_names
+		out_uuid = uuid5(out_uuid, string(name, ":", inputs[name]))
+	end
+	for name in out_names
+		out_uuid = uuid5(out_uuid, string(name, ":", outputs[name]))
 	end
 	return out_uuid
 end
 
 """
-	inputs_completion(p::Program, inputs::Dict{String})
+	arg_completion(args::Vector{Arg}, xxputs::Dict{String})
 
-complete missing keywords in `inputs` and `outputs`.
+complete missing args in user-provided `inputs` or `outputs`.
 """
-function inputs_completion(p::Program, inputs::Dict{String})
-	value_type = fieldtypes(eltype(inputs))[2]  # value type of inputs
-	for (i, keyword) in enumerate(p.inputs)
-		if haskey(inputs, keyword)
+function arg_completion(args::Vector{Arg}, xxputs::Dict{String})
+	value_type = fieldtypes(eltype(xxputs))[2]  # value type of xxputs
+	for arg in args
+		keyword = arg.name
+		if haskey(xxputs, keyword)
 			# check types
-			value = convert_data_type(inputs[keyword], p.input_types[i])
+			value = convert_data_type(xxputs[keyword], arg.type)
 			if !(value isa value_type)
-				inputs = convert(Dict{String,Any}, inputs)
+				xxputs = convert(Dict{String,Any}, xxputs)
 			end  # it is ok to replace in for-loop
-			inputs[keyword] = value
+			xxputs[keyword] = value
 		else
 			# not provided, check default
-			default = p.default_inputs[i]
-			if isnothing(default)
-				# no default
-				throw(ErrorException("ArgumentError: Program '$(p.name)' requires '$keyword' in inputs, but it is not provided."))
+			if arg.required
+				throw(ErrorException("ArgumentError: Program requires '$keyword', but it is not provided."))
 			else
+				default = arg.default
 				if !(default isa value_type)
-					inputs = convert(Dict{String,Any}, inputs)
+					xxputs = convert(Dict{String,Any}, xxputs)
 				end  # it is ok to replace in for-loop
-				inputs[keyword] = default
+				xxputs[keyword] = default
 			end
 		end
 	end
-	inputs
-end
-function outputs_completion(p::Program, outputs::Dict{String})
-	value_type = fieldtypes(eltype(outputs))[2]  # value type of outputs
-	for (i, keyword) in enumerate(p.outputs)
-		if haskey(outputs, keyword)
-			# check types
-			value = convert_data_type(outputs[keyword], p.output_types[i])
-			if !(value isa value_type)
-				outputs = convert(Dict{String,Any}, outputs)
-			end  # it is ok to replace in for-loop
-			outputs[keyword] = value
-		else
-			# not provided, check default
-			default = p.default_outputs[i]
-			if isnothing(default)
-				# no default
-				throw(ErrorException("ArgumentError: Program '$(p.name)' requires $keyword in outputs, but it is not provided."))
-			else
-				if !(default isa value_type)
-					outputs = convert(Dict{String,Any}, outputs)
-				end  # it is ok to replace in for-loop
-				outputs[keyword] = default
-			end
-		end
-	end
-	outputs
+	xxputs
 end
 
 """
@@ -248,16 +230,18 @@ find_keywords(not_string) = []
 6. Return inputs and outputs.
 """
 function xxputs_completion_and_check(p::Program, inputs::Dict{String}, outputs::Dict{String})
-	inputs = inputs_completion(p::Program, inputs::Dict{String})
+	# inputs = inputs_completion(p::Program, inputs::Dict{String})
+	inputs = arg_completion(p.arg_inputs, inputs)
 
-	if isempty(p.outputs)
+	if isempty(p.arg_outputs)
 		# do nothing to outputs
 	else
 		if p.infer_outputs !== do_nothing
 			outputs_from_infer = to_xxput_dict(p.infer_outputs(inputs))
 			outputs = merge(outputs_from_infer, outputs)
 		end
-		outputs = outputs_completion(p::Program, outputs::Dict{String})
+		# outputs = outputs_completion(p::Program, outputs::Dict{String})
+		outputs = arg_completion(p.arg_outputs, outputs)
 	end
 
 	# check keyword consistency (keys in inputs and outputs compatible with the function)

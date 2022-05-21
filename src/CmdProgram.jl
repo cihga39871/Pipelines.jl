@@ -4,23 +4,16 @@ mutable struct CmdProgram <: Program
 	info_before::String
 	info_after::String
     cmd_dependencies::Vector{CmdDependency}
-	inputs::Vector{String}
-	input_types::Vector{Type}
-	default_inputs::Vector
+	arg_inputs::Vector{Arg}
 	validate_inputs::Function
 	prerequisites::Function
     cmd::Base.AbstractCmd
 	infer_outputs::Function
-	outputs::Vector{String}
-	output_types::Vector{Type}
-	default_outputs::Vector
+	arg_outputs::Vector{Arg}
 	validate_outputs::Function
 	wrap_up::Function
 
-	function CmdProgram(name, id_file, info_before, info_after, cmd_dependencies, inputs, input_types, default_inputs, validate_inputs, prerequisites, cmd, infer_outputs, outputs, output_types, default_outputs, validate_outputs, wrap_up)
-
-		check_reserved_xxputs(inputs)
-		check_reserved_xxputs(outputs)
+	function CmdProgram(name, id_file, info_before, info_after, cmd_dependencies, arg_inputs, validate_inputs, prerequisites, cmd, infer_outputs, arg_outputs, validate_outputs, wrap_up)
 
 		check_function_methods(validate_inputs, (Dict, ), "validate_inputs")
 		check_function_methods(prerequisites, (Dict, Dict), "prerequisites")
@@ -28,7 +21,7 @@ mutable struct CmdProgram <: Program
 		check_function_methods(validate_outputs, (Dict, ), "validate_outputs")
 		check_function_methods(wrap_up, (Dict, Dict), "wrap_up")
 
-		new(name, id_file, info_before, info_after, cmd_dependencies, inputs, input_types, default_inputs, validate_inputs, prerequisites, cmd, infer_outputs, outputs, output_types, default_outputs, validate_outputs, wrap_up)
+		new(name, id_file, info_before, info_after, cmd_dependencies, arg_inputs, validate_inputs, prerequisites, cmd, infer_outputs, arg_outputs, validate_outputs, wrap_up)
 	end
 end
 
@@ -68,7 +61,7 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 - `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
 
 
-  > `keyword` is an argument name, needs to be a `String`.
+  > `keyword` is an argument name, normally it is a `String`. If the keyword does not affect results (such as ncpu, nthreads), it needs to be a `Symbol`. When generating unique run IDs, Symbol args are ignored.
   >
   > `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
   >
@@ -141,8 +134,12 @@ function CmdProgram(;
 	validate_outputs::Union{Function,Expr}  = do_nothing,  # vars of outputs
 	wrap_up::Union{Function,Expr}           = do_nothing   # vars of inputs and outputs
 )
-	inputs, input_types, default_inputs = parse_default(inputs)
-	outputs, output_types, default_outputs = parse_default(outputs)
+	# inputs, input_types, default_inputs = parse_default(inputs)
+	# outputs, output_types, default_outputs = parse_default(outputs)
+	arg_inputs = parse_arg(inputs)
+	arg_outputs = parse_arg(outputs)
+	inputs = String[arg.name for arg in arg_inputs]
+	outputs = String[arg.name for arg in arg_outputs]
 
 	validate_inputs = quote_function(validate_inputs, inputs)
 	infer_outputs = quote_function(infer_outputs, inputs)
@@ -156,16 +153,12 @@ function CmdProgram(;
 		info_before,
 		info_after,
 		cmd_dependencies,
-		inputs,
-		input_types,
-		default_inputs,
+		arg_inputs,
 		validate_inputs,
 		prerequisites,
 		cmd,
 		infer_outputs,
-		outputs,
-		output_types,
-		default_outputs,
+		arg_outputs,
 		validate_outputs,
 		wrap_up
 	)
@@ -189,7 +182,7 @@ function _run(
 	inputs, outputs = xxputs_completion_and_check(p, inputs, outputs)
 
 	# run id based on inputs and outputs
-	run_id = generate_run_uuid(inputs, outputs)
+	run_id = generate_run_uuid(p, inputs, outputs)
 	run_id_file = joinpath(dir, p.id_file * "." * string(run_id))
 
 	# whether dry run

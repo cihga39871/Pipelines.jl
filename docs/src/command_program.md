@@ -31,8 +31,9 @@ In Bash script, the main code of the example:
 REF=/path/to/reference_genome
 FASTQ=/path/to/input_fastq_file
 BAM=/path/to/output_bam_file
+NTHREADS=8
 
-bowtie2 -x $REF -q $FASTQ | samtools sort -O bam -o $BAM
+bowtie2 --threads $NTHREADS -x $REF -q $FASTQ | samtools sort -O bam -o $BAM
 ```
 
 The equivalent version using CmdProgram:
@@ -42,10 +43,11 @@ program_bowtie2 = CmdProgram(
     ...,
     inputs = [
         "FASTQ" => String,
-        "REF" => "human_genome_hg38.fa" => String
+        "REF" => "human_genome_hg38.fa" => String,
+		:NTHREADS => Int => 8
     ],
     outputs = "BAM" => String,
-    cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`)
+    cmd = pipeline(`bowtie2 --threads NTHREADS -x REF -q FASTQ`, `samtools sort -O bam -o BAM`)
 )
 ```
 

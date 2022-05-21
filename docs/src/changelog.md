@@ -1,5 +1,13 @@
 # Change log
 
+## v0.8.2
+
+- Feature: New `Arg` data type for storing inputs and outputs information in `Program`. `arg_inputs::Vector{Arg}` and `arg_outputs::Vector{Arg}` are new fields of `Program`.
+
+- Feature: If a `Arg` name of inputs/outputs is a Symbol, run id will not generate using this Arg, which is useful for args do not affect the results, such as nthread, ncpu. (#8)
+
+- Fix other issues.
+
 ## v0.8.0
 
 - Feature: `quote_function` allows user to use 'elements of inputs and outputs as variables' when defining Program. To use the feature, users can pass `quote ... end` to Program's arguments that requires `Function` before, such as `main`, `validate_inputs`. From Pipelines v0.8, all `Expr` provided will be converted to `Function` automatically. See details in `quote_expr`.

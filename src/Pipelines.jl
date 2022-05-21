@@ -23,6 +23,9 @@ check_dependency,
 check_dependency_file,
 check_dependency_dir
 
+include("Arg.jl")
+export Arg
+
 include("Program.jl")
 export Program, prog_run,
 infer_outputs,
