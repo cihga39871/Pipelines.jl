@@ -23,7 +23,7 @@ Pipelines are built with multiple `Program`s. `Program` is the abstract type con
 JuliaProgram <: Program
 
 JuliaProgram(;
-    name::String                            = "Command Program",
+    name::String                            = "Julia Program",
     id_file::String                         = "",
     info_before::String                     = "auto",
     info_after::String                      = "auto",
@@ -44,19 +44,9 @@ JuliaProgram(;
 To run a `JuliaProgram`, the methods are the same as `CmdProgram`:
 
 ```julia
-success, outputs = run(p::Program; program_kwargs..., run_kwargs...)
-```
-
-- `program_kwargs...` include elements in `p.inputs` and `p.outputs`
-- `run_kwargs...` are keyword arguments pass to `run(p::Program, inputs, outputs; run_kwargs...)` (see below.)
-
-The old method needs to create `inputs::Dict{String}` and `outputs::Dict{String}` first:
-
-```julia
 success, outputs = run(
 	p::Program;
-	inputs=Dict{String}(),
-	outputs=Dict{String}(),
+	program_kwargs...,
 	dir::AbstractString="",
 	check_dependencies::Bool=true,
 	skip_when_done::Bool=true,
@@ -69,51 +59,54 @@ success, outputs = run(
 	stdlog=nothing,
 	append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
-
-success, outputs = run(p::Program, inputs, outputs; kwargs...)
-
-# only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
-success, outputs = run(p::Program, inputs; kwargs...)
 ```
 
+- `program_kwargs...` include elements in `p.inputs` and `p.outputs`
+- Other keyword arguments are related to run. Details can be found at [`run`](@ref).
 
 
-!!! note
+
+!!! warning "Thread safety"
     Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different `Tasks` or multi-thread mode.
 
 
 
-!!! note "Compatibility with JobSchedulers.jl"
+!!! compat "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
 
     `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`. See example below.
-    
+
 ## Example
 ```julia
 using Pipelines
 
 p = JuliaProgram(
-    id_file = "id_file",
-    inputs = ["a", "b"],
-    outputs = ["out"],
-    main = (inputs, outputs) -> begin
-        a = inputs["a"]
-        b = inputs["b"]
-        println("inputs are ", a, " and ", b)
-        println("You can also use info in outputs: ", outputs["out"])
-
+	id_file = "id_file",
+	inputs = ["a",
+	          "b" => Int],
+	outputs = "c" => "<a>.<b>",
+	main = quote
+		println("inputs are ", a, " and ", b)
+		println("You can also use info in outputs: ", outputs["c"])
         println("The returned value will be assigned to a new outputs")
-        return Dict{String,Any}("out" => b^2)
-    end
-)
+		println("It is ok to use inputs and outputs directly:")
+		@show inputs
+		@show outputs
+		c = b^2
+	end)
 
-success, outputs = run(p, a=`in1`, b=2, out="any", touch_run_id_file=false) # outputs will be refreshed
+# running the program using `run`: keyword arguments include keys of inputs and outputs
+success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
 
-# An alternative way to run
+# an old way to `run` program: need to create inputs and outputs first.
 inputs = Dict("a" => `in1`, "b" => 2)
-outputs = "out" => "will_be_replaced"
-success, outputs = run(p, inputs, outputs; touch_run_id_file = false)
+outputs = "c" => "out"
+success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
+
+# for CmdProgram, outputs are inferred before running the main command, however,
+# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
+@assert new_out != outputs
 ```
 
 ### Compatibility with JobSchedulers.jl

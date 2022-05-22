@@ -44,14 +44,17 @@ program_bowtie2 = CmdProgram(
     inputs = [
         "FASTQ" => String,
         "REF" => "human_genome_hg38.fa" => String,
-		:NTHREADS => Int => 8
+        :NTHREADS => Int => 8
     ],
     outputs = "BAM" => String,
     cmd = pipeline(`bowtie2 --threads NTHREADS -x REF -q FASTQ`, `samtools sort -O bam -o BAM`)
 )
 ```
 
-Now, the code can be run by invoking `run(program_bowtie2, inputs, outputs)`, but to illustrate the full functionality, we will add more things to make it robust and easy to use.
+Now, the code can be run by invoking `run(program_bowtie2; FASTQ = "x", REF = "y", NTHREADS = 8, BAM = "z")`, but to illustrate the full functionality, we will add more things to make it robust and easy to use.
+
+!!! tip "Name of inputs: String or Symbol"
+    Normally the name should be a `String`. However, if the argument does not affect results (such as ncpu, nthreads), it needs to be a `Symbol`. Symbol arguments are ignored when generating unique run IDs, so it can prevent re-running a program with different CPU allocation (for example).
 
 ### Command Dependency (Robustness↑)
 
@@ -165,28 +168,28 @@ program_bowtie2 = CmdProgram(
         "REF" => "human_genome_hg38.fa" => String
     ],
 
-	outputs = ["BAM" => String],
-	infer_outputs = quote
+    outputs = ["BAM" => String],
+    infer_outputs = quote
         Dict("BAM" => to_str(FASTQ) * ".bam")
     end,
 
-	validate_inputs = quote
+    validate_inputs = quote
         check_dependency_file(FASTQ) && check_dependency_file(REF)
     end,
 
-	prerequisites = quote
+    prerequisites = quote
         mkpath(dirname(to_str(BAM)))
     end,
 
-	validate_outputs = quote
+    validate_outputs = quote
         check_dependency_file(BAM)
     end,
 
     cmd = pipeline(`bowtie2 -x REF -q FASTQ`, `samtools sort -O bam -o BAM`),  # do not use dollar sign here.
 
     wrap_up = quote
-		run(`samtools index $BAM`)  # unlike cmd = ..., dollar sign is necessary in all quotes!
-	end
+        run(`samtools index $BAM`)  # unlike cmd = ..., dollar sign is necessary in all quotes!
+    end
 )
 ```
 
@@ -218,22 +221,12 @@ In this way, all preparation and post-evaluation can be wrapped in a single `Cmd
 
 ## Run
 
-To run a `Program`, use one of the following methods.
-
-```julia
-success, outputs = run(p::Program; program_kwargs..., run_kwargs...)
-```
-
-- `program_kwargs...` include elements in `p.inputs` and `p.outputs`
-- `run_kwargs...` are keyword arguments pass to `run(p::Program, inputs, outputs; run_kwargs...)` (see below.)
-
-The old method needs to create `inputs::Dict{String}` and `outputs::Dict{String}` first:
+To run a `Program`, use this method:
 
 ```julia
 success, outputs = run(
 	p::Program;
-	inputs=Dict{String}(),
-	outputs=Dict{String}(),
+	program_kwargs...,
 	dir::AbstractString="",
 	check_dependencies::Bool=true,
 	skip_when_done::Bool=true,
@@ -246,21 +239,29 @@ success, outputs = run(
 	stdlog=nothing,
 	append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
-
-success, outputs = run(p::Program, inputs, outputs; run_kwargs...)
-
-# only usable when outputs have default values.
-success, outputs = run(p::Program, inputs; run_kwargs...)
 ```
 
+- `program_kwargs...` include elements in `p.inputs` and `p.outputs`
+- Other keyword arguments are related to run. Details can be found at [`run`](@ref).
 
 
-!!! note
+!!! compat
+    The old methods < v0.8 still work, which put program's arguments in `inputs::Dict{String}` and `outputs::Dict{String}`:
+
+    ```julia
+    success, outputs = run(p::Program, inputs, outputs; run_kwargs...)
+    # only usable when outputs have default values.
+    success, outputs = run(p::Program, inputs; run_kwargs...)
+    ```
+
+
+
+!!! warning
     Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different `Tasks` or multi-thread mode.
 
 
 
-!!! note "Compatibility with JobSchedulers.jl"
+!!! compat "Compatibility with JobSchedulers.jl"
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
 
@@ -310,23 +311,23 @@ The explanation of arguments is in the next section.
 
 6. Remove the run id file if exists.
 
-7. Validate inputs by invoking `p.validate_inputs(inputs)`.
+7. Validate inputs. (`p.validate_inputs`)
 
 8. Preparing the main command.
 
    > If you specify `run(...; stdout=something, stderr=something, append::Bool)`, the command (`cmd`) will be wrapped with `pipeline(cmd; stdout=something, stderr=something, append::Bool)`. If `cmd` has its own file redirection, the outer wrapper may not work as you expect.
 
-9. Meet prerequisites by invoking `p.prerequisites(inputs, outputs)`.
+9. Meet prerequisites. (`p.prerequisites`)
 
-   > It is the last function before running the main command.  For example, you can create a directory if  the main command cannot create itself.
+   > It is the last code before running the main command.  For example, you can create a directory if  the main command cannot create itself.
 
 10. Run the main command.
 
-11. Validate outputs by invoking `p.validate_outputs(outputs)`.
+11. Validate outputs. (`p.validate_outputs`)
 
-12. Run the wrap up function by invoking `p.wrap_up(inputs, outputs)`
+12. Run the wrap up code. (`p.wrap_up`)
 
-    > It is the last function to do after-command jobs. For example, you can delete intermediate files if necessary.
+    > It is the last code to do after-command jobs. For example, you can delete intermediate files if necessary.
 
 13. Create run id file if `run(..., touch_run_id_file=true)`. Read Step 3 for details.
 
@@ -335,6 +336,8 @@ The explanation of arguments is in the next section.
     > The content can set by `p.info_after::String`.
     >
     > Disable: `run(..., verbose=false)`
+	>
+	> Simple info: `run(..., verbose=min)`
 
 15. Return `(success::Bool, outputs{String})`
 

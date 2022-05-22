@@ -60,7 +60,6 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
 
-
   > `keyword` is an argument name, normally it is a `String`. If the keyword does not affect results (such as ncpu, nthreads), it needs to be a `Symbol`. When generating unique run IDs, Symbol args are ignored.
   >
   > `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
@@ -84,15 +83,13 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
 
 - `wrap_up::Expr`: the last quoted code to run. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
 
-> **Compatibility of Pipelines < v0.8**:
->
-> You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
->
-> From Pipelines v0.8, all `Expr` provided will be converted to `Function` automatically.
+!!! compat "Compatibility of Pipelines < v0.8"
+    You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
 
-> **Debug: variable not found**
->
-> Please refer to [`quote_expr`](@ref), section 'quote variables in other scopes.'
+    From Pipelines v0.8, all `Expr` provided will be converted to `Function` automatically.
+
+!!! tip "Debug: variable not found"
+    Please refer to [`quote_expr`](@ref), section 'quote variables in other scopes.'
 
 # Example
 
@@ -183,7 +180,7 @@ function _run(
 
 	# run id based on inputs and outputs
 	run_id = generate_run_uuid(p, inputs, outputs)
-	run_id_file = joinpath(dir, p.id_file * "." * string(run_id))
+	run_id_file = joinpath(dir, getfield(p, :id_file) * "." * string(run_id))
 
 	# whether dry run
 	if dry_run
@@ -193,32 +190,32 @@ function _run(
 	verbose_level = parse_verbose(verbose)
 
 	if verbose_level == :all
-		if p.info_before == "auto" || p.info_before == ""
-			@info timestamp() * "Started: $(p.name)" command_template=p.cmd run_id inputs outputs
+		if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
+			@info timestamp() * "Started: $(getfield(p, :name))" command_template=getfield(p, :cmd) run_id inputs outputs
 		else
-			@info timestamp() * p.info_before command_template=p.cmd run_id inputs outputs
+			@info timestamp() * getfield(p, :info_before) command_template=getfield(p, :cmd) run_id inputs outputs
 		end
 	elseif verbose_level == :min
-		if p.info_before == "auto" || p.info_before == ""
-			@info timestamp() * "Started: $(p.name) [$(run_id)]"
+		if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
+			@info timestamp() * "Started: $(getfield(p, :name)) [$(run_id)]"
 		else
-			@info timestamp() * p.info_before * " [$(run_id)]"
+			@info timestamp() * getfield(p, :info_before) * " [$(run_id)]"
 		end
 	end
 
 	# skip when done
-	if skip_when_done && isfile(run_id_file) && isok(p.validate_outputs(outputs))
+	if skip_when_done && isfile(run_id_file) && isok(getfield(p, :validate_outputs)(outputs))
 		if verbose_level == :all
-			@warn timestamp() * "Skipped finished program: $(p.name)" command_template=p.cmd run_id inputs outputs
+			@warn timestamp() * "Skipped finished program: $(getfield(p, :name))" command_template=getfield(p, :cmd) run_id inputs outputs
 		else
-			@warn timestamp() * "Skipped finished program: $(p.name) [$(run_id)]"
+			@warn timestamp() * "Skipped finished program: $(getfield(p, :name)) [$(run_id)]"
 		end
 		return true, outputs
 	end
 
 	# check dependencies
 	if check_dependencies
-		foreach(check_dependency, p.cmd_dependencies)
+		foreach(check_dependency, getfield(p, :cmd_dependencies))
 	end
 
 	# preparation: remove run id file
@@ -226,9 +223,9 @@ function _run(
 
 	# preparation: validate inputs
 	try
-		isok(p.validate_inputs(inputs)) || error("ProgramInputValidationError: $(p.name): the prerequisites function returns false.")
+		isok(getfield(p, :validate_inputs)(inputs)) || error("ProgramInputValidationError: $(getfield(p, :name)): the prerequisites function returns false.")
 	catch e
-		@error timestamp() * "ProgramInputValidationError: $(p.name): fail to validate inputs (before running the main command)." validation_function=p.validate_inputs command_template=p.cmd run_id inputs outputs
+		@error timestamp() * "ProgramInputValidationError: $(getfield(p, :name)): fail to validate inputs (before running the main command)." validation_function=getfield(p, :validate_inputs) command_template=getfield(p, :cmd) run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -244,9 +241,9 @@ function _run(
 
 	# preparation: run function prerequisites before the main command
 	try
-		isok(p.prerequisites(inputs, outputs)) || error("ProgramPrerequisitesError: $(p.name): the prerequisites function returns false.")
+		isok(getfield(p, :prerequisites)(inputs, outputs)) || error("ProgramPrerequisitesError: $(getfield(p, :name)): the prerequisites function returns false.")
 	catch e
-		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command)." prerequisites=p.prerequisites command_template=p.cmd run_id inputs outputs
+		@error timestamp() * "ProgramPrerequisitesError: $(getfield(p, :name)): fail to run the prerequisites function (before running the main command)." prerequisites=getfield(p, :prerequisites) command_template=getfield(p, :cmd) run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -256,24 +253,24 @@ function _run(
 		run(cmd)
 		# run(pipeline(cmd, stdout=stdout, stderr=stderr, append=append))
 	catch e
-		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command." prerequisites=p.prerequisites command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main command." prerequisites=getfield(p, :prerequisites) command_running=cmd run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
 
 	# confirmation: validate outputs
 	try
-		isok(p.validate_outputs(outputs)) || error("ProgramOutputValidationError: $(p.name): the validation function returns false.")
+		isok(getfield(p, :validate_outputs)(outputs)) || error("ProgramOutputValidationError: $(getfield(p, :name)): the validation function returns false.")
 	catch e
-		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command)." validation_function=p.validate_outputs command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramOutputValidationError: $(getfield(p, :name)): fail to validate outputs (after running the main command)." validation_function=getfield(p, :validate_outputs) command_running=cmd run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
 
 	try
-		isok(p.wrap_up(inputs, outputs)) || error("ProgramWrapUpError: $(p.name): the wrap_up function returns false.")
+		isok(getfield(p, :wrap_up)(inputs, outputs)) || error("ProgramWrapUpError: $(getfield(p, :name)): the wrap_up function returns false.")
 	catch e
-		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function." wrap_up=p.wrap_up command_running=cmd run_id inputs outputs
+		@error timestamp() * "ProgramWrapUpError: $(getfield(p, :name)): fail to run the wrap_up function." wrap_up=getfield(p, :wrap_up) command_running=cmd run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -282,16 +279,16 @@ function _run(
 	touch_run_id_file && touch(run_id_file)
 
 	if verbose_level == :all
-		if p.info_after == "auto" || p.info_after == ""
-			@info timestamp() * "Finished: $(p.name)" command_running=cmd run_id inputs outputs
+		if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
+			@info timestamp() * "Finished: $(getfield(p, :name))" command_running=cmd run_id inputs outputs
 		else
-			@info timestamp() * p.info_after command_running=cmd run_id inputs outputs
+			@info timestamp() * getfield(p, :info_after) command_running=cmd run_id inputs outputs
 		end
 	elseif verbose_level == :min
-		if p.info_after == "auto" || p.info_after == ""
-			@info timestamp() * "Finished: $(p.name) [$run_id]"
+		if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
+			@info timestamp() * "Finished: $(getfield(p, :name)) [$run_id]"
 		else
-			@info timestamp() * p.info_after * " [$run_id]"
+			@info timestamp() * getfield(p, :info_after) * " [$run_id]"
 		end
 	end
 	return true, outputs
@@ -357,9 +354,9 @@ end
 Prepare the runable command. Keywords in CmdProgram will be given to values of inputs/outputs.
 """
 function prepare_cmd(p::CmdProgram, inputs::Dict{String}, outputs::Dict{String})
-	prepare_cmd(p.cmd, inputs, outputs)
+	prepare_cmd(getfield(p, :cmd), inputs, outputs)
 end
 
 function prepare_cmd(p::CmdProgram, inputs, outputs)
-	prepare_cmd(p.cmd, to_xxput_dict(inputs), to_xxput_dict(outputs))
+	prepare_cmd(getfield(p, :cmd), to_xxput_dict(inputs), to_xxput_dict(outputs))
 end

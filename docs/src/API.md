@@ -17,14 +17,19 @@ prepare_cmd
 JuliaProgram()
 ```
 
-## Quote for Program Args
+## Quote for Program
 ```@docs
 quote_expr
 quote_function
 ```
 
-## Run Programs
+## Arg
+```@docs
+Arg
+Pipelines.RESERVED_KEY_SET
+```
 
+## Run Program
 ```@docs
 Base.run
 ```
@@ -62,8 +67,7 @@ restore_stderr
 
 ## Internal
 ```@docs
-Pipelines.RESERVED_KEY_SET
-Pipelines.parse_default
+Pipelines.parse_arg
 Pipelines.to_xxput_dict
 Pipelines.try_function
 Pipelines.StackTraceVector

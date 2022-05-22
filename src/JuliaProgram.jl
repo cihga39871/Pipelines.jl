@@ -30,7 +30,7 @@ end
 	JuliaProgram <: Program
 
 	JuliaProgram(;
-		name::String                            = "Command Program",
+		name::String                            = "Julia Program",
 		id_file::String                         = "",
 		info_before::String                     = "auto",
 		info_after::String                      = "auto",
@@ -80,21 +80,20 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
 - `main::Expr`: The main julia code. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
 
-  > Caution: the returned value of `p.main` will be assigned to new `outputs`. Please ensure the variables in outputs are defined correctly, since it will return `outputs::Dict{String,Any}`.
+!!! warning "Returned outputs"
+    The returned value of `p.main` will be assigned to new `outputs`. Please ensure the variables in outputs are defined correctly, since it will return `outputs::Dict{String,Any}`.
 
 - `validate_outputs::Expr`: A quoted code to validate outputs. Elements in `outputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 
 - `wrap_up::Expr`: the last quoted code to run. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
 
-> **Compatibility of Pipelines < v0.8**:
->
-> You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
->
-> From Pipelines v0.8, all `Expr` provided will be converted to `Function` automatically.
+!!! compat "Compatibility of Pipelines < v0.8"
+    You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.
 
-> **Debug: variable not found**
->
-> Please refer to [`quote_expr`](@ref), section 'quote variables in other scopes.'
+    From Pipelines v0.8, all `Expr` provided will be converted to `Function` automatically.
+
+!!! tip "Debug: variable not found"
+    Please refer to [`quote_expr`](@ref), section 'quote variables in other scopes.'
 
 # Example
 
@@ -183,7 +182,7 @@ function _run(
 
 	# run id based on inputs and outputs
 	run_id = generate_run_uuid(p, inputs, outputs)
-	run_id_file = joinpath(dir, p.id_file * "." * string(run_id))
+	run_id_file = joinpath(dir, getfield(p, :id_file) * "." * string(run_id))
 
 	# whether dry run
 	if dry_run
@@ -193,32 +192,32 @@ function _run(
 	verbose_level = parse_verbose(verbose)
 
 	if verbose_level == :all
-		if p.info_before == "auto" || p.info_before == ""
-			@info timestamp() * "Started: $(p.name)" run_id inputs outputs
+		if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
+			@info timestamp() * "Started: $(getfield(p, :name))" run_id inputs outputs
 		else
-			@info timestamp() * p.info_before run_id inputs outputs
+			@info timestamp() * getfield(p, :info_before) run_id inputs outputs
 		end
 	elseif verbose_level == :min
-		if p.info_before == "auto" || p.info_before == ""
-			@info timestamp() * "Started: $(p.name) [$(run_id)]"
+		if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
+			@info timestamp() * "Started: $(getfield(p, :name)) [$(run_id)]"
 		else
-			@info timestamp() * p.info_before * " [$(run_id)]"
+			@info timestamp() * getfield(p, :info_before) * " [$(run_id)]"
 		end
 	end
 
 	# skip when done
-	if skip_when_done && isfile(run_id_file) && isok(p.validate_outputs(outputs))
+	if skip_when_done && isfile(run_id_file) && isok(getfield(p, :validate_outputs)(outputs))
 		if verbose_level == :all
-			@warn timestamp() * "Skipped finished program: $(p.name)" run_id inputs outputs
+			@warn timestamp() * "Skipped finished program: $(getfield(p, :name))" run_id inputs outputs
 		else
-			@warn timestamp() * "Skipped finished program: $(p.name) [$(run_id)]"
+			@warn timestamp() * "Skipped finished program: $(getfield(p, :name)) [$(run_id)]"
 		end
 		return true, outputs
 	end
 
 	# check dependencies
 	if check_dependencies
-		foreach(check_dependency, p.cmd_dependencies)
+		foreach(check_dependency, getfield(p, :cmd_dependencies))
 	end
 
 	# preparation: remove run id file
@@ -226,9 +225,9 @@ function _run(
 
 	# preparation: validate inputs
 	try
-		isok(p.validate_inputs(inputs)) || error("ProgramInputValidationError: $(p.name): the prerequisites function returns false.")
+		isok(getfield(p, :validate_inputs)(inputs)) || error("ProgramInputValidationError: $(getfield(p, :name)): the prerequisites function returns false.")
 	catch e
-		@error timestamp() * "ProgramInputValidationError: $(p.name): fail to validate inputs (before running the main command)." validation_function=p.validate_inputs run_id inputs outputs
+		@error timestamp() * "ProgramInputValidationError: $(getfield(p, :name)): fail to validate inputs (before running the main command)." validation_function=getfield(p, :validate_inputs) run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -242,25 +241,25 @@ function _run(
 
 	# preparation: run function prerequisites before the main command
 	try
-		isok(p.prerequisites(inputs, outputs)) || error("ProgramPrerequisitesError: $(p.name): the prerequisites function returns false.")
+		isok(getfield(p, :prerequisites)(inputs, outputs)) || error("ProgramPrerequisitesError: $(getfield(p, :name)): the prerequisites function returns false.")
 	catch e
-		@error timestamp() * "ProgramPrerequisitesError: $(p.name): fail to run the prerequisites function (before running the main command)." prerequisites=p.prerequisites run_id inputs outputs
+		@error timestamp() * "ProgramPrerequisitesError: $(getfield(p, :name)): fail to run the prerequisites function (before running the main command)." prerequisites=getfield(p, :prerequisites) run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
 
 	# run the main command
 	outputs_main = try
-		p.main(inputs, outputs)
+		getfield(p, :main)(inputs, outputs)
 	catch e
-		@error timestamp() * "ProgramRunningError: $(p.name): fail to run the main command." run_id inputs outputs
+		@error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main command." run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
 
 	# check type of outputs
 	if !isa(outputs_main, Dict)
-		@warn timestamp() * "ProgramMainReturnValue: $(p.name): the returned value of the main function is not a Dict, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main
+		@warn timestamp() * "ProgramMainReturnValue: $(getfield(p, :name)): the returned value of the main function is not a Dict, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main
 
 		# check keys in outputs::Dict{String}
 		check_outputs_keywords(p, outputs)
@@ -269,7 +268,7 @@ function _run(
 			check_outputs_keywords(p, outputs_main)
 			outputs_main
 		catch
-			@warn timestamp() * "ProgramMainReturnValue: $(p.name): the returned Dict of the main function does not pass the keyword checks, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main
+			@warn timestamp() * "ProgramMainReturnValue: $(getfield(p, :name)): the returned Dict of the main function does not pass the keyword checks, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main
 			outputs
 		end
 	end
@@ -277,17 +276,17 @@ function _run(
 
 	# confirmation: validate outputs
 	try
-		isok(p.validate_outputs(outputs)) || error("ProgramOutputValidationError: $(p.name): the validation function returns false.")
+		isok(getfield(p, :validate_outputs)(outputs)) || error("ProgramOutputValidationError: $(getfield(p, :name)): the validation function returns false.")
 	catch e
-		@error timestamp() * "ProgramOutputValidationError: $(p.name): fail to validate outputs (after running the main command)." validation_function=p.validate_outputs run_id inputs outputs
+		@error timestamp() * "ProgramOutputValidationError: $(getfield(p, :name)): fail to validate outputs (after running the main command)." validation_function=getfield(p, :validate_outputs) run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
 
 	try
-		isok(p.wrap_up(inputs, outputs)) || error("ProgramWrapUpError: $(p.name): the wrap_up function returns false.")
+		isok(getfield(p, :wrap_up)(inputs, outputs)) || error("ProgramWrapUpError: $(getfield(p, :name)): the wrap_up function returns false.")
 	catch e
-		@error timestamp() * "ProgramWrapUpError: $(p.name): fail to run the wrap_up function." wrap_up=p.wrap_up run_id inputs outputs
+		@error timestamp() * "ProgramWrapUpError: $(getfield(p, :name)): fail to run the wrap_up function." wrap_up=getfield(p, :wrap_up) run_id inputs outputs
 		rethrow(e)
 		return false, outputs
 	end
@@ -296,16 +295,16 @@ function _run(
 	touch_run_id_file && touch(run_id_file)
 
 	if verbose_level == :all
-		if p.info_after == "auto" || p.info_after == ""
-			@info timestamp() * "Finished: $(p.name)" run_id inputs outputs
+		if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
+			@info timestamp() * "Finished: $(getfield(p, :name))" run_id inputs outputs
 		else
-			@info timestamp() * p.info_after run_id inputs outputs
+			@info timestamp() * getfield(p, :info_after) run_id inputs outputs
 		end
 	elseif verbose_level == :min
-		if p.info_after == "auto" || p.info_after == ""
-			@info timestamp() * "Finished: $(p.name) [$run_id]"
+		if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
+			@info timestamp() * "Finished: $(getfield(p, :name)) [$run_id]"
 		else
-			@info timestamp() * p.info_after * " [$run_id]"
+			@info timestamp() * getfield(p, :info_after) * " [$run_id]"
 		end
 	end
 	return true, outputs

@@ -29,4 +29,5 @@
     v = ["A", :B => Int => 5.0, "C" => 9.0 => Float64]
     @test Pipelines.parse_arg(v) == Arg[Arg(v[1]), Arg(v[2]), Arg(v[3])]
 
+    @test_nowarn display(Arg[])
 end

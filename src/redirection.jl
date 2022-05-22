@@ -9,7 +9,7 @@ stderr_origin = nothing  # re-defined in __init__()
 
 Restore the current stdout to the original stdout. It is useful when redirecting stdout/stderr fails when calling `redirect_to_files`, which happens when an old stream is closed and then redirected to.
 
-!!! note
+!!! warning "Thread safety"
     Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
 
 See also `restore_stderr()`.
@@ -28,8 +28,8 @@ end
 
 Restore the current stderr to the original stderr. It is useful when redirecting stdout/stderr fails when calling `redirect_to_files`, which happens when an old stream is closed and then redirected to.
 
-!!! note
-Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+!!! warning "Thread safety"
+    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
 
 See also `restore_stdout()`.
 """
@@ -194,7 +194,7 @@ Redirect outputs of function `f` to file(s).
 
 Caution: If `xxxfile` is an `IO`, it won't be closed. Please use `close(io)` or `JobSchedulers.close_in_future(io, jobs)` manually!
 
-!!! note
+!!! warning "Thread safety"
     Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
 """
 function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")

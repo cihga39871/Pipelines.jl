@@ -304,21 +304,20 @@ Run Program (CmdProgram or JuliaProgram).
 
 Return `(success::Bool, outputs::Dict{String})`
 
-  > If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` ***only*** when the returned value is a `Dict{String}` and passes `p.validate_outputs`. See more at [`JuliaProgram`](@ref).
+!!! warning
+    If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` **only** when the returned value is a `Dict{String}` and passes `p.validate_outputs`. See more at [`JuliaProgram`](@ref).
 
 # Positional Arguments
 
 - `p::Program`: the command or Julia program template.
 
-- `inputs` and `outputs`: `p::Program` stores a program template with replaceable portions as *keywords*. All keywords can be found at `p.inputs` and `p.outputs` string vectors. Here, `inputs` and `outputs` are better to be `Dict(keyword::String => replacement)`.
+- `inputs` and `outputs`: `p::Program` stores a program template with replaceable portions as *keywords*. All keywords can be found at `p.arg_inputs` and `p.arg_outputs`. Here, `inputs` and `outputs` are better to be `Dict(keyword::String => replacement)`.
 
   > If data types of `inputs` and `outputs` are not `Dict{String}`, they will be converted as far as possible. If the conversion fails, program will throw an error.
 
-  > If `p isa JuliaProgram`, `outputs` **will be overwritten by the returned value of** `p.main` ***only*** when the returned value is a `Dict{String}` and passes `p.validate_outputs`.
-
 # Keyword Arguments:
 
-- elements in `p.inputs` and `p.outputs`. They will merge to positional arguments `inputs` and `outputs`.
+- elements in `p.arg_inputs` and `p.arg_outputs`. They will merge to positional arguments `inputs` and `outputs`.
 
 - `dir::AbstractString = ""`: working directory to run the program and store `run_id_file`.
 
@@ -336,8 +335,8 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If `p isa CmdProgram` and the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
 
-!!! note
-	Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+!!! warning "Thread safety"
+    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
 
 ### Workflow
 
@@ -345,53 +344,55 @@ Return `(success::Bool, outputs::Dict{String})`
 
 2. Validate compatibility between `p` and `inputs/outputs`.
 
-3. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs(outputs)`)
+3. Check whether the program has run before. (`skip_when_done`, `p.validate_outputs`)
 
 4. Check command dependencies. (`check_dependencies`, `p.cmd_dependencies`)
 
-5. Validate `inputs`. (`p.validate_inputs(inputs)`)
+5. Validate `inputs`. (`p.validate_inputs`)
 
 6. [CmdProgram only] Generate runnable command from `p` and `inputs/outputs`. (`stdout`, `stderr`, `append`)
 
-7. Preparing before running main command. (`p.prerequisites(inputs, outputs)`)
+7. Preparing before running main command. (`p.prerequisites`)
 
 8. Run command [CmdProgram] or the main function [JuliaProgram].
 
-9. If `p isa CmdProgram`, validate `outputs` only. If `p isa JuliaProgram`, validate the returned value of the main function. If pass, `outputs` will ***overwritten by the returned value***. Otherwise, the original `outputs` is ***kept***. (`p.validate_outputs(outputs)`)
+9. If `p isa CmdProgram`, validate `outputs` only. If `p isa JuliaProgram`, validate the returned value of the main function. If pass, `outputs` will **overwritten by the returned value**. Otherwise, the original `outputs` is **kept**. (`p.validate_outputs`)
 
-10. Wrap up. (`p.wrap_up(inputs, outputs)`)
+10. Wrap up. (`p.wrap_up`)
 
 11. Success, touch run id file, and return `(success::Bool, outputs::Dict{String})`. (`touch_run_id_file::Bool`)
 
 
 # Example
 
-	p = JuliaProgram(
-		id_file = "id_file",
-		inputs = ["a",
-		          "b" => Int],
-		outputs = "c" => "<a>.<b>",
-		main = quote
-			println("inputs are ", a, " and ", b)
-			println("You can also use info in outputs: ", outputs["c"])
-	        println("The returned value will be assigned to a new outputs")
-			println("It is ok to use inputs and outputs directly:")
-			@show inputs
-			@show outputs
-			c = b^2
-		end)
+```julia
+p = JuliaProgram(
+	id_file = "id_file",
+	inputs = ["a",
+	          "b" => Int],
+	outputs = "c" => "<a>.<b>",
+	main = quote
+		println("inputs are ", a, " and ", b)
+		println("You can also use info in outputs: ", outputs["c"])
+        println("The returned value will be assigned to a new outputs")
+		println("It is ok to use inputs and outputs directly:")
+		@show inputs
+		@show outputs
+		c = b^2
+	end)
 
-	# running the program using `run`: keyword arguments include keys of inputs and outputs
-	success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
+# running the program using `run`: keyword arguments include keys of inputs and outputs
+success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
 
-	# an old way to `run` program: need to create inputs and outputs first.
-	inputs = Dict("a" => `in1`, "b" => 2)
-	outputs = "c" => "out"
-	success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
+# an old way to `run` program: need to create inputs and outputs first.
+inputs = Dict("a" => `in1`, "b" => 2)
+outputs = "c" => "out"
+success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
 
-	# for CmdProgram, outputs are inferred before running the main command, however,
-	# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
-	@assert new_out != outputs
+# for CmdProgram, outputs are inferred before running the main command, however,
+# for JuliaProgram, outputs will change to the returned value of main function, if the returned value is a Dict and pass `p.validate_outputs`
+@assert new_out != outputs
+```
 """
 function prog_run(p::Program; args...)
 	run(p; args...)
@@ -402,7 +403,7 @@ end
 
 Classify `args...` to inputs and outputs of `p` or other keyword arguments.
 
-Return (inputs::Dict{String}, outputs::Dict{String}, other_kwargs::Tuple)
+Return `(inputs::Dict{String}, outputs::Dict{String}, other_kwargs::Tuple)`
 """
 function parse_program_args(p::Program; args...)
     inputs = Dict{String,Any}()
@@ -411,9 +412,9 @@ function parse_program_args(p::Program; args...)
     for (i, arg) in enumerate(args)
         k, v = arg
         k_str = string(k)
-        if k_str in p.inputs
+        if k_str in p.arg_inputs
             inputs[k_str] = v
-        elseif k_str in p.outputs
+        elseif k_str in p.arg_outputs
             outputs[k_str] = v
 		elseif k === :inputs
 			inputs = merge(to_xxput_dict(v), inputs)

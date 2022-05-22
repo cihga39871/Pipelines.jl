@@ -37,6 +37,7 @@ using Test
 	    validate_stderr = do_nothing,
 	    exit_when_fail = true
 	)
+	@test_nowarn display(julia)
 
 	check_dependency(julia)
 
@@ -58,6 +59,7 @@ using Test
 	    ],
 	    cmd = `echo input input2 optional_arg optional_arg2 output`
 	)
+	@test_nowarn display(p)
 
 	inputs = Dict(
 	    "input" => `in1`,
@@ -91,6 +93,7 @@ using Test
 	    cmd = `echo input input2`
 	)
 
+	@info "A stack trace will show:"
 	@test run(p_nooutput,
 	    inputs;
 	    skip_when_done = false,
@@ -290,9 +293,11 @@ using Test
 		id_file = "id_file",
 		cmd = `julia --abcdefg`
 	)
+	@info "A ProgramRunningError should show below"
 	p_error_res = run(p_error, retry=1, verbose=:min)
 	@test p_error_res isa Pipelines.StackTraceVector
 
+	@info "A ProgramRunningError should show below"
 	pj_error = JuliaProgram(
 		id_file = "id_file",
 		main = (x, y) -> begin

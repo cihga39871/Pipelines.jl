@@ -1,6 +1,8 @@
 
 ### Reserved keys
 """
+	const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
+
 Reserved keys that cannot be used in inputs and outputs.
 """
 const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
@@ -18,7 +20,10 @@ struct Arg{AllowedType,DefaultType}
     independent::Bool
 end
 
-Arg(name::Union{String,Symbol}, type::Type = Any, default = nothing; required::Bool = isnothing(default), independent::Bool = name isa Symbol)
+Arg(name::Union{String,Symbol}, type::Type = Any, default = nothing;
+	required::Bool = isnothing(default),
+	independent::Bool = name isa Symbol
+)
 ```
 
 `Arg` stores the settings of inputs and outputs in `Program`.
@@ -32,6 +37,40 @@ Arg(name::Union{String,Symbol}, type::Type = Any, default = nothing; required::B
 - `required = isnothing(default)`: if true, the `Arg` has to be provided by users.
 
 - `independent = isa(name, Symbol)`: if true, the argument does not change the results of a Program, such as "nthreads", "memory". Independent args have no effect on run id.
+
+-------------
+
+```julia
+Arg(pair::Pair)
+```
+
+An easy way to create `Arg`.
+
+## Valid `pair` types
+
+- `name`: no default value.
+
+- `name => value`: set default value, except `value` is `nothing` (default value not set).
+
+- `name => value_type::Type`: no default value, but value type.
+
+- `name => value => value_type::Type`: set default value and value type.
+
+- `name => value_type::Type => value`: set default value and value type.
+
+Also, `name isa Symbol` means `independent = true`.
+
+!!! tip "An edge situation"
+    To create an argument with a default value of `nothing`, you cannot use `pair::Pair`. Instead, this works:
+	```julia
+	p = JuliaProgram(
+	    inputs = [
+		    Arg("ARG_NAME", Any, nothing; required = true),
+			"OTHER_ARG" => String
+		]
+	)
+
+	```
 """
 struct Arg{AllowedType,DefaultType}
     name::String
@@ -72,6 +111,16 @@ function Arg(name::Symbol, default; required::Bool = isnothing(default), indepen
 end
 
 
+## search
+function Base.in(name::AbstractString, args::Vector{Arg})
+	for a in args
+		if name == a.name
+			return true
+		end
+	end
+	return false
+end
+
 ## parse default inputs/outputs
 function throw_invalid_xxputs(any)
 	throw(ErrorException("TypeError: Elements of inputs and outputs can only be one of `name::Union{String,Symbol}`, `name => default_value`, `name => data_type`, `name => default_value => data_type`, `name => data_type => default_value`. Invalid value: $any"))
@@ -86,15 +135,15 @@ Return `Vector{Arg}`.
 
 ## Valid `v` element types
 
-- `name::String`: no default value.
+- `name`: no default value.
 
-- `name::String => value`: set default value, except `value` is `nothing` (default value not set).
+- `name => value`: set default value, except `value` is `nothing` (default value not set).
 
-- `name::String => value_type::Type`: no default value, but value type.
+- `name => value_type::Type`: no default value, but value type.
 
-- `name::String => value => value_type::Type`: set default value and value type.
+- `name => value => value_type::Type`: set default value and value type.
 
-- `name::String => value_type::Type => value`: set default value and value type.
+- `name => value_type::Type => value`: set default value and value type.
 """
 parse_arg(v::Vector{String}) = Arg[Arg(ele) for ele in v]
 parse_arg(v::Vector) = Arg[Arg(ele) for ele in v]
@@ -104,6 +153,7 @@ parse_arg(s::AbstractString) = Arg[Arg(s)]
 parse_arg(p::Pair) = Arg[Arg(p)]
 parse_arg(d::Dict) = Arg[Arg(p) for p in d]
 parse_arg(s::Symbol) = Arg[Arg(s)]
+parse_arg(a::Arg) = Arg[a]
 parse_arg(any) = throw_invalid_xxputs(any)
 
 function Arg(ele::Pair)
@@ -111,7 +161,7 @@ function Arg(ele::Pair)
 	type, value = parse_arg_info(ele.second)
 	Arg(name, type, value)
 end
-Arg(a::Arg) = copy(a)
+Arg(a::Arg) = a
 Arg(any) = throw_invalid_xxputs(any)
 
 
