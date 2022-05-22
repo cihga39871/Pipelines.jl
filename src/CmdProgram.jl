@@ -66,11 +66,6 @@ Command program template. To run a `CmdProgram`, use `run(::CmdProgram; kwargs..
   >
   > `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
 
-  *HOW DOES THIS WORK?*
-
-  > `CmdProgram` stores a command template. In the template, replaceable portions are occupied by *keywords*, and all keywords are set in `inputs` and `outputs`.
-  > `keyword`s will be replaced before running the program. Users need to provide a dictionary of `keyword::String => value` in `run(::Program, inputs::Dict{String}, outputs::Dict{String})`.
-
 - `validate_inputs::Expr`: A quoted code to validate inputs. Elements in `inputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 
 - `infer_outputs::Expr`: A quoted code to infer outputs from inputs. Elements in `inputs` can be directly used as variables. Has to return a `Dict{String}("OUTPUT_VAR" => value)`. See details in [`quote_expr`](@ref)

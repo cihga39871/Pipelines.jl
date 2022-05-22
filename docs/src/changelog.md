@@ -1,12 +1,14 @@
 # Change log
 
-## v0.8.2
+## v0.8.2-3
 
 - Feature: New `Arg` data type for storing inputs and outputs information in `Program`. `arg_inputs::Vector{Arg}` and `arg_outputs::Vector{Arg}` are new fields of `Program`.
 
 - Feature: If a `Arg` name of inputs/outputs is a Symbol, run id will not generate using this Arg, which is useful for args do not affect the results, such as nthread, ncpu. (#8)
 
 - Fix other issues.
+
+- Docs: better documentation for v0.8 features.
 
 ## v0.8.1
 

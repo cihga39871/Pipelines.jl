@@ -59,18 +59,13 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 
 - `cmd_dependencies::Vector{CmdDependency}`: Any command dependencies used in the program.
 
-- `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`.
+- `inputs` and `outputs`: Elements (or vectors containing elements) in the following format: (1) `keyword` (2) `keyword => data_type` (3) `keyword => default_value` (4) `keyword => default_value => data_type`. See more: [`Arg`](@ref).
 
   > `keyword` is an argument name, normally it is a `String`. If the keyword does not affect results (such as ncpu, nthreads), it needs to be a `Symbol`. When generating unique run IDs, Symbol args are ignored.
   >
   > `default_value` is optional. If set, users may not provide this argument when running. Elsewise, users have to provide it. Caution: `nothing` is preserved and means default value not set. If `String`, it can contain other keywords, but need to quote using '<>', such as `"<arg>.txt"`
   >
   > `data_type` is optional. If set, the value provided have to be this data type, or an error will throw.
-
-  *HOW DOES THIS WORK?*
-
-  > `JuliaProgram` stores a Julia function, with two arguments `inputs::Dict{String}, outputs::Dict{String}`. The keys of the two arguments should be set in `inputs::Vector{String}` and `outputs::Vector{String}`.
-  > Caution: the returned value of `p.main` will be assigned to new `outputs` when the returned value is `Dict{String}` with proper keys. Otherwise, a warning will show and the returned value will be the original `outputs::Dict`.
 
 - `validate_inputs::Expr`: A quoted code to validate inputs. Elements in `inputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 

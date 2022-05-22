@@ -11,7 +11,7 @@ A `CmdProgram` contains a command template, lists of dependencies/inputs/outputs
 
 We will go through an example to illustrate how to write a `CmdProgram`.
 
-The example is a **robust** Bowtie2 mapping program. It shows every functionality of `CmdProgram`, but in reality, we do not need that much validation.
+The example is a **robust** Bowtie2 mapping program. It shows every feature of `CmdProgram`, but in reality, we do not need that much validation.
 
 ### Define the Name
 ```julia
@@ -51,29 +51,32 @@ program_bowtie2 = CmdProgram(
 )
 ```
 
-Now, the code can be run by invoking `run(program_bowtie2; FASTQ = "x", REF = "y", NTHREADS = 8, BAM = "z")`, but to illustrate the full functionality, we will add more things to make it robust and easy to use.
+Now, the code can be run by invoking `run(program_bowtie2; FASTQ = "x", REF = "y", NTHREADS = 8, BAM = "z")`, but to illustrate all features, we will add more things to make it robust and easy to use.
 
-!!! tip "Name of inputs: String or Symbol"
-    Normally the name should be a `String`. However, if the argument does not affect results (such as ncpu, nthreads), it needs to be a `Symbol`. Symbol arguments are ignored when generating unique run IDs, so it can prevent re-running a program with different CPU allocation (for example).
+!!! tip "Name of arguments: String or Symbol"
+    Normally the name should be a `String`. However, if the argument does not affect results (such as number of threads), it needs to be a `Symbol`. Symbol arguments are ignored when generating unique run IDs to prevent re-running a program. Arguments will be converted to [`Arg`](@ref) objects.
 
 ### Command Dependency (Robustness↑)
 
-We use `samtools` and `bowtie2` as command dependencies. They can be wrapped in `CmdDependency`, which is illustrated in another page. Please allow me to skip it for now.
+We use `samtools` and `bowtie2` (two bioinformatics programs) as `command dependencies`. They can be wrapped in [`CmdDependency`](@ref).
 
 ### Infer Outputs (Convenience↑)
 
-We can set a default method to generate `outputs::Dict{String}` from inputs, which allows us run the program without specifying outputs (`run(program_bowtie2, inputs)`.)
+We can set a default method to generate `outputs::Dict{String}` from inputs, which allows us run the program without specifying outputs. Elements in `inputs` can be directly used as variables.
 
 ```julia
 program_bowtie2 = CmdProgram(
     ...,
     outputs = "BAM" => String,
     infer_outputs = quote
-        Dict("BAM" => to_str(FASTQ) * ".bam")
+        Dict("BAM" => FASTQ * ".bam")
     end,
     ...
 )
 ```
+
+!!! tip "Quote usage in Program"
+    Quote is a piece of code of the type `Expr`ession. See details in [`quote_expr`](@ref).
 
 Or, the following does the same job:
 
@@ -85,19 +88,17 @@ program_bowtie2 = CmdProgram(
 )
 ```
 
-
-
-!!! note "to_str(x) and to_cmd(x)"
-    `to_str` converts most types to `String`, and `to_cmd` to `Cmd`. They are tailored for parsing `inputs["x"]` and `outputs["x"]`.
-
-    User-defined `inputs, outputs::Dict{String}` only confine the key type (`String`), does not confine the value type because of flexibility. When writing functions using inputs/outputs, we should consider this. It can be a Number, a Cmd, a String, and even a Vector. Pipeline.jl provides `to_str` and `to_cmd` to elegantly convert those types to `String` or `Cmd` as you wish.
-
-    Other conversions are also available, such as `replaceext` (replace extension) and `removeext` (remove extension). More details are in API/Utils page.
+!!! tip "Useful functions to change file names"
+    - [`replaceext`](@ref): replace file extension.
+	- [`removeext`](@ref): remove file extension.
+	- [`to_str`](@ref): converts most types to `String`.
+	- [`to_cmd`](@ref): converts most types to `Cmd`.
+	More details are in the API/Utils page.
 
 
 ### Validate Inputs (Robustness↑)
 
-To make the code robust, we can check whether the inputs exists by using `validate_inputs`. It is a function takes `inputs::Dict{String}` as the argument.
+To make the code robust, we can check whether the inputs exists by using `validate_inputs`. Elements in `inputs` can be directly used as variables.
 
 ```julia
 program_bowtie2 = CmdProgram(
@@ -115,20 +116,20 @@ program_bowtie2 = CmdProgram(
 
 ### Prerequisites (Robustness↑)
 
-We also need to prepare something (`prerequisites`) before running the main command. For example, create the output directory if not exist. (`prerequisites`) is a function takes `inputs::Dict{String}, outputs::Dict{String}` as the arguments.
+We also need to prepare something (`prerequisites`) before running the main command. For example, create the output directory if not exist. Elements in `inputs` and `outputs` can be directly used as variables.
 
 ```julia
 program_bowtie2 = CmdProgram(
     ...,
     prerequisites = quote
-        mkpath(dirname(to_str(BAM)))
+        mkpath(dirname(BAM))
     end
 )
 ```
 
 ### Validate Outputs (Robustness↑)
 
-After running the main command, we can validate outputs by using `validate_outputs`. It is a function takes `outputs::Dict{String}` as the argument.
+After running the main command, we can validate outputs by using `validate_outputs`. Elements in `outputs` can be directly used as variables.
 
 ```julia
 program_bowtie2 = CmdProgram(
@@ -143,7 +144,7 @@ program_bowtie2 = CmdProgram(
 
 ### Wrap Up (Convenience↑)
 
-After validating outputs, we may also do something to wrap up, such as removing temporary files. Here, we build an index for output BAM file. wrap_up function takes `inputs::Dict{String}, outputs::Dict{String}` as the arguments.
+After validating outputs, we may also do something to wrap up, such as removing temporary files. Here, we build an index for output BAM file. Elements in `inputs` and `outputs` can be directly used as variables.
 
 ```julia
 program_bowtie2 = CmdProgram(
@@ -170,7 +171,7 @@ program_bowtie2 = CmdProgram(
 
     outputs = ["BAM" => String],
     infer_outputs = quote
-        Dict("BAM" => to_str(FASTQ) * ".bam")
+        Dict("BAM" => FASTQ * ".bam")
     end,
 
     validate_inputs = quote
@@ -178,7 +179,7 @@ program_bowtie2 = CmdProgram(
     end,
 
     prerequisites = quote
-        mkpath(dirname(to_str(BAM)))
+        mkpath(dirname(BAM))
     end,
 
     validate_outputs = quote
@@ -297,7 +298,7 @@ The explanation of arguments is in the next section.
 
    > **How does the program know it ran before?**
    >
-   > a. `run(..., skip_when_down=true)` enables the functionality.
+   > a. `run(..., skip_when_done=true)` skip running the program if it has been done before.
    >
    > b. Run id file is generated. The prefix of run id file is set by `p.id_file`. After given inputs and outputs, a unique ID will be appended to the prefix. You can use `run(..., touch_run_id_file=false)` to skip creating the run id file.
    >

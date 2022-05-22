@@ -89,7 +89,7 @@ p = JuliaProgram(
 	main = quote
 		println("inputs are ", a, " and ", b)
 		println("You can also use info in outputs: ", outputs["c"])
-        println("The returned value will be assigned to a new outputs")
+		println("The returned value will be assigned to a new outputs")
 		println("It is ok to use inputs and outputs directly:")
 		@show inputs
 		@show outputs
@@ -116,11 +116,6 @@ using JobSchedulers
 
 scheduler_start()  # start job scheduler
 
-job = Job(p, inputs, outputs;
-    touch_run_id_file = false
-)  # create a Job object; same arguments as `run`
-
-# An alternative way to create a Job, since JobSchedulers v0.6.8
 job = Job(p, a=`in1`, b=2, out="any", touch_run_id_file=false)
 
 submit!(job)  # submit job to queue

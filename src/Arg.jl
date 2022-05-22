@@ -12,18 +12,25 @@ const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "w
 
 """
 ```julia
-struct Arg{AllowedType,DefaultType}
+
+Arg(name)
+Arg(name => value)
+Arg(name => type::Type)
+Arg(name => value => type::Type)
+Arg(name => type::Type => value)
+
+Arg(name::Union{String,Symbol}, type::Type = Any, default = nothing;
+	required::Bool = isnothing(default),
+	independent::Bool = name isa Symbol
+)
+
+struct Arg{type,DefaultType}
     name::String
     type::Type
     default::DefaultType
     required::Bool
     independent::Bool
 end
-
-Arg(name::Union{String,Symbol}, type::Type = Any, default = nothing;
-	required::Bool = isnothing(default),
-	independent::Bool = name isa Symbol
-)
 ```
 
 `Arg` stores the settings of inputs and outputs in `Program`.
@@ -38,13 +45,6 @@ Arg(name::Union{String,Symbol}, type::Type = Any, default = nothing;
 
 - `independent = isa(name, Symbol)`: if true, the argument does not change the results of a Program, such as "nthreads", "memory". Independent args have no effect on run id.
 
--------------
-
-```julia
-Arg(pair::Pair)
-```
-
-An easy way to create `Arg`.
 
 ## Valid `pair` types
 
@@ -58,10 +58,9 @@ An easy way to create `Arg`.
 
 - `name => value_type::Type => value`: set default value and value type.
 
-Also, `name isa Symbol` means `independent = true`.
 
 !!! tip "An edge situation"
-    To create an argument with a default value of `nothing`, you cannot use `pair::Pair`. Instead, this works:
+    To create an argument with a default value of `nothing`, you cannot use `=>`. Instead, this works:
 	```julia
 	p = JuliaProgram(
 	    inputs = [
