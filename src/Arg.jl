@@ -1,7 +1,7 @@
 
 ### Reserved keys
 """
-	const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
+    const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
 
 Reserved keys that cannot be used in inputs and outputs.
 """
@@ -20,8 +20,8 @@ Arg(name => value => type::Type)
 Arg(name => type::Type => value)
 
 Arg(name::Union{String,Symbol}, type::Type = Any, default = nothing;
-	required::Bool = isnothing(default),
-	independent::Bool = name isa Symbol
+    required::Bool = isnothing(default),
+    independent::Bool = name isa Symbol
 )
 
 struct Arg{type,DefaultType}
@@ -61,15 +61,15 @@ end
 
 !!! tip "An edge situation"
     To create an argument with a default value of `nothing`, you cannot use `=>`. Instead, this works:
-	```julia
-	p = JuliaProgram(
-	    inputs = [
-		    Arg("ARG_NAME", Any, nothing; required = true),
-			"OTHER_ARG" => String
-		]
-	)
+    ```julia
+    p = JuliaProgram(
+        inputs = [
+            Arg("ARG_NAME", Any, nothing; required = true),
+            "OTHER_ARG" => String
+        ]
+    )
 
-	```
+    ```
 """
 struct Arg{AllowedType,DefaultType}
     name::String
@@ -78,10 +78,10 @@ struct Arg{AllowedType,DefaultType}
     required::Bool
     independent::Bool
     function Arg(name::String, type::Type, default::DefaultType, required::Bool, independent::Bool) where DefaultType
-		if name in RESERVED_KEY_SET
-			error("Program: cannot use the reserved name ($name) in inputs or outputs. Please use another name.")
-		end
-		default = convert_data_type(default, type)
+        if name in RESERVED_KEY_SET
+            error("Program: cannot use the reserved name ($name) in inputs or outputs. Please use another name.")
+        end
+        default = convert_data_type(default, type)
         # if !(default isa type || default isa Nothing)
         #     throw(TypeError(:Arg, "checking default value and allowed type", type, default))
         # end
@@ -112,17 +112,17 @@ end
 
 ## search
 function Base.in(name::AbstractString, args::Vector{Arg})
-	for a in args
-		if name == a.name
-			return true
-		end
-	end
-	return false
+    for a in args
+        if name == a.name
+            return true
+        end
+    end
+    return false
 end
 
 ## parse default inputs/outputs
 function throw_invalid_xxputs(any)
-	throw(ErrorException("TypeError: Elements of inputs and outputs can only be one of `name::Union{String,Symbol}`, `name => default_value`, `name => data_type`, `name => default_value => data_type`, `name => data_type => default_value`. Invalid value: $any"))
+    throw(ErrorException("TypeError: Elements of inputs and outputs can only be one of `name::Union{String,Symbol}`, `name => default_value`, `name => data_type`, `name => default_value => data_type`, `name => data_type => default_value`. Invalid value: $any"))
 end
 
 """
@@ -156,31 +156,31 @@ parse_arg(a::Arg) = Arg[a]
 parse_arg(any) = throw_invalid_xxputs(any)
 
 function Arg(ele::Pair)
-	name = ele.first
-	type, value = parse_arg_info(ele.second)
-	Arg(name, type, value)
+    name = ele.first
+    type, value = parse_arg_info(ele.second)
+    Arg(name, type, value)
 end
 Arg(a::Arg) = a
 Arg(any) = throw_invalid_xxputs(any)
 
 
 function parse_arg_info(data_type::Type)
-	data_type, nothing
+    data_type, nothing
 end
 function parse_arg_info(p::Pair)
-	parse_arg_info_pair(p.first, p.second)
+    parse_arg_info_pair(p.first, p.second)
 end
 function parse_arg_info(value)
-	Any, value
+    Any, value
 end
 function parse_arg_info_pair(a::Type, b::Type)
-	if a isa b
-		b, a
-	elseif b isa a
-		a, b
-	else
-		throw(ErrorException("TypeError: $(a) and $(b) are not inclusive."))
-	end
+    if a isa b
+        b, a
+    elseif b isa a
+        a, b
+    else
+        throw(ErrorException("TypeError: $(a) and $(b) are not inclusive."))
+    end
 end
 parse_arg_info_pair(a, b::Type) = b, convert_data_type(a, b)
 parse_arg_info_pair(a::Type, b) = a, convert_data_type(b, a)
@@ -188,13 +188,13 @@ parse_arg_info_pair(a::Type, b) = a, convert_data_type(b, a)
 convert_data_type(value::Nothing, data_type::Type) = nothing
 
 function convert_data_type(value, data_type::Type)
-	if isa(value, data_type)
-		return value
-	else
-		try
-			convert(data_type, value)
-		catch
-			throw(ErrorException("TypeError: cannot convert $value to $data_type."))
-		end
-	end
+    if isa(value, data_type)
+        return value
+    else
+        try
+            convert(data_type, value)
+        catch
+            throw(ErrorException("TypeError: cannot convert $value to $data_type."))
+        end
+    end
 end

@@ -45,19 +45,19 @@ To run a `JuliaProgram`, the methods are the same as `CmdProgram`:
 
 ```julia
 success, outputs = run(
-	p::Program;
-	program_kwargs...,
-	dir::AbstractString="",
-	check_dependencies::Bool=true,
-	skip_when_done::Bool=true,
-	touch_run_id_file::Bool=true,
-	verbose=true,
-	retry::Int=0,
-	dry_run::Bool=false,
-	stdout=nothing,
-	stderr=nothing,
-	stdlog=nothing,
-	append::Bool=false
+    p::Program;
+    program_kwargs...,
+    dir::AbstractString="",
+    check_dependencies::Bool=true,
+    skip_when_done::Bool=true,
+    touch_run_id_file::Bool=true,
+    verbose=true,
+    retry::Int=0,
+    dry_run::Bool=false,
+    stdout=nothing,
+    stderr=nothing,
+    stdlog=nothing,
+    append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
 ```
 
@@ -82,19 +82,19 @@ success, outputs = run(
 using Pipelines
 
 p = JuliaProgram(
-	id_file = "id_file",
-	inputs = ["a",
-	          "b" => Int],
-	outputs = "c" => "<a>.<b>",
-	main = quote
-		println("inputs are ", a, " and ", b)
-		println("You can also use info in outputs: ", outputs["c"])
-		println("The returned value will be assigned to a new outputs")
-		println("It is ok to use inputs and outputs directly:")
-		@show inputs
-		@show outputs
-		c = b^2
-	end)
+    id_file = "id_file",
+    inputs = ["a",
+              "b" => Int],
+    outputs = "c" => "<a>.<b>",
+    main = quote
+        println("inputs are ", a, " and ", b)
+        println("You can also use info in outputs: ", outputs["c"])
+        println("The returned value will be assigned to a new outputs")
+        println("It is ok to use inputs and outputs directly:")
+        @show inputs
+        @show outputs
+        c = b^2
+    end)
 
 # running the program using `run`: keyword arguments include keys of inputs and outputs
 success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)

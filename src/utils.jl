@@ -9,19 +9,19 @@ const UUID4 = uuid4(UUIDs.MersenneTwister(39871))
 
 ## simple functions
 """
-	do_nothing() = nothing
-	do_nothing(x) = nothing
-	do_nothing(x, y) = nothing
+    do_nothing() = nothing
+    do_nothing(x) = nothing
+    do_nothing(x, y) = nothing
 """
 do_nothing() = nothing
 do_nothing(x) = nothing
 do_nothing(x, y) = nothing
 
 """
-	isok(x::Nothing) = true
-	isok(x::Bool) = x
-	isok(x::AbstractString) = true unless x is "" / n / no / null / f / false / 0
-	isok(x::Any) = true  # default is true
+    isok(x::Nothing) = true
+    isok(x::Bool) = x
+    isok(x::AbstractString) = true unless x is "" / n / no / null / f / false / 0
+    isok(x::Any) = true  # default is true
 """
 isok(x::Nothing) = true
 isok(x::Bool) = x
@@ -30,32 +30,32 @@ isok(x) = true  # default is true
 
 
 """
-	to_xxput_dict(p::Pair{String, V}) where V
-	to_xxput_dict(p::Pair)
-	to_xxput_dict(v::Vector{V}) where V <: Pair
-	to_xxput_dict(d::Dict)
+    to_xxput_dict(p::Pair{String, V}) where V
+    to_xxput_dict(p::Pair)
+    to_xxput_dict(v::Vector{V}) where V <: Pair
+    to_xxput_dict(d::Dict)
 
 Convert inputs/outputs to Dict{String} in `run(p, inputs, outputs)`
 """
 function to_xxput_dict(p::Pair{String, V}) where V
-	Dict(p.first => p.second)
+    Dict(p.first => p.second)
 end
 function to_xxput_dict(p::Pair)
-	Dict(str(p.first) => p.second)
+    Dict(str(p.first) => p.second)
 end
 function to_xxput_dict(v::Vector{V}) where V <: Pair
-	res = Dict{String,Any}()
-	for p in v
-		res[str(p.first)] = p.second
-	end
-	res
+    res = Dict{String,Any}()
+    for p in v
+        res[str(p.first)] = p.second
+    end
+    res
 end
 function to_xxput_dict(d::Dict)
-	res = Dict{String,Any}()
-	for p in d
-		res[str(p.first)] = p.second
-	end
-	res
+    res = Dict{String,Any}()
+    for p in d
+        res[str(p.first)] = p.second
+    end
+    res
 end
 to_xxput_dict(d::Dict{String}) = d
 to_xxput_dict(any) = throw(ErrorException("TypeError: cannot run Program: cannot convert to Dict{String}: inputs, outputs, or returned value of infer_outputs(inputs)"))

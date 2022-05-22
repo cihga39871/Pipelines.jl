@@ -90,10 +90,10 @@ program_bowtie2 = CmdProgram(
 
 !!! tip "Useful functions to change file names"
     - [`replaceext`](@ref): replace file extension.
-	- [`removeext`](@ref): remove file extension.
-	- [`to_str`](@ref): converts most types to `String`.
-	- [`to_cmd`](@ref): converts most types to `Cmd`.
-	More details are in the API/Utils page.
+    - [`removeext`](@ref): remove file extension.
+    - [`to_str`](@ref): converts most types to `String`.
+    - [`to_cmd`](@ref): converts most types to `Cmd`.
+    More details are in the API/Utils page.
 
 
 ### Validate Inputs (Robustness↑)
@@ -150,8 +150,8 @@ After validating outputs, we may also do something to wrap up, such as removing 
 program_bowtie2 = CmdProgram(
     ...,
     wrap_up = quote
-		run(`samtools index $BAM`)  # dollar sign is necessary in quote, unlike Pipelines(;cmd = ...) cannot use dollar sign.
-	end
+        run(`samtools index $BAM`)  # dollar sign is necessary in quote, unlike Pipelines(;cmd = ...) cannot use dollar sign.
+    end
 )
 ```
 
@@ -202,19 +202,19 @@ program_bowtie2 = CmdProgram(
 CmdProgram <: Program
 
 CmdProgram(;
-	name::String                            = "Command Program",
-	id_file::String                         = "",
-	info_before::String                     = "auto",
-	info_after::String                      = "auto",
-	cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
-	inputs                                  = Vector{String}(),
-	validate_inputs::Expr                   = do_nothing,  # vars of inputs
-	infer_outputs::Expr                     = do_nothing,  # vars of inputs
-	prerequisites::Expr                     = do_nothing,  # vars of inputs and outputs
-	cmd::Base.AbstractCmd                   = ``,
-	outputs                                 = Vector{String}(),
-	validate_outputs::Expr                  = do_nothing,  # vars of outputs
-	wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
+    name::String                            = "Command Program",
+    id_file::String                         = "",
+    info_before::String                     = "auto",
+    info_after::String                      = "auto",
+    cmd_dependencies::Vector{CmdDependency} = Vector{CmdDependency}(),
+    inputs                                  = Vector{String}(),
+    validate_inputs::Expr                   = do_nothing,  # vars of inputs
+    infer_outputs::Expr                     = do_nothing,  # vars of inputs
+    prerequisites::Expr                     = do_nothing,  # vars of inputs and outputs
+    cmd::Base.AbstractCmd                   = ``,
+    outputs                                 = Vector{String}(),
+    validate_outputs::Expr                  = do_nothing,  # vars of outputs
+    wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
 ) -> CmdProgram
 ```
 
@@ -226,19 +226,19 @@ To run a `Program`, use this method:
 
 ```julia
 success, outputs = run(
-	p::Program;
-	program_kwargs...,
-	dir::AbstractString="",
-	check_dependencies::Bool=true,
-	skip_when_done::Bool=true,
-	touch_run_id_file::Bool=true,
-	verbose=true,
-	retry::Int=0,
-	dry_run::Bool=false,
-	stdout=nothing,
-	stderr=nothing,
-	stdlog=nothing,
-	append::Bool=false
+    p::Program;
+    program_kwargs...,
+    dir::AbstractString="",
+    check_dependencies::Bool=true,
+    skip_when_done::Bool=true,
+    touch_run_id_file::Bool=true,
+    verbose=true,
+    retry::Int=0,
+    dry_run::Bool=false,
+    stdout=nothing,
+    stderr=nothing,
+    stdlog=nothing,
+    append::Bool=false
 ) -> (success::Bool, outputs::Dict{String})
 ```
 
@@ -337,8 +337,8 @@ The explanation of arguments is in the next section.
     > The content can set by `p.info_after::String`.
     >
     > Disable: `run(..., verbose=false)`
-	>
-	> Simple info: `run(..., verbose=min)`
+    >
+    > Simple info: `run(..., verbose=min)`
 
 15. Return `(success::Bool, outputs{String})`
 

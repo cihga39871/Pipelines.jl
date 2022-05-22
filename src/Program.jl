@@ -1,84 +1,84 @@
 """
 # Summary
 
-	abstract type Program <: Any
+    abstract type Program <: Any
 
 # Subtypes
 
-	CmdProgram
-	JuliaProgram
+    CmdProgram
+    JuliaProgram
 """
 abstract type Program end
 
 
 function Base.getproperty(p::Program, sym::Symbol)
-	if sym === :inputs
-		String[arg.name for arg in getfield(p, :arg_inputs)]
-	elseif sym === :default_inputs
-		Any[arg.default for arg in getfield(p, :arg_inputs)]
-	elseif sym === :input_types
-		Type[arg.type for arg in getfield(p, :arg_inputs)]
-	elseif sym === :outputs
-		String[arg.name for arg in getfield(p, :arg_outputs)]
-	elseif sym === :default_outputs
-		Any[arg.default for arg in getfield(p, :arg_outputs)]
-	elseif sym === :output_types
-		Type[arg.type for arg in getfield(p, :arg_outputs)]
-	else
-		getfield(p, sym)
-	end
+    if sym === :inputs
+        String[arg.name for arg in getfield(p, :arg_inputs)]
+    elseif sym === :default_inputs
+        Any[arg.default for arg in getfield(p, :arg_inputs)]
+    elseif sym === :input_types
+        Type[arg.type for arg in getfield(p, :arg_inputs)]
+    elseif sym === :outputs
+        String[arg.name for arg in getfield(p, :arg_outputs)]
+    elseif sym === :default_outputs
+        Any[arg.default for arg in getfield(p, :arg_outputs)]
+    elseif sym === :output_types
+        Type[arg.type for arg in getfield(p, :arg_outputs)]
+    else
+        getfield(p, sym)
+    end
 end
 
 
 function check_function_methods(f::Function, t::Tuple, name = string(f))
-	if !hasmethod(f, t)
-		error("Program: function `$name` does not have the required method: $t. See more at the documents of `JuliaProgram` or `CmdProgram`.")
-	end
+    if !hasmethod(f, t)
+        error("Program: function `$name` does not have the required method: $t. See more at the documents of `JuliaProgram` or `CmdProgram`.")
+    end
 end
 
 """
-	infer_outputs(p::Program; input_kwargs...)
-	infer_outputs(p::Program, inputs)
-	infer_outputs(p::Program, inputs, outputs)
+    infer_outputs(p::Program; input_kwargs...)
+    infer_outputs(p::Program, inputs)
+    infer_outputs(p::Program, inputs, outputs)
 
 Infer the default outputs from `p::Program` and `inputs::Dict{String}`.
 """
 function infer_outputs(p::Program, inputs, outputs = Dict{String,Any}())
-	i, o = xxputs_completion_and_check(p, inputs, outputs)
-	o
+    i, o = xxputs_completion_and_check(p, inputs, outputs)
+    o
 end
 function infer_outputs(p::Program; input_kwargs...)
-	inputs, outputs, kws = parse_program_args(p; input_kwargs...)
-	if length(kws) > 0
-		@warn "Some keyword arguments are not part of inputs and outputs" kws...
-	end
-	i, o = xxputs_completion_and_check(p, inputs, outputs)
-	o
+    inputs, outputs, kws = parse_program_args(p; input_kwargs...)
+    if length(kws) > 0
+        @warn "Some keyword arguments are not part of inputs and outputs" kws...
+    end
+    i, o = xxputs_completion_and_check(p, inputs, outputs)
+    o
 end
 
 function check_keywords(p::Program, inputs::Dict{String}, outputs::Dict{String})
-	Set(p.inputs) == Set(keys(inputs)) || error("ProgramInputError: $(p.name): inputs provided and demanded not identical.")
-	Set(p.outputs) == Set(keys(outputs)) || error("ProgramOutputError: $(p.name): outputs provided and demanded not identical.")
+    Set(p.inputs) == Set(keys(inputs)) || error("ProgramInputError: $(p.name): inputs provided and demanded not identical.")
+    Set(p.outputs) == Set(keys(outputs)) || error("ProgramOutputError: $(p.name): outputs provided and demanded not identical.")
 end
 function check_outputs_keywords(p::Program, outputs::Dict{String})
-	Set(p.outputs) == Set(keys(outputs)) || error("ProgramOutputError: $(p.name): outputs provided and demanded not identical.")
+    Set(p.outputs) == Set(keys(outputs)) || error("ProgramOutputError: $(p.name): outputs provided and demanded not identical.")
 end
 
 """
-	check_dependency(p::Program; exit_when_fail::Bool=true)
+    check_dependency(p::Program; exit_when_fail::Bool=true)
 
 Check dependencies listed in `p.cmd_dependencies`.
 """
 function check_dependency(p::Program; exit_when_fail::Bool=true)
-	length(p.cmd_dependencies) == 0 && (return true)
-	final_res = true
-	for dep in p.cmd_dependencies
-		res = check_dependency(dep; exit_when_fail = exit_when_fail)
-		if !res
-			final_res = false
-		end
-	end
-	final_res
+    length(p.cmd_dependencies) == 0 && (return true)
+    final_res = true
+    for dep in p.cmd_dependencies
+        res = check_dependency(dep; exit_when_fail = exit_when_fail)
+        if !res
+            final_res = false
+        end
+    end
+    final_res
 end
 
 """
@@ -87,32 +87,32 @@ end
 Check all `CmdDependency` and `Program` under `m::Module`.
 """
 function check_dependency(m::Module = @__MODULE__; exit_when_fail = true, verbose = true)
-	verbose && (@info "Dependencies Status:")
+    verbose && (@info "Dependencies Status:")
 
     deps = filter!(x -> isdefined(m, x) && (getfield(m, x) isa CmdDependency || getfield(m, x) isa Program), names(m))
-	length(deps) == 0 && (return true)
+    length(deps) == 0 && (return true)
 
-	final_res = true
-	max_len = maximum([length(String(d)) for d in deps])
-	for dep_name in deps
-		nspace = max_len - length(String(dep_name))
-		space = " " ^ nspace
-		dep = getfield(m, dep_name)
-		res = check_dependency(dep; exit_when_fail = exit_when_fail)
-		status = res ? "  OK" : "FAIL"
-		if verbose
-			if dep isa CmdDependency
-				@info "  $status  $m.$dep_name  $space$(dep.exec)"
-			else  # Program
-				@info "  $status  $m.$dep_name"
-			end
-		end
+    final_res = true
+    max_len = maximum([length(String(d)) for d in deps])
+    for dep_name in deps
+        nspace = max_len - length(String(dep_name))
+        space = " " ^ nspace
+        dep = getfield(m, dep_name)
+        res = check_dependency(dep; exit_when_fail = exit_when_fail)
+        status = res ? "  OK" : "FAIL"
+        if verbose
+            if dep isa CmdDependency
+                @info "  $status  $m.$dep_name  $space$(dep.exec)"
+            else  # Program
+                @info "  $status  $m.$dep_name"
+            end
+        end
 
-		if !res
-			final_res = false
-		end
-	end
-	return final_res
+        if !res
+            final_res = false
+        end
+    end
+    return final_res
 end
 
 """
@@ -121,101 +121,101 @@ end
 Check all `CmdDependency` and `Program` under `m::Module`. Similar to `check_dependency`, but do not `exit_when_fail` by default.
 """
 function status_dependency(m::Module = @__MODULE__; exit_when_fail = false, verbose = true)
-	check_dependency(m; exit_when_fail = exit_when_fail, verbose = verbose)
+    check_dependency(m; exit_when_fail = exit_when_fail, verbose = verbose)
 end
 
 function generate_run_uuid(p::Program, inputs::Dict{String}, outputs::Dict{String})
-	out_uuid = UUID4
-	in_names = sort!([arg.name for arg in p.arg_inputs])
-	out_names = sort!([arg.name for arg in p.arg_outputs])
-	for name in in_names
-		out_uuid = uuid5(out_uuid, string(name, ":", inputs[name]))
-	end
-	for name in out_names
-		out_uuid = uuid5(out_uuid, string(name, ":", outputs[name]))
-	end
-	return out_uuid
+    out_uuid = UUID4
+    in_names = sort!([arg.name for arg in p.arg_inputs])
+    out_names = sort!([arg.name for arg in p.arg_outputs])
+    for name in in_names
+        out_uuid = uuid5(out_uuid, string(name, ":", inputs[name]))
+    end
+    for name in out_names
+        out_uuid = uuid5(out_uuid, string(name, ":", outputs[name]))
+    end
+    return out_uuid
 end
 
 """
-	arg_completion(args::Vector{Arg}, xxputs::Dict{String})
+    arg_completion(args::Vector{Arg}, xxputs::Dict{String})
 
 complete missing args in user-provided `inputs` or `outputs`.
 """
 function arg_completion(args::Vector{Arg}, xxputs::Dict{String})
-	value_type = fieldtypes(eltype(xxputs))[2]  # value type of xxputs
-	for arg in args
-		keyword = arg.name
-		if haskey(xxputs, keyword)
-			# check types
-			value = convert_data_type(xxputs[keyword], arg.type)
-			if !(value isa value_type)
-				xxputs = convert(Dict{String,Any}, xxputs)
-			end  # it is ok to replace in for-loop
-			xxputs[keyword] = value
-		else
-			# not provided, check default
-			if arg.required
-				throw(ErrorException("ArgumentError: Program requires '$keyword', but it is not provided."))
-			else
-				default = arg.default
-				if !(default isa value_type)
-					xxputs = convert(Dict{String,Any}, xxputs)
-				end  # it is ok to replace in for-loop
-				xxputs[keyword] = default
-			end
-		end
-	end
-	xxputs
+    value_type = fieldtypes(eltype(xxputs))[2]  # value type of xxputs
+    for arg in args
+        keyword = arg.name
+        if haskey(xxputs, keyword)
+            # check types
+            value = convert_data_type(xxputs[keyword], arg.type)
+            if !(value isa value_type)
+                xxputs = convert(Dict{String,Any}, xxputs)
+            end  # it is ok to replace in for-loop
+            xxputs[keyword] = value
+        else
+            # not provided, check default
+            if arg.required
+                throw(ErrorException("ArgumentError: Program requires '$keyword', but it is not provided."))
+            else
+                default = arg.default
+                if !(default isa value_type)
+                    xxputs = convert(Dict{String,Any}, xxputs)
+                end  # it is ok to replace in for-loop
+                xxputs[keyword] = default
+            end
+        end
+    end
+    xxputs
 end
 
 """
-	keyword_interpolation(inputs::Dict{String}, outputs::Dict{String})
+    keyword_interpolation(inputs::Dict{String}, outputs::Dict{String})
 
 Interpolate <keyword> in `String`.
 """
 function keyword_interpolation(inputs::Dict{String}, outputs::Dict{String})
-	allputs = Dict(union(inputs, outputs))
-	keyword_interpolation(allputs::Dict{String})
-	for key in keys(inputs)
-		inputs[key] = allputs[key]
-	end
-	for key in keys(outputs)
-		outputs[key] = allputs[key]
-	end
-	inputs, outputs
+    allputs = Dict(union(inputs, outputs))
+    keyword_interpolation(allputs::Dict{String})
+    for key in keys(inputs)
+        inputs[key] = allputs[key]
+    end
+    for key in keys(outputs)
+        outputs[key] = allputs[key]
+    end
+    inputs, outputs
 end
 function keyword_interpolation(allputs::Dict{String})
-	for key in keys(allputs)
-		keyword_interpolation(allputs, key, 1)
-	end
-	allputs
+    for key in keys(allputs)
+        keyword_interpolation(allputs, key, 1)
+    end
+    allputs
 end
 function keyword_interpolation(allputs::Dict{String}, key::String, n_recursion::Int)
-	value = allputs[key]
-	keywords = find_keywords(value)
-	isempty(keywords) && return allputs # no need to interpolate
-	for keyword in keywords
-		keyword_value = get(allputs, keyword, nothing)
-		isnothing(keyword_value) && continue # keyword not match, ignore
-		if isempty(find_keywords(keyword_value))
-			allputs[key] = replace(allputs[key], "<$keyword>" => str(keyword_value))
-		else
-			n_recursion > 20 && throw(ErrorException("ProgramArgumentError: too many recursion occurs in keyword interpolation."))
-			keyword_interpolation(allputs::Dict{String}, keyword::String, n_recursion + 1)
-		end
-	end
-	allputs
+    value = allputs[key]
+    keywords = find_keywords(value)
+    isempty(keywords) && return allputs # no need to interpolate
+    for keyword in keywords
+        keyword_value = get(allputs, keyword, nothing)
+        isnothing(keyword_value) && continue # keyword not match, ignore
+        if isempty(find_keywords(keyword_value))
+            allputs[key] = replace(allputs[key], "<$keyword>" => str(keyword_value))
+        else
+            n_recursion > 20 && throw(ErrorException("ProgramArgumentError: too many recursion occurs in keyword interpolation."))
+            keyword_interpolation(allputs::Dict{String}, keyword::String, n_recursion + 1)
+        end
+    end
+    allputs
 end
 
 function find_keywords(value::T) where T <: AbstractString
-	m = eachmatch(r"<([^<>]+)>", value)
-	String[i.captures[1] for i in m]
+    m = eachmatch(r"<([^<>]+)>", value)
+    String[i.captures[1] for i in m]
 end
 find_keywords(not_string) = []
 
 """
-	xxputs_completion_and_check(p::Program, inputs, outputs)
+    xxputs_completion_and_check(p::Program, inputs, outputs)
 
 1. Check and complete `inputs` using types and values stored in `p`.
 
@@ -230,75 +230,75 @@ find_keywords(not_string) = []
 6. Return inputs and outputs.
 """
 function xxputs_completion_and_check(p::Program, inputs::Dict{String}, outputs::Dict{String})
-	# inputs = inputs_completion(p::Program, inputs::Dict{String})
-	inputs = arg_completion(p.arg_inputs, inputs)
+    # inputs = inputs_completion(p::Program, inputs::Dict{String})
+    inputs = arg_completion(p.arg_inputs, inputs)
 
-	if isempty(p.arg_outputs)
-		# do nothing to outputs
-	else
-		if p.infer_outputs !== do_nothing
-			outputs_from_infer = to_xxput_dict(p.infer_outputs(inputs))
-			outputs = merge(outputs_from_infer, outputs)
-		end
-		# outputs = outputs_completion(p::Program, outputs::Dict{String})
-		outputs = arg_completion(p.arg_outputs, outputs)
-	end
+    if isempty(p.arg_outputs)
+        # do nothing to outputs
+    else
+        if p.infer_outputs !== do_nothing
+            outputs_from_infer = to_xxput_dict(p.infer_outputs(inputs))
+            outputs = merge(outputs_from_infer, outputs)
+        end
+        # outputs = outputs_completion(p::Program, outputs::Dict{String})
+        outputs = arg_completion(p.arg_outputs, outputs)
+    end
 
-	# check keyword consistency (keys in inputs and outputs compatible with the function)
-	check_keywords(p, inputs, outputs)
+    # check keyword consistency (keys in inputs and outputs compatible with the function)
+    check_keywords(p, inputs, outputs)
 
-	# parse <keyword> in String
-	inputs, outputs = keyword_interpolation(inputs, outputs)
+    # parse <keyword> in String
+    inputs, outputs = keyword_interpolation(inputs, outputs)
 end
 
 function xxputs_completion_and_check(p::Program, inputs, outputs)
-	xxputs_completion_and_check(p, to_xxput_dict(inputs), to_xxput_dict(outputs))
+    xxputs_completion_and_check(p, to_xxput_dict(inputs), to_xxput_dict(outputs))
 end
 
 function Base.run(p::Program, inputs, outputs; kwarg...)
-	run(p; inputs=inputs, outputs=outputs, kwarg...)
+    run(p; inputs=inputs, outputs=outputs, kwarg...)
 end
 
 function Base.run(p::Program, inputs; kwarg...)
-	run(p; inputs=inputs, kwarg...)
+    run(p; inputs=inputs, kwarg...)
 end
 
 function Base.run(p::Program;
-	dir::AbstractString = "", retry::Int = 0,
-	stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false,
-	kwarg...
+    dir::AbstractString = "", retry::Int = 0,
+    stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false,
+    kwarg...
 )
-	if dir != ""
-		dir_backup = pwd()
-		dir = abspath(dir)
-		cd(dir) # go to working directory
-	end
+    if dir != ""
+        dir_backup = pwd()
+        dir = abspath(dir)
+        cd(dir) # go to working directory
+    end
 
-	inputs, outputs, kws = parse_program_args(p; kwarg...)
+    inputs, outputs, kws = parse_program_args(p; kwarg...)
 
-	n_try = 0
-	local res
-	while n_try <= retry
-		res = redirect_to_files(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
-			if n_try > 0
-				@warn "Retry $(p.name) ($n_try/$retry)"
-			end
-			_run(p; dir = dir, inputs = inputs, outputs = outputs, kws...)
-		end
-		res isa StackTraceVector || break  # res isa StackTraceVector means failed, need retry.
-		n_try += 1
-	end
+    n_try = 0
+    local res
+    while n_try <= retry
+        res = redirect_to_files(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
+            if n_try > 0
+                @warn "Retry $(p.name) ($n_try/$retry)"
+            end
+            _run(p; dir = dir, inputs = inputs, outputs = outputs, kws...)
+        end
+        res isa StackTraceVector || break  # res isa StackTraceVector means failed, need retry.
+        n_try += 1
+    end
 
-	if dir != ""
-		cd(dir_backup)
-	end
-	res
+    if dir != ""
+        cd(dir_backup)
+    end
+    res
 end
 
 """
-	run(p::Program; kwargs...)
-	run(p::Program, inputs, outputs; kwargs...)
-	run(p::Program, inputs; kwargs...) # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
+    run(p::Program; kwargs...)
+    run(p::Program, inputs, outputs; kwargs...)
+    run(p::Program, inputs; kwargs...) # only usable when `p.infer_outputs` is defined, or default outputs are set in `p`.
 
 Run Program (CmdProgram or JuliaProgram).
 
@@ -367,19 +367,19 @@ Return `(success::Bool, outputs::Dict{String})`
 
 ```julia
 p = JuliaProgram(
-	id_file = "id_file",
-	inputs = ["a",
-	          "b" => Int],
-	outputs = "c" => "<a>.<b>",
-	main = quote
-		println("inputs are ", a, " and ", b)
-		println("You can also use info in outputs: ", outputs["c"])
+    id_file = "id_file",
+    inputs = ["a",
+              "b" => Int],
+    outputs = "c" => "<a>.<b>",
+    main = quote
+        println("inputs are ", a, " and ", b)
+        println("You can also use info in outputs: ", outputs["c"])
         println("The returned value will be assigned to a new outputs")
-		println("It is ok to use inputs and outputs directly:")
-		@show inputs
-		@show outputs
-		c = b^2
-	end)
+        println("It is ok to use inputs and outputs directly:")
+        @show inputs
+        @show outputs
+        c = b^2
+    end)
 
 # running the program using `run`: keyword arguments include keys of inputs and outputs
 success, new_out = run(p; a = `in1`, b = 2, c = "out", touch_run_id_file = false)
@@ -395,11 +395,11 @@ success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
 ```
 """
 function prog_run(p::Program; args...)
-	run(p; args...)
+    run(p; args...)
 end
 
 """
-	parse_program_args(p::Program; kwargs...)
+    parse_program_args(p::Program; kwargs...)
 
 Classify `args...` to inputs and outputs of `p` or other keyword arguments.
 
@@ -416,10 +416,10 @@ function parse_program_args(p::Program; args...)
             inputs[k_str] = v
         elseif k_str in p.arg_outputs
             outputs[k_str] = v
-		elseif k === :inputs
-			inputs = merge(to_xxput_dict(v), inputs)
-		elseif k === :outputs
-			outputs = merge(to_xxput_dict(v), outputs)
+        elseif k === :inputs
+            inputs = merge(to_xxput_dict(v), inputs)
+        elseif k === :outputs
+            outputs = merge(to_xxput_dict(v), outputs)
         else
             push!(kw_indices, i)
         end
@@ -429,18 +429,18 @@ function parse_program_args(p::Program; args...)
 end
 
 function parse_verbose(verbose::Symbol)
-	if verbose in (:all, :min, :none)
-		return verbose
-	elseif verbose == :minimum
-		return :min
-	elseif verbose in (:max, :maximum, :full, :yes, :true)
-		return :all
-	elseif verbose in (:no, :nothing, :null, :false)
-		return :none
-	else
-		@error "Cannot determine verbose level ($verbose). Set to :all. Accepted verbose options are true, false, :all, :min, and :none."
-		return :all
-	end
+    if verbose in (:all, :min, :none)
+        return verbose
+    elseif verbose == :minimum
+        return :min
+    elseif verbose in (:max, :maximum, :full, :yes, :true)
+        return :all
+    elseif verbose in (:no, :nothing, :null, :false)
+        return :none
+    else
+        @error "Cannot determine verbose level ($verbose). Set to :all. Accepted verbose options are true, false, :all, :min, and :none."
+        return :all
+    end
 end
 parse_verbose(verbose::Bool) = verbose ? :all : :none
 parse_verbose(::Nothing) = :none
