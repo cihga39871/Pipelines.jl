@@ -125,7 +125,7 @@ function CmdProgram(;
     outputs                                 = Vector{String}(),
     validate_outputs::Union{Function,Expr}  = do_nothing,  # vars of outputs
     wrap_up::Union{Function,Expr}           = do_nothing,  # vars of inputs and outputs
-    mod::Module                             = @__MODULE__
+    mod::Module                             = eval(:(@__MODULE__))
 )
     # inputs, input_types, default_inputs = parse_default(inputs)
     # outputs, output_types, default_outputs = parse_default(outputs)
@@ -134,11 +134,11 @@ function CmdProgram(;
     inputs = String[arg.name for arg in arg_inputs]
     outputs = String[arg.name for arg in arg_outputs]
 
-    validate_inputs = quote_function(validate_inputs, inputs; mod = mod)
-    infer_outputs = quote_function(infer_outputs, inputs; mod = mod)
-    prerequisites = quote_function(prerequisites, inputs, outputs; mod = mod)
-    validate_outputs = quote_function(validate_outputs, outputs; mod = mod)
-    wrap_up = quote_function(wrap_up, inputs, outputs; mod = mod)
+    validate_inputs = quote_function(validate_inputs, inputs)
+    infer_outputs = quote_function(infer_outputs, inputs)
+    prerequisites = quote_function(prerequisites, inputs, outputs)
+    validate_outputs = quote_function(validate_outputs, outputs)
+    wrap_up = quote_function(wrap_up, inputs, outputs)
 
     CmdProgram(
         name,
