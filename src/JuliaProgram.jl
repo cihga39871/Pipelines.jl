@@ -128,7 +128,7 @@ function JuliaProgram(;
     outputs                                 = Vector{String}(),
     validate_outputs::Union{Function,Expr}  = do_nothing,  # vars of outputs
     wrap_up::Union{Function,Expr}           = do_nothing,  # vars of inputs and outputs,
-    mod::module                             = @__MODULE__
+    mod::Module                             = @__MODULE__
 )
     # inputs, input_types, default_inputs = parse_default(inputs)
     # outputs, output_types, default_outputs = parse_default(outputs)
