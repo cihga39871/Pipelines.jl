@@ -31,15 +31,4 @@
 
     @test_nowarn display(Arg[])
 
-    @test_nowarn p = @pkg JuliaProgram(
-        id_file = "id_file",
-        inputs = ["a",
-                  "b" => Int],
-        outputs = "c" => "<a>.<b>",
-        main = quote
-            println("inputs are ", a, " and ", b)
-            println("You can also use info in outputs: ", c)
-            println("The returned value will be assigned to a new outputs")
-            c = b^2
-        end)
 end

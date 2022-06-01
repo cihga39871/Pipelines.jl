@@ -234,33 +234,3 @@ function dictreplace_all!(expr, kys, dsym::Symbol)
     end
     expr
 end
-
-"""
-    @pkg CmdProgram(...)
-    @pkg JuliaProgram(...)
-
-Make the program precompilable for another package/module. Otherwise the precompilation of the package defining the program will fail.
-
-It is equivalent to:
-
-```julia
-CmdProgram(..., mod = @__MODULE__)
-JuliaProgram(..., mod = @__MODULE__)
-```
-"""
-macro pkg(prog_expr)
-    @show prog_expr
-    prog_expr.head == :call || (return prog_expr)
-    prog_expr.args[1] in [:CmdProgram, :JuliaProgram]  || (return prog_expr)
-    has_mod = false
-    for expr in @view(prog_expr.args[2:end])
-        if expr.head == :kw && expr.args[1] == :mod
-            has_mod = true
-            expr.args[2] == __module__
-        end
-    end
-    if !has_mod
-        push!(prog_expr.args, Expr(:kw, :mod, __module__))
-    end
-    return prog_expr
-end

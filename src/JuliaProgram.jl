@@ -43,6 +43,7 @@ end
         outputs                                 = Vector{String}(),
         validate_outputs::Expr                  = do_nothing,  # vars of outputs
         wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
+        mod::Module                             = Pipelines    # please change to @__MODULE__
     ) -> JuliaProgram
 
 Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs...).`
@@ -81,6 +82,8 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 - `validate_outputs::Expr`: A quoted code to validate outputs. Elements in `outputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 
 - `wrap_up::Expr`: the last quoted code to run. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
+
+- `mod::Module`: `Expr`ressions will evaluated to functions in `mod`. Please use `mod = @__MODULE__` to prevent precompilation fail when defining the program within a package.
 
 !!! compat "Compatibility of Pipelines < v0.8"
     You can still pass `Function` to variables require `Expr`, but you **cannot** use the 'elements as variables' feature. The function should take `inputs::Dict{String}` and/or `outputs::Dict{String}` as variables, and you have to use traditional `inputs["VARNAME"]` in functions.

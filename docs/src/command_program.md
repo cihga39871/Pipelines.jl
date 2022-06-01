@@ -215,6 +215,7 @@ CmdProgram(;
     outputs                                 = Vector{String}(),
     validate_outputs::Expr                  = do_nothing,  # vars of outputs
     wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
+    mod::Module                             = Pipelines    # please change to @__MODULE__
 ) -> CmdProgram
 ```
 
@@ -255,7 +256,8 @@ success, outputs = run(
     success, outputs = run(p::Program, inputs; run_kwargs...)
     ```
 
-
+!!! warning "Argument mod::Module"
+    `Expr`ressions will evaluated to functions in `mod`. Please use `mod = @__MODULE__` to prevent precompilation fail when defining the program within a package.
 
 !!! warning
     Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different `Tasks` or multi-thread mode.

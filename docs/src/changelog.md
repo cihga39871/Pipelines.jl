@@ -1,5 +1,9 @@
 # Change log
 
+## v0.8.4
+
+- Fix: If defining a `Program` using `Expr` in other packages, the precompilation will fail due to the Expr will be `@eval` to a function in `Pipelines`. Julia does not allow define new functions in a compiled module. To avoid this, we have to pass the current module to `CmdProgram` or `JuliaProgram`. In this fix, the two methods accepts a new keyword argument `mod`, which allows users to pass `mod = @__MODULE__` manually.
+
 ## v0.8.2-3
 
 - Feature: New `Arg` data type for storing inputs and outputs information in `Program`. `arg_inputs::Vector{Arg}` and `arg_outputs::Vector{Arg}` are new fields of `Program`.
