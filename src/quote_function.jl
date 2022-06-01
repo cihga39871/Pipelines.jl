@@ -179,12 +179,12 @@ end
 function quote_function(expr::Expr, inputs::Vector{String}; specific_return = nothing)
     expr = dictreplace_all!(expr, inputs, :inputs)
     if isnothing(specific_return)
-        @eval Main function(inputs)
+        @eval parentmodule(@__MODULE__) function(inputs)
             $expr
         end
     else
         specific_return = dictreplace_all!(specific_return, inputs, :inputs)
-        @eval Main function(inputs)
+        @eval parentmodule(@__MODULE__) function(inputs)
             $expr
             $specific_return
         end
@@ -194,13 +194,13 @@ function quote_function(expr::Expr, inputs::Vector{String}, outputs::Vector{Stri
     expr = dictreplace_all!(expr, inputs, :inputs)
     expr = dictreplace_all!(expr, outputs, :outputs)
     if isnothing(specific_return)
-        @eval Main function(inputs, outputs)
+        @eval parentmodule(@__MODULE__) function(inputs, outputs)
             $expr
         end
     else
         specific_return = dictreplace_all!(specific_return, inputs, :inputs)
         specific_return = dictreplace_all!(specific_return, outputs, :outputs)
-        @eval Main function(inputs, outputs)
+        @eval parentmodule(@__MODULE__) function(inputs, outputs)
             $expr
             $specific_return
         end
