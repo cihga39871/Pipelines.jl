@@ -211,8 +211,8 @@ function quote_function(expr::Expr, inputs::Vector{String}, outputs::Vector{Stri
         end
     end
 end
-quote_function(f::Function, x::Vector{String}; specific_return = nothing) = f
-quote_function(f::Function, x::Vector{String}, y::Vector{String}; specific_return = nothing) = f
+quote_function(f::Function, x::Vector{String}; args...) = f
+quote_function(f::Function, x::Vector{String}, y::Vector{String}; args...) = f
 
 dictreplace!(ex, s::Symbol, v::Expr) = ex
 dictreplace!(ex::Symbol, s::Symbol, v::Expr) = s == ex ? v : ex

@@ -1,7 +1,7 @@
 name = "Pipelines"
 uuid = "ef544631-5c6f-4e9b-994c-12e7a4cd724c"
 authors = ["Jiacheng Chuan <jiacheng_chuan@outlook.com>"]
-version = "0.8.3-5"
+version = "0.8.3-6"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
