@@ -7,7 +7,7 @@ using Logging
 using OrderedCollections  # sorting dict in generate_run_uuid
 
 include("quote_function.jl")
-export quote_function, quote_expr
+export quote_function, quote_expr, @pkg
 
 include("utils.jl")
 export do_nothing, isok,
