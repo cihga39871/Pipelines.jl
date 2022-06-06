@@ -14,10 +14,10 @@ const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "w
 ```julia
 
 Arg(name)
-Arg(name => value)
+Arg(name => default)
 Arg(name => type::Type)
-Arg(name => value => type::Type)
-Arg(name => type::Type => value)
+Arg(name => default => type::Type)
+Arg(name => type::Type => default)
 
 Arg(name::Union{String,Symbol}, type::Type = Any, default = nothing;
     required::Bool = isnothing(default),
@@ -50,13 +50,13 @@ end
 
 - `name`: no default value.
 
-- `name => value`: set default value, except `value` is `nothing` (default value not set).
+- `name => default`: set default value, except `value` is `nothing` (default value not set).
 
-- `name => value_type::Type`: no default value, but value type.
+- `name => type`: no default value, but value type is restricted.
 
-- `name => value => value_type::Type`: set default value and value type.
+- `name => default => type`: set default value and value type.
 
-- `name => value_type::Type => value`: set default value and value type.
+- `name => type => default`: set default value and value type.
 
 
 !!! tip "An edge situation"
@@ -64,7 +64,7 @@ end
     ```julia
     p = JuliaProgram(
         inputs = [
-            Arg("ARG_NAME", Any, nothing; required = true),
+            Arg("ARG_NAME", nothing; required = false),
             "OTHER_ARG" => String
         ]
     )
