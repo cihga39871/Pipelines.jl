@@ -1,7 +1,11 @@
 
 ### Reserved keys
 """
-    const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem", "schedule_time", "wall_time", "priority", "dependency", "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs", "check_dependencies", "skip_when_done", "touch_run_id_file", "verbose", "retry", "dry_run"])
+    const RESERVED_KEY_SET = Set(["name", "user", "ncpu", "mem",
+        "schedule_time", "wall_time", "priority", "dependency",
+        "stdout", "stderr", "stdlog", "append", "dir", "inputs", "outputs",
+        "check_dependencies", "skip_when_done", "touch_run_id_file",
+        "verbose", "retry", "dry_run"])
 
 Reserved keys that cannot be used in inputs and outputs.
 """
