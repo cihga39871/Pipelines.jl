@@ -83,22 +83,18 @@ See also: [`CmdProgram`](@ref), [`JuliaProgram`](@ref), [`quote_function`](@ref)
 function quote_expr end
 
 """
-    quote_function(expr::Expr, inputs::Vector{String}; specific_return = nothing)
-
-Return `Function` with one argument: `inputs::Dict{String}`
 
 ```julia
-quote_function(expr::Expr, inputs::Vector{String}, outputs::Vector{String}; specific_return = nothing)
+quote_function(expr::Expr, inputs::Vector{String}; specific_return = nothing, mod::Module = Pipelines)
+    # Return `Function` with one argument: `inputs::Dict{String}`.
+
+quote_function(expr::Expr, inputs::Vector{String}, outputs::Vector{String}; specific_return = nothing, mod::Module = Pipelines)
+    # Return `Function` with two arguments: `inputs::Dict{String}, outputs::Dict{String}`.
+
+quote_function(f::Function, x; specific_return, mod) = f
+quote_function(f::Function, x, y; specific_return, mod) = f
+    # Directly return `f::Function` without any process.
 ```
-
-Return `Function` with two arguments: `inputs::Dict{String}, outputs::Dict{String}`
-
-```julia
-quote_function(f::Function, x; specific_return) = f
-quote_function(f::Function, x, y; specific_return) = f
-```
-
-Directly return `f::Function` without any process.
 
 ### Description
 
@@ -106,12 +102,14 @@ When building `Program`, `Expr` are automatically converted to `Function` using 
 
 - `specific_return`: an `Expr` appended to `expr`.
 
+- `mod::Module`: `Expr`ressions will evaluated to functions in `mod`. Please use `mod = @__MODULE__` to prevent precompilation fail when defining the program within a package.
+
 In `expr::Expr`, elements in `inputs` or `outputs` can be directly used as variables for those arguments. See the table below.
 
 | Argument                 | Elements as variables | Default returned value                             |
 | :----------------------- | :-------------------- | :------------------------------------------------- |
 | validate_inputs          | inputs                | the last expression                                |
-| infer_outputs            | inputs                | the last expression, can converted to Dict{String} |
+| infer_outputs            | inputs                | the last expression, can be converted to Dict{String} |
 | prerequisites            | inputs, outputs       | the last expression                                |
 | main (JuliaProgram only) | inputs, outputs       | outputs::Dict{String}                              |
 | validate_outputs         | outputs               | the last expression                                |
@@ -124,57 +122,18 @@ function JuliaProgram(; kwargs...)
     ...
     # inputs isa Vector{String}
     # outputs isa Vector{String}
+    # mod isa Module where evaluating expressions to functions in
 
-    validate_inputs = quote_function(validate_inputs, inputs)
-    infer_outputs = quote_function(infer_outputs, inputs)
-    prerequisites = quote_function(prerequisites, inputs, outputs)
-    validate_outputs = quote_function(validate_outputs, outputs)
-    wrap_up = quote_function(wrap_up, inputs, outputs)
+    validate_inputs = quote_function(validate_inputs, inputs; mod = mod)
+    infer_outputs = quote_function(infer_outputs, inputs; mod = mod)
+    prerequisites = quote_function(prerequisites, inputs, outputs; mod = mod)
+    validate_outputs = quote_function(validate_outputs, outputs; mod = mod)
+    wrap_up = quote_function(wrap_up, inputs, outputs; mod = mod)
 
-    main = quote_function(main, inputs, outputs; specific_return = :(outputs))
+    main = quote_function(main, inputs, outputs; specific_return = :(outputs), mod = mod)
     ...
 end
 ```
-
-!!! warning "`quote` variables in other scopes"
-    1. A local variable in other scopes should be referenced using `\$` in `expr`ession. (No need to use `\$` for global variables.)
-
-    2. A local `::Symbol` variable (`sym`) should be referenced using `\$(QuoteNode(sym))` in `expr`ession.
-
-    ### Example:
-    ```julia
-    inputs = ["A", "B"]
-    g_var = 3
-    g_sym = :globalsymbol
-
-    function gen_expr()
-        l_var = 5
-        l_sym = :abc
-        expr = quote
-            @show inputs
-            @show g_var
-            @show g_sym
-            @show \$(QuoteNode(l_sym))
-            @show \$l_var + 2
-            A + B
-        end
-    end
-
-    expr = gen_expr()
-    new_func = quote_function(expr, inputs)
-
-    inputs_of_new_func = Dict("A" => 100, "B" => 50)
-    x = new_func(inputs_of_new_func)
-    # inputs = Dict("B" => 50, "A" => 100)
-    # g_var = 3
-    # g_sym = :globalsymbol
-    # :abc = :abc
-    # 5 + 2 = 7
-    # 150
-
-    x
-    # 150
-    ```
 """
 function quote_function(expr::Expr, inputs::Vector{String}; specific_return = nothing, mod::Module = @__MODULE__)
     expr = dictreplace_all!(expr, inputs, :inputs)
