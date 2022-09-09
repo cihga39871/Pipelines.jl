@@ -1,6 +1,6 @@
 # Pipelines.jl
 
-*A lightweight Julia package for computational pipelines.*
+*A lightweight and powerful Julia package for computational pipelines.*
 
 Building reusable pipelines and workflows is easier than you have ever thought.
 
