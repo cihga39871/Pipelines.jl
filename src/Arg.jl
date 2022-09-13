@@ -72,7 +72,6 @@ end
             "OTHER_ARG" => String
         ]
     )
-
     ```
 """
 struct Arg{AllowedType,DefaultType}
@@ -83,7 +82,7 @@ struct Arg{AllowedType,DefaultType}
     independent::Bool
     function Arg(name::String, type::Type, default::DefaultType, required::Bool, independent::Bool) where DefaultType
         if name in RESERVED_KEY_SET
-            error("Program: cannot use the reserved name ($name) in inputs or outputs. Please use another name.")
+            error("Program: cannot use the reserved name ($name) in inputs or outputs. Please use another name. All reserved names includes in the $RESERVED_KEY_SET")
         end
         default = convert_data_type(default, type)
         # if !(default isa type || default isa Nothing)
@@ -126,7 +125,7 @@ end
 
 ## parse default inputs/outputs
 function throw_invalid_xxputs(any)
-    throw(ErrorException("TypeError: Elements of inputs and outputs can only be one of `name::Union{String,Symbol}`, `name => default_value`, `name => data_type`, `name => default_value => data_type`, `name => data_type => default_value`. Invalid value: $any"))
+    throw(ErrorException("TypeError: Invalid value: $any. Elements of inputs and outputs can only be one of `name::Union{String,Symbol}`, `name => default_value`, `name => data_type`, `name => default_value => data_type`, `name => data_type => default_value`."))
 end
 
 """
@@ -201,4 +200,50 @@ function convert_data_type(value, data_type::Type)
             throw(ErrorException("TypeError: cannot convert $value to $data_type."))
         end
     end
+end
+
+######## arg forward
+
+const FORWARD_KEY_SET = Set([:name, :user, :ncpu, :mem])
+
+function throw_invalid_type_of_arg_forward(any)
+    throw(ErrorException("TypeError: Invalid value: $any. `arg_forward` forwards args from inputs and outputs to specific keywords in `JobSchedulers.Job()`, only supporting `Pipelines.FORWARD_KEY_SET`: `$FORWARD_KEY_SET`. Elements (or vectors containing elements) in the following format: `\"arg_of_inputs_or_outputs\" => :key_in_FORWARD_KEY_SET`."))
+end
+
+parse_arg_forward(v::Vector{Pair{String,Symbol}}) = v
+parse_arg_forward(v::Vector) = Pair{String,Symbol}[parse_arg_forward_element(p) for p in v]
+parse_arg_forward(p::Pair) = [parse_arg_forward_element(p)]
+parse_arg_forward(d::Dict) = parse_arg_forward(collect(d))
+parse_arg_forward(any) = throw_invalid_type_of_arg_forward(any)
+
+parse_arg_forward_element(p::Pair{String,Symbol}) = p
+parse_arg_forward_element(p::Pair) = String(p.first) => Symbol(p.second)
+parse_arg_forward_element(any) = throw_invalid_type_of_arg_forward(any)
+
+function namein(x::String, arg_inputs::Vector{Arg}, arg_outputs::Vector{Arg})
+    for arg in arg_inputs
+        if arg.name == x
+            return true
+        end
+    end
+    for arg in arg_outputs
+        if arg.name == x
+            return true
+        end
+    end
+    false
+end
+
+function check_arg_forward(arg_forward::Vector{Pair{String,Symbol}},arg_inputs::Vector{Arg}, arg_outputs::Vector{Arg})
+    isempty(arg_forward) && (return true)
+    for p in arg_forward
+        if p.second in FORWARD_KEY_SET
+            if !namein(p.first, arg_inputs, arg_outputs)
+                throw(ArgumentError("invalid arg_forward element \"$(p.first)\" => :$(p.second): \"$(p.first)\" is not found in inputs or outputs."))
+            end
+        else
+            throw(ArgumentError("invalid arg_forward element \"$(p.first)\" => :$(p.second): :$(p.second) cannot be forwarded to other functions. Only names in $FORWARD_KEY_SET can be forwarded."))
+        end
+    end
+    true
 end

@@ -265,8 +265,7 @@ end
 
 function Base.run(p::Program;
     dir::AbstractString = "", retry::Int = 0,
-    stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false,
-    kwarg...
+    stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false, _do_parse_program_args::Bool = true, kwarg...
 )
     if dir != ""
         dir_backup = pwd()
@@ -274,7 +273,9 @@ function Base.run(p::Program;
         cd(dir) # go to working directory
     end
 
-    inputs, outputs, kws = parse_program_args(p; kwarg...)
+    if _do_parse_program_args
+        inputs, outputs, kws = parse_program_args(p; kwarg...)
+    end
 
     n_try = 0
     local res
@@ -283,7 +284,11 @@ function Base.run(p::Program;
             if n_try > 0
                 @warn "Retry $(p.name) ($n_try/$retry)"
             end
-            _run(p; dir = dir, inputs = inputs, outputs = outputs, kws...)
+            if _do_parse_program_args
+                _run(p; dir = dir, inputs = inputs, outputs = outputs, kws...)
+            else
+                _run(p; dir = dir, kwarg...)
+            end
         end
         res isa StackTraceVector || break  # res isa StackTraceVector means failed, need retry.
         n_try += 1
@@ -399,9 +404,9 @@ function prog_run(p::Program; args...)
 end
 
 """
-    parse_program_args(p::Program; kwargs...)
+    parse_program_args(p::Program; args...)
 
-Classify `args...` to inputs and outputs of `p` or other keyword arguments.
+Classify `args...` to inputs and outputs of `p`, and other keyword arguments. `args` includes `inputs = ..., and outputs = ...`
 
 Return `(inputs::Dict{String}, outputs::Dict{String}, other_kwargs::Tuple)`
 """

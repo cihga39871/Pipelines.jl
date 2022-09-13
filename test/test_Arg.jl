@@ -32,3 +32,72 @@
     @test_nowarn display(Arg[])
 
 end
+
+@testset "Arg forward" begin
+    @test_throws ErrorException JuliaProgram(
+        id_file = "id_file",
+        inputs = [
+            "a",
+            "b" => Int,
+            "NAME", :thread, :ncpu
+        ],
+        outputs = [
+            "c" => "<a>.<b>"
+        ],
+        main = quote
+            c = "$a.$b.$name.$thread"
+        end,
+        arg_forward = "NAME" => "name"
+    )
+    p = JuliaProgram(
+        id_file = "id_file",
+        inputs = [
+            "a",
+            "b" => Int,
+            "NAME", :thread
+        ],
+        outputs = [
+            "c" => "<a>.<b>"
+        ],
+        main = quote
+            c = "$a.$b.$name.$thread"
+        end,
+        arg_forward = "NAME" => "name"
+    )
+    @test p.arg_forward == ["NAME" => :name]
+
+    p = JuliaProgram(
+        id_file = "id_file",
+        inputs = [
+            "a",
+            "b" => Int,
+            "NAME", :thread
+        ],
+        outputs = [
+            "c" => "<a>.<b>"
+        ],
+        main = quote
+            c = "$a.$b.$name.$thread"
+        end,
+        arg_forward = ["NAME" => "name", :thread => :ncpu]
+    )
+    @test p.arg_forward == ["NAME" => :name, "thread" => :ncpu]
+    p = JuliaProgram(
+        id_file = "id_file",
+        inputs = [
+            "a",
+            "b" => Int,
+            "NAME", :thread
+        ],
+        outputs = [
+            "c" => "<a>.<b>"
+        ],
+        main = quote
+            c = "$a.$b.$name.$thread"
+        end,
+        arg_forward = Dict("NAME" => "name", :thread => :ncpu)
+    )
+    @test p.arg_forward == ["NAME" => :name, "thread" => :ncpu] || 
+    p.arg_forward == ["thread" => :ncpu, "NAME" => :name]
+
+end

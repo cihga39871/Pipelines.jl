@@ -12,8 +12,9 @@ mutable struct JuliaProgram <: Program
     arg_outputs::Vector{Arg}
     validate_outputs::Function
     wrap_up::Function
+    arg_forward::Vector{Pair{String,Symbol}}
 
-    function JuliaProgram(name, id_file, info_before, info_after, cmd_dependencies, arg_inputs, validate_inputs, prerequisites, main, infer_outputs, arg_outputs, validate_outputs, wrap_up)
+    function JuliaProgram(name, id_file, info_before, info_after, cmd_dependencies, arg_inputs, validate_inputs, prerequisites, main, infer_outputs, arg_outputs, validate_outputs, wrap_up, arg_forward)
 
         check_function_methods(validate_inputs, (Dict, ), "validate_inputs")
         check_function_methods(prerequisites, (Dict, Dict), "prerequisites")
@@ -21,8 +22,11 @@ mutable struct JuliaProgram <: Program
         check_function_methods(infer_outputs, (Dict, ), "infer_outputs")
         check_function_methods(validate_outputs, (Dict, ), "validate_outputs")
         check_function_methods(wrap_up, (Dict, Dict), "wrap_up")
-
-        new(name, id_file, info_before, info_after, cmd_dependencies, arg_inputs, validate_inputs, prerequisites, main, infer_outputs, arg_outputs, validate_outputs, wrap_up)
+        
+        arg_forward = parse_arg_forward(arg_forward)
+        check_arg_forward(arg_forward, arg_inputs, arg_outputs)
+        
+        new(name, id_file, info_before, info_after, cmd_dependencies, arg_inputs, validate_inputs, prerequisites, main, infer_outputs, arg_outputs, validate_outputs, wrap_up, arg_forward)
     end
 end
 
@@ -43,7 +47,8 @@ end
         outputs                                 = Vector{String}(),
         validate_outputs::Expr                  = do_nothing,  # vars of outputs
         wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
-        mod::Module                             = Pipelines    # please change to @__MODULE__
+        arg_forward                             = Vector{Pair{String,Symbol}}(),
+        mod::Module                             = Pipelines    # change to @__MODULE__ to avoid precompilation error
     ) -> JuliaProgram
 
 Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs...).`
@@ -82,6 +87,8 @@ Julia program template. To run a `JuliaProgram`, use `run(::JuliaProgram; kwargs
 - `validate_outputs::Expr`: A quoted code to validate outputs. Elements in `outputs` can be directly used as variables. If validation fail, throw error or return false. See details in [`quote_expr`](@ref)
 
 - `wrap_up::Expr`: the last quoted code to run. Elements in `inputs` and `outputs` can be directly used as variables. See details in [`quote_expr`](@ref)
+
+- `arg_forward`: forward args from inputs and outputs to specific keywords in `JobSchedulers.Job()`, only supporting `Pipelines.FORWARD_KEY_SET`: `$FORWARD_KEY_SET`. Elements (or vectors containing elements) in the following format: `"arg_of_inputs_or_outputs" => :key_in_FORWARD_KEY_SET`.
 
 - `mod::Module`: `Expr`ressions will evaluated to functions in `mod`. Please use `mod = @__MODULE__` to prevent precompilation fail when defining the program within a package.
 
@@ -131,6 +138,7 @@ function JuliaProgram(;
     outputs                                 = Vector{String}(),
     validate_outputs::Union{Function,Expr}  = do_nothing,  # vars of outputs
     wrap_up::Union{Function,Expr}           = do_nothing,  # vars of inputs and outputs,
+    arg_forward                             = Vector{Pair{String,Symbol}}(),
     mod::Module                             = @__MODULE__
 )
     # inputs, input_types, default_inputs = parse_default(inputs)
@@ -161,7 +169,8 @@ function JuliaProgram(;
         infer_outputs,
         arg_outputs,
         validate_outputs,
-        wrap_up
+        wrap_up,
+        arg_forward
     )
 end
 
@@ -174,10 +183,13 @@ function _run(
     verbose::Union{Bool, Symbol, AbstractString}=true,
     touch_run_id_file::Bool=true,
     dry_run::Bool=false,
-    dir::AbstractString=""
+    dir::AbstractString="",
+    _do_xxputs_completion_and_check::Bool = true
 )
     # input/output completion
-    inputs, outputs = xxputs_completion_and_check(p, inputs, outputs)
+    if _do_xxputs_completion_and_check
+        inputs, outputs = xxputs_completion_and_check(p, inputs, outputs)
+    end
 
     # run id based on inputs and outputs
     run_id = generate_run_uuid(p, inputs, outputs)
