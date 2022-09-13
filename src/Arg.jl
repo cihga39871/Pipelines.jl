@@ -204,10 +204,15 @@ end
 
 ######## arg forward
 
+"""
+    FORWARD_KEY_SET = Set([:name, :user, :ncpu, :mem])
+
+`Program` objects has a field `arg_forward`. It can forward args from inputs and outputs to `JobSchedulers.Job()`, only supporting keyword arguments in `Pipelines.FORWARD_KEY_SET`. `arg_forward` accepts elements (or vectors containing elements) in the following format: `\"arg_of_inputs_or_outputs\" => :key_in_FORWARD_KEY_SET`."
+"""
 const FORWARD_KEY_SET = Set([:name, :user, :ncpu, :mem])
 
 function throw_invalid_type_of_arg_forward(any)
-    throw(ErrorException("TypeError: Invalid value: $any. `arg_forward` forwards args from inputs and outputs to specific keywords in `JobSchedulers.Job()`, only supporting `Pipelines.FORWARD_KEY_SET`: `$FORWARD_KEY_SET`. Elements (or vectors containing elements) in the following format: `\"arg_of_inputs_or_outputs\" => :key_in_FORWARD_KEY_SET`."))
+    throw(ErrorException("TypeError: Invalid value: $any. `arg_forward` can forward args from inputs and outputs to `JobSchedulers.Job()`, only supporting keyword arguments in `Pipelines.FORWARD_KEY_SET`: `$FORWARD_KEY_SET`. `arg_forward` accepts elements (or vectors containing elements) in the following format: `\"arg_of_inputs_or_outputs\" => :key_in_FORWARD_KEY_SET`."))
 end
 
 parse_arg_forward(v::Vector{Pair{String,Symbol}}) = v

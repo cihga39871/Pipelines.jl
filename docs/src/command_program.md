@@ -214,8 +214,10 @@ CmdProgram(;
     cmd::Base.AbstractCmd                   = ``,
     outputs                                 = Vector{String}(),
     validate_outputs::Expr                  = do_nothing,  # vars of outputs
-    wrap_up::Expr                           = do_nothing   # vars of inputs and outputs
+    wrap_up::Expr                           = do_nothing,   # vars of inputs and outputs
+    arg_forward                             = Vector{Pair{String,Symbol}}(),
     mod::Module                             = Pipelines    # please change to @__MODULE__
+
 ) -> CmdProgram
 ```
 
@@ -268,7 +270,9 @@ success, outputs = run(
 
     Pipelines.jl is fully compatible with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl) which is a Julia-based job scheduler and workload manager inspired by Slurm and PBS.
 
-    `run(::Program, ...)` can be replaced by `Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
+    `run(::Program, ...)` can be replaced by `JobSchedulers.Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
+
+    `arg_forward` is used to forward user-defined inputs/outputs to specific keyword arguments of `JobSchedulers.Job(::Program, ...)`, including `name::String`, `user::String`, `ncpu::Int`, `mem::Int`.
 
 The explanation of arguments is in the next section.
 
