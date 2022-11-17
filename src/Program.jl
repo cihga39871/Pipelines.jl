@@ -450,3 +450,24 @@ end
 parse_verbose(verbose::Bool) = verbose ? :all : :none
 parse_verbose(::Nothing) = :none
 parse_verbose(verbose::AbstractString) = parse_verbose(Symbol(verbose))
+
+"""
+    isinputnewer(inputs::Dict, run_id_file::AbstractString) -> Bool
+
+Check whether any existing file (not dir) paths of `AbstractString` or `AbstractPath` in `inputs` are newer than `run_id_file`.
+"""
+function isinputnewer(inputs::Dict, run_id_file::AbstractString)
+    input_time = 0.0
+    for (k,v) in inputs
+        if v isa AbstractString || v isa AbstractPath
+            if isfile(v)
+                modified_time = mtime(v)
+                if modified_time > input_time
+                    input_time = modified_time
+                end
+            end
+        end
+    end
+
+    input_time > mtime(run_id_file)
+end

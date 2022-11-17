@@ -215,7 +215,7 @@ function _run(
     end
 
     # skip when done
-    if skip_when_done && isfile(run_id_file) && isok(getfield(p, :validate_outputs)(outputs))
+    if skip_when_done && isfile(run_id_file) && isok(getfield(p, :validate_outputs)(outputs)) && !isinputnewer(inputs, run_id_file)
         if verbose_level == :all
             @warn timestamp() * "Skipped finished program: $(getfield(p, :name))" command_template=getfield(p, :cmd) run_id inputs outputs
         else

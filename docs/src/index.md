@@ -65,14 +65,16 @@ run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = 
 ```
 
 !!! note "Program will not run twice by default!"
-    If you run a program with the same inputs again, the program will just return the same result, display a warning message without running the command twice.
+    The program will generate a file (run id file) in the working directory indicating the program has been run.
+
+    If you run a program with the same inputs again, and any file (not dir) paths of the inputs are not newer than the run id file, the program will just return the same result, display a warning message without running the program twice.
 
     ```julia
     input_args = (REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
     run(echo; input_args...)
     ```
     
-    This is because the program will generate a file (run id file) in the current directory indicating the program has been run. Several methods can be used to re-run a program:
+    Several methods can be used to re-run a program:
     
     ```julia
     # Method 1: stop checking finished program using skip_when_done = false

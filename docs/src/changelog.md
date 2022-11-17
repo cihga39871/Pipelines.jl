@@ -1,8 +1,13 @@
 # Change log
 
+## v0.8.6
+
+- Feature: If any file (not dir) paths of the inputs are newer than the run id file, the program will run again to update the outputs, even if the run id file exists. (#4)
+
 ## v0.8.5
 
 - Feature: Enchance compatibility with JobSchedulers v0.6.12: `Program` has a new field called `arg_forward` that is used to forward user-defined inputs/outputs to specific keyword arguments of `JobSchedulers.Job(::Program, ...)`, including `name::String`, `user::String`, `ncpu::Int`, `mem::Int`.
+
 ## v0.8.4
 
 - Fix: If defining a `Program` using `Expr` in other packages, the precompilation will fail due to the Expr will be `@eval` to a function in `Pipelines`. Julia does not allow define new functions in a compiled module. To avoid this, we have to pass the current module to `CmdProgram` or `JuliaProgram`. In this fix, the two methods accepts a new keyword argument `mod`, which allows users to pass `mod = @__MODULE__` manually.

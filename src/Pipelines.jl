@@ -1,10 +1,12 @@
 module Pipelines
 
+using Reexport
 using Printf
-using Dates
+@reexport using Dates
 using UUIDs
 using Logging
 using OrderedCollections  # sorting dict in generate_run_uuid
+@reexport using FilePathsBase  # isinputnewer in Program.jl
 
 include("quote_function.jl")
 export quote_function, quote_expr

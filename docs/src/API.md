@@ -75,4 +75,5 @@ Pipelines.StackTraceVector
 Pipelines.keyword_interpolation
 Pipelines.xxputs_completion_and_check
 Pipelines.parse_program_args
+Pipelines.isinputnewer
 ```
