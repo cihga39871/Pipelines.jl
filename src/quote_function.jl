@@ -182,7 +182,7 @@ function dictreplace!(ex::AbstractString, s::Symbol, v::Expr)
 end
 function dictreplace!(ex::Expr, s::Symbol, v::Expr)
     if ex.head == :kw
-        for i in 2:length(ex.args)
+        for i in 2:length(ex.args)  # func(a; b = b): the first b does not change
             ex.args[i] = dictreplace!(ex.args[i], s, v)
         end
     else
