@@ -202,28 +202,28 @@ function _run(
 
     verbose_level = parse_verbose(verbose)
 
-    if verbose_level == :all
-        if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
-            @info timestamp() * "Started: $(getfield(p, :name))" run_id inputs outputs
-        else
-            @info timestamp() * getfield(p, :info_before) run_id inputs outputs
-        end
-    elseif verbose_level == :min
-        if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
-            @info timestamp() * "Started: $(getfield(p, :name)) [$(run_id)]"
-        else
-            @info timestamp() * getfield(p, :info_before) * " [$(run_id)]"
-        end
-    end
-
     # skip when done
     if skip_when_done && !need_rerun(p, run_id_file, inputs, outputs)
         if verbose_level == :all
-            @warn timestamp() * "Skipped finished program: $(getfield(p, :name))" run_id inputs outputs
+            @warn timestamp() * "Skipped finished program: $(getfield(p, :name))" run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         else
-            @warn timestamp() * "Skipped finished program: $(getfield(p, :name)) [$(run_id)]"
+            @warn timestamp() * "Skipped finished program: $(getfield(p, :name)) [$(run_id)]" _module=nothing _group=nothing _id=nothing _file=nothing
         end
         return true, outputs
+    end
+    
+    if verbose_level == :all
+        if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
+            @info timestamp() * "Started: $(getfield(p, :name))" run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
+        else
+            @info timestamp() * getfield(p, :info_before) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
+        end
+    elseif verbose_level == :min
+        if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
+            @info timestamp() * "Started: $(getfield(p, :name)) [$(run_id)]" _module=nothing _group=nothing _id=nothing _file=nothing
+        else
+            @info timestamp() * getfield(p, :info_before) * " [$(run_id)]" _module=nothing _group=nothing _id=nothing _file=nothing
+        end
     end
 
     # check dependencies
@@ -238,7 +238,7 @@ function _run(
     try
         isok(getfield(p, :validate_inputs)(inputs)) || error("ProgramInputValidationError: $(getfield(p, :name)): the prerequisites function returns false.")
     catch e
-        @error timestamp() * "ProgramInputValidationError: $(getfield(p, :name)): fail to validate inputs (before running the main command)." validation_function=getfield(p, :validate_inputs) run_id inputs outputs
+        @error timestamp() * "ProgramInputValidationError: $(getfield(p, :name)): fail to run validate_inputs (before running the main command)." validation_function=getfield(p, :validate_inputs) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -254,7 +254,7 @@ function _run(
     try
         isok(getfield(p, :prerequisites)(inputs, outputs)) || error("ProgramPrerequisitesError: $(getfield(p, :name)): the prerequisites function returns false.")
     catch e
-        @error timestamp() * "ProgramPrerequisitesError: $(getfield(p, :name)): fail to run the prerequisites function (before running the main command)." prerequisites=getfield(p, :prerequisites) run_id inputs outputs
+        @error timestamp() * "ProgramPrerequisitesError: $(getfield(p, :name)): fail to run prerequisites (before running the main command)." prerequisites=getfield(p, :prerequisites) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -263,14 +263,14 @@ function _run(
     outputs_main = try
         getfield(p, :main)(inputs, outputs)
     catch e
-        @error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main command." run_id inputs outputs
+        @error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main function." run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
 
     # check type of outputs
     if !isa(outputs_main, Dict)
-        @warn timestamp() * "ProgramMainReturnValue: $(getfield(p, :name)): the returned value of the main function is not a Dict, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main
+        @warn timestamp() * "ProgramMainReturnValue: $(getfield(p, :name)): the returned value of the main function is not a Dict, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main _module=nothing _group=nothing _id=nothing _file=nothing
 
         # check keys in outputs::Dict{String}
         check_outputs_keywords(p, outputs)
@@ -279,7 +279,7 @@ function _run(
             check_outputs_keywords(p, outputs_main)
             outputs_main
         catch
-            @warn timestamp() * "ProgramMainReturnValue: $(getfield(p, :name)): the returned Dict of the main function does not pass the keyword checks, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main
+            @warn timestamp() * "ProgramMainReturnValue: $(getfield(p, :name)): the returned Dict of the main function does not pass the keyword checks, use the inferred output instead" run_id inputs outputs returned_outputs=outputs_main _module=nothing _group=nothing _id=nothing _file=nothing
             outputs
         end
     end
@@ -289,7 +289,7 @@ function _run(
     try
         isok(getfield(p, :validate_outputs)(outputs)) || error("ProgramOutputValidationError: $(getfield(p, :name)): the validation function returns false.")
     catch e
-        @error timestamp() * "ProgramOutputValidationError: $(getfield(p, :name)): fail to validate outputs (after running the main command)." validation_function=getfield(p, :validate_outputs) run_id inputs outputs
+        @error timestamp() * "ProgramOutputValidationError: $(getfield(p, :name)): fail to run validate_outputs (after running the main command)." validation_function=getfield(p, :validate_outputs) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -297,7 +297,7 @@ function _run(
     try
         isok(getfield(p, :wrap_up)(inputs, outputs)) || error("ProgramWrapUpError: $(getfield(p, :name)): the wrap_up function returns false.")
     catch e
-        @error timestamp() * "ProgramWrapUpError: $(getfield(p, :name)): fail to run the wrap_up function." wrap_up=getfield(p, :wrap_up) run_id inputs outputs
+        @error timestamp() * "ProgramWrapUpError: $(getfield(p, :name)): fail to run wrap_up." wrap_up=getfield(p, :wrap_up) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -307,15 +307,15 @@ function _run(
 
     if verbose_level == :all
         if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
-            @info timestamp() * "Finished: $(getfield(p, :name))" run_id inputs outputs
+            @info timestamp() * "Finished: $(getfield(p, :name))" run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         else
-            @info timestamp() * getfield(p, :info_after) run_id inputs outputs
+            @info timestamp() * getfield(p, :info_after) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         end
     elseif verbose_level == :min
         if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
-            @info timestamp() * "Finished: $(getfield(p, :name)) [$run_id]"
+            @info timestamp() * "Finished: $(getfield(p, :name)) [$run_id]" _module=nothing _group=nothing _id=nothing _file=nothing
         else
-            @info timestamp() * getfield(p, :info_after) * " [$run_id]"
+            @info timestamp() * getfield(p, :info_after) * " [$run_id]" _module=nothing _group=nothing _id=nothing _file=nothing
         end
     end
     return true, outputs

@@ -200,28 +200,28 @@ function _run(
 
     verbose_level = parse_verbose(verbose)
 
-    if verbose_level == :all
-        if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
-            @info timestamp() * "Started: $(getfield(p, :name))" command_template=getfield(p, :cmd) run_id inputs outputs
-        else
-            @info timestamp() * getfield(p, :info_before) command_template=getfield(p, :cmd) run_id inputs outputs
-        end
-    elseif verbose_level == :min
-        if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
-            @info timestamp() * "Started: $(getfield(p, :name)) [$(run_id)]"
-        else
-            @info timestamp() * getfield(p, :info_before) * " [$(run_id)]"
-        end
-    end
-
     # skip when done
     if skip_when_done && !need_rerun(p, run_id_file, inputs, outputs)
         if verbose_level == :all
-            @warn timestamp() * "Skipped finished program: $(getfield(p, :name))" command_template=getfield(p, :cmd) run_id inputs outputs
+            @warn timestamp() * "Skipped finished program: $(getfield(p, :name))" command_template=getfield(p, :cmd) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         else
-            @warn timestamp() * "Skipped finished program: $(getfield(p, :name)) [$(run_id)]"
+            @warn timestamp() * "Skipped finished program: $(getfield(p, :name)) [$(run_id)]" _module=nothing _group=nothing _id=nothing _file=nothing
         end
         return true, outputs
+    end
+    
+    if verbose_level == :all
+        if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
+            @info timestamp() * "Started: $(getfield(p, :name))" command_template=getfield(p, :cmd) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
+        else
+            @info timestamp() * getfield(p, :info_before) command_template=getfield(p, :cmd) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
+        end
+    elseif verbose_level == :min
+        if getfield(p, :info_before) == "auto" || getfield(p, :info_before) == ""
+            @info timestamp() * "Started: $(getfield(p, :name)) [$(run_id)]" _module=nothing _group=nothing _id=nothing _file=nothing
+        else
+            @info timestamp() * getfield(p, :info_before) * " [$(run_id)]" _module=nothing _group=nothing _id=nothing _file=nothing
+        end
     end
 
     # check dependencies
@@ -236,7 +236,7 @@ function _run(
     try
         isok(getfield(p, :validate_inputs)(inputs)) || error("ProgramInputValidationError: $(getfield(p, :name)): the prerequisites function returns false.")
     catch e
-        @error timestamp() * "ProgramInputValidationError: $(getfield(p, :name)): fail to validate inputs (before running the main command)." validation_function=getfield(p, :validate_inputs) command_template=getfield(p, :cmd) run_id inputs outputs
+        @error timestamp() * "ProgramInputValidationError: $(getfield(p, :name)): fail to run validate_inputs (before running the main command)." validation_function=getfield(p, :validate_inputs) command_template=getfield(p, :cmd) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -254,7 +254,7 @@ function _run(
     try
         isok(getfield(p, :prerequisites)(inputs, outputs)) || error("ProgramPrerequisitesError: $(getfield(p, :name)): the prerequisites function returns false.")
     catch e
-        @error timestamp() * "ProgramPrerequisitesError: $(getfield(p, :name)): fail to run the prerequisites function (before running the main command)." prerequisites=getfield(p, :prerequisites) command_template=getfield(p, :cmd) run_id inputs outputs
+        @error timestamp() * "ProgramPrerequisitesError: $(getfield(p, :name)): fail to run prerequisites (before running the main command)." prerequisites=getfield(p, :prerequisites) command_template=getfield(p, :cmd) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -264,7 +264,7 @@ function _run(
         run(cmd)
         # run(pipeline(cmd, stdout=stdout, stderr=stderr, append=append))
     catch e
-        @error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main command." prerequisites=getfield(p, :prerequisites) command_running=cmd run_id inputs outputs
+        @error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main command." prerequisites=getfield(p, :prerequisites) command_running=cmd run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -273,7 +273,7 @@ function _run(
     try
         isok(getfield(p, :validate_outputs)(outputs)) || error("ProgramOutputValidationError: $(getfield(p, :name)): the validation function returns false.")
     catch e
-        @error timestamp() * "ProgramOutputValidationError: $(getfield(p, :name)): fail to validate outputs (after running the main command)." validation_function=getfield(p, :validate_outputs) command_running=cmd run_id inputs outputs
+        @error timestamp() * "ProgramOutputValidationError: $(getfield(p, :name)): fail to run validate_outputs (after running the main command)." validation_function=getfield(p, :validate_outputs) command_running=cmd run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -281,7 +281,7 @@ function _run(
     try
         isok(getfield(p, :wrap_up)(inputs, outputs)) || error("ProgramWrapUpError: $(getfield(p, :name)): the wrap_up function returns false.")
     catch e
-        @error timestamp() * "ProgramWrapUpError: $(getfield(p, :name)): fail to run the wrap_up function." wrap_up=getfield(p, :wrap_up) command_running=cmd run_id inputs outputs
+        @error timestamp() * "ProgramWrapUpError: $(getfield(p, :name)): fail to run wrap_up." wrap_up=getfield(p, :wrap_up) command_running=cmd run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         rethrow(e)
         return false, outputs
     end
@@ -291,15 +291,15 @@ function _run(
 
     if verbose_level == :all
         if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
-            @info timestamp() * "Finished: $(getfield(p, :name))" command_running=cmd run_id inputs outputs
+            @info timestamp() * "Finished: $(getfield(p, :name))" command_running=cmd run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         else
-            @info timestamp() * getfield(p, :info_after) command_running=cmd run_id inputs outputs
+            @info timestamp() * getfield(p, :info_after) command_running=cmd run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing
         end
     elseif verbose_level == :min
         if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
-            @info timestamp() * "Finished: $(getfield(p, :name)) [$run_id]"
+            @info timestamp() * "Finished: $(getfield(p, :name)) [$run_id]" _module=nothing _group=nothing _id=nothing _file=nothing
         else
-            @info timestamp() * getfield(p, :info_after) * " [$run_id]"
+            @info timestamp() * getfield(p, :info_after) * " [$run_id]" _module=nothing _group=nothing _id=nothing _file=nothing
         end
     end
     return true, outputs

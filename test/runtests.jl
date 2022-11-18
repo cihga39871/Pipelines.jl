@@ -256,14 +256,14 @@ using Test
     @test run(p, touch_run_id_file=false, stdout="out.txt", stdlog="log.txt")[1]
 
     @test read("out.txt", String) == "stdout> 10.6\n"
-    @test length(read("log.txt", String)) > 600
+    @test length(read("log.txt", String)) > 500
 
     @test run(p, "a" => 6.6, touch_run_id_file=false, stderr = "err.txt", dir=working_dir)[1]
 
     # redirect files at working dir
     @test !isfile("err.txt")
     @test isfile(joinpath(working_dir, "err.txt"))
-    @test length(read(joinpath(working_dir, "err.txt"), String)) > 600
+    @test length(read(joinpath(working_dir, "err.txt"), String)) > 500
 
     ## cmd program
     p = CmdProgram(

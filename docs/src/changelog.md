@@ -1,5 +1,9 @@
 # Change log
 
+## v0.9.2
+
+- Feature: If skipping program, not showing `@info` of start.
+- Feature: `@logmsg` does not show module, file, line etc.
 ## v0.9.1
 
 - Fix: pretty print of Pipelines types.
