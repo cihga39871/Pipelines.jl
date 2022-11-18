@@ -1,5 +1,8 @@
 # Change log
 
+## v0.9.3
+- Feature: run id file also try to record all possible files from Base.AbstractCmd inputs/outputs.
+
 ## v0.9.2
 
 - Feature: If skipping program, not showing `@info` of start.

@@ -82,20 +82,20 @@ function create_run_id_file(run_id_file::AbstractString, inputs::Dict, outputs::
         for (k,v) in inputs
             if v isa AbstractString || v isa AbstractPath
                 if isfile(v)
-                    modified_time = mtime(v)
-                    fs = filesize(v)
-                    println(io, "i\t$(modified_time)\t$fs\t$k\t$v")
+                    write_run_id_line(io, k, v, "i")
                 end
+            elseif v isa Base.AbstractCmd
+                cmd_to_run_id_lines(io, k, v, "i")
             end
         end
 
         for (k,v) in outputs
             if v isa AbstractString || v isa AbstractPath
                 if isfile(v)
-                    modified_time = mtime(v)
-                    fs = filesize(v)
-                    println(io, "o\t$(modified_time)\t$fs\t$k\t$v")
+                    write_run_id_line(io, k, v, "o")
                 end
+            elseif v isa Base.AbstractCmd
+                cmd_to_run_id_lines(io, k, v, "o")
             end
         end
     end
@@ -135,12 +135,23 @@ function any_file_differ(file_info::Dict{String, RunIDLine}, xxputs::Dict)
                     return true
                 else
                     (now_mtime == old.mtime) || (return true)
-                    filesize(v) == old.filesize || (return true)
+                    (filesize(v) == old.filesize) || (return true)
                 end
             else # file missing, if it is input, ignore. outputs = differ
                 old = get(file_info, v, nothing)
                 old === nothing && continue
                 old.isinput || (return true)
+            end
+        elseif v isa Base.AbstractCmd
+            # scan file_info with the same arg_name
+            # if old has any change, re run
+            for old in values(file_info)
+                if old.key == k
+                    f = old.value
+                    isfile(f) || (return true)
+                    (mtime(f) == old.mtime) || (return true)
+                    (filesize(f) == old.filesize) || (return true)
+                end
             end
         end
     end
@@ -160,4 +171,88 @@ function need_rerun(p::Program, run_id_file::AbstractString, inputs::Dict, outpu
     any_file_differ(run_id_file::AbstractString, inputs::Dict, outputs::Dict) && (return true)
 
     false
+end
+
+"""
+    RUN_ID_LINE_SKIP_EXTENSION = $RUN_ID_LINE_SKIP_EXTENSION
+
+If a file with a extension listed, infomation of this file will not write to `run_id_file`.
+"""
+const RUN_ID_LINE_SKIP_EXTENSION = [".so", ".dylib", ".dll"]
+
+function write_run_id_line(io, arg_name::AbstractString, file::AbstractString, first_char::String; skip_ext::Vector = RUN_ID_LINE_SKIP_EXTENSION)
+    ext = splitext(file)[2]
+    ext in skip_ext && (return false)  # skip dynamic library
+
+    modified_time = mtime(file)
+    fs = filesize(file)
+    println(io, "$first_char\t$(modified_time)\t$fs\t$arg_name\t$file")
+    true
+end
+write_run_id_line(io, arg_name::AbstractPath, file::AbstractString, first_char::String; skip_ext::Vector = RUN_ID_LINE_SKIP_EXTENSION) = write_run_id_line(io, string(arg_name), file, first_char; skip_ext = skip_ext)
+
+
+function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Cmd, first_char::String)
+    for (i, arg) in enumerate(cmd.exec)
+        i == 1 && continue  # the first argument is software, skip
+        length(arg) == 0 && continue  # empty argument
+        tryparse(Float64, arg) isa Float64 && continue  # not file
+
+        if arg[1] == '-' && length(arg) > 2
+            # like -qJ/mnt/scratch_2t/usr/software/julia-1.8.1/lib/julia/sys.so
+            m = match(r"^-[A-Za-z0-9\-\_]+(/.+)", arg)
+
+            if isnothing(m)
+                m = match(r"^-[A-Za-z0-9\-\_]+=(.+)", arg)
+                if isnothing(m)
+                    continue
+                end
+            end
+
+            f = m.captures[1]
+            if isfile(f)
+                write_run_id_line(io, arg_name, f, first_char)
+            else
+                # check whether it is file1,file2 or file1;file2
+                splited = split(f, r"[,;:]")
+                length(splited) == 1 && continue
+                for s in splited
+                    if isfile(s)
+                        write_run_id_line(io, arg_name, s, first_char)
+                    end
+                end
+            end
+            continue
+        end
+
+        if isfile(arg)
+            write_run_id_line(io, arg_name, arg, first_char)
+        else
+            # check whether it is file1,file2 or file1;file2
+            splited = split(arg, r"[,;:]")
+            length(splited) == 1 && continue
+            for f in splited
+                if isfile(f)
+                    write_run_id_line(io, arg_name, f, first_char)
+                end
+            end
+        end
+    end
+end
+
+function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, c::Base.CmdRedirect, first_char::String)
+    cmd_to_run_id_lines(io, arg_name, c.cmd, first_char)
+    cmd_to_run_id_lines(io, arg_name, c.handle, first_char)
+end
+function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, c::T, first_char::String) where T <: Union{Base.OrCmds, Base.ErrOrCmds, Base.AndCmds}
+    cmd_to_run_id_lines(io, arg_name, c.a, first_char)
+    cmd_to_run_id_lines(io, arg_name, c.b, first_char)
+end
+function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, h::Base.TTY, first_char::String)   # h: handle property of CmdRedirect
+    nothing
+end
+function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, h::Base.FileRedirect, first_char::String)   # h: handle property of CmdRedirect
+    if isfile(h.filename)
+        write_run_id_line(io, arg_name, h.filename, first_char)
+    end
 end

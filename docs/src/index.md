@@ -65,7 +65,7 @@ run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = 
 ```
 
 !!! note "Program will not run twice by default!"
-    The program will generate a file (run id file) in the working directory with information of input/output files.
+    The program will generate a file (run id file) in the working directory. It records the states of all possible files (not dirs) guessed from `AbstractString`, `FilePathsBase.AbstractPath`, `Base.AbstractCmd` of inputs/outputs.
 
     If you run a program with the same inputs again, and any file (not dir) in inputs/outputs is not modified, the program will just return the same result, without running the program twice.
 

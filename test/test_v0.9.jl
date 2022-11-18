@@ -51,3 +51,57 @@ end
     f2 = quote_function(expr, inputs)
     f2(Dict("abc" => 2, "def" => 33))
 end
+
+@testset "v0.9.3 Possible files in Cmd also write to run_id_file" begin
+
+    prog_cmd = JuliaProgram(
+        name = "Program Cmd",
+        id_file = ".cmd",
+        inputs = "CMD" => Base.AbstractCmd,
+        main = quote
+            run(CMD)
+        end
+    )
+
+    run(prog_cmd, CMD = `echo 123 456`)
+    run_id_file = run(prog_cmd, CMD = `echo 123 456`, dry_run = true)[2]
+    file_info = Pipelines.parse_run_id_file(run_id_file)
+    @test isempty(file_info)
+
+    cmd = pipeline(`echo 123 456`, "123456.txt")
+    run(prog_cmd, CMD = cmd)
+    run_id_file = run(prog_cmd, CMD = cmd, dry_run = true)[2]
+    file_info = Pipelines.parse_run_id_file(run_id_file)
+    @test haskey(file_info, "123456.txt")
+
+    @test_warn "Skipped finished" run(prog_cmd, CMD = cmd)
+
+    # touching the file, re run
+    touch("123456.txt")
+    @test_warn "Started: Program Cmd" run(prog_cmd, CMD = cmd)
+
+    cmd = `echo 123456.txt`
+    run(prog_cmd, CMD = cmd)
+    run_id_file = run(prog_cmd, CMD = cmd, dry_run = true)[2]
+    file_info = Pipelines.parse_run_id_file(run_id_file)
+    @test haskey(file_info, "123456.txt")
+
+    touch("123.txt")
+
+    cmd = `echo -J=123456.txt,123.txt`
+    run(prog_cmd, CMD = cmd)
+    run_id_file = run(prog_cmd, CMD = cmd, dry_run = true)[2]
+    file_info = Pipelines.parse_run_id_file(run_id_file)
+    @test haskey(file_info, "123456.txt")
+
+    cmd = `echo 123456.txt,123.txt`
+    run(prog_cmd, CMD = cmd)
+    run_id_file = run(prog_cmd, CMD = cmd, dry_run = true)[2]
+    file_info = Pipelines.parse_run_id_file(run_id_file)
+    @test haskey(file_info, "123456.txt")
+    @test haskey(file_info, "123.txt")
+
+    touch("123.txt")
+    @test_warn "Started: Program Cmd" run(prog_cmd, CMD = cmd)
+    @test_warn "Skipped finished" run(prog_cmd, CMD = cmd)
+end
