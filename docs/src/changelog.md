@@ -1,5 +1,9 @@
 # Change log
 
+## v0.9.1
+
+- Fix: pretty print of Pipelines types.
+
 ## v0.9.0
 
 - Feature: run id file contain file information to guess whether files are updated and better decide rerun.

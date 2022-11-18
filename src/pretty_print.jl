@@ -1,39 +1,54 @@
 
 
-function Base.display(p::CmdDependency)
-    println("CmdDependency:")
-    println("  exec             → ", p.exec)
-    println("  test_args        → ", p.test_args)
-    println("  validate_success → ", p.validate_success)
-    println("  validate_stdout  → ", p.validate_stdout)
-    println("  validate_stderr  → ", p.validate_stderr)
-    println("  exit_when_fail   → ", p.exit_when_fail)
+function Base.show(io::IO, ::MIME"text/plain", p::CmdDependency)
+    println(io, "CmdDependency:")
+    println(io, "  exec             → ", p.exec)
+    println(io, "  test_args        → ", p.test_args)
+    println(io, "  validate_success → ", p.validate_success)
+    println(io, "  validate_stdout  → ", p.validate_stdout)
+    println(io, "  validate_stderr  → ", p.validate_stderr)
+    println(io, "  exit_when_fail   → ", p.exit_when_fail)
 end
-
+function Base.show(io::IO, p::CmdDependency)
+    show(io, p.exec)
+end
 function Base.print(io::IO, p::CmdDependency)
     print(io, p.exec)
 end
 
-function Base.show(io::IO, p::CmdDependency)
-    show(io, p.exec)
+function Base.show(io::IO, ::MIME"text/plain", a::Arg)
+    println(io, "Arg:")
+    println(io, "  name        → ", a.name)
+    println(io, "  type        → ", a.type)
+    println(io, "  default     → ", a.default)
+    println(io, "  required    → ", a.required)
+    println(io, "  independent → ", a.independent)
+end
+function Base.show(io::IO, a::Arg)
+    type_str = a.type == Any ? "" : "::$(a.type)"
+    if a.required
+        if a.independent
+            s = "$(a.name)$(type_str) (required, independent)"
+        else
+            s = "$(a.name)$(type_str) (required)"
+        end
+    else
+        if a.independent
+            s = "$(a.name)$(type_str) (independent, default = $(a.default))"
+        else
+            s = "$(a.name)$(type_str) (default = $(a.default))"
+        end
+    end
+    print(io, s)
 end
 
-function Base.display(a::Arg)
-    println("Arg:")
-    println("  name        → ", a.name)
-    println("  type        → ", a.type)
-    println("  default     → ", a.default)
-    println("  required    → ", a.required)
-    println("  independent → ", a.independent)
-end
-
-function Base.display(args::Vector{Arg}; indent::Int = 2, summary::Bool = true)
+function Base.show(io::IO, ::MIME"text/plain", args::Vector{T}; indent::Int = 2, summary::Bool = true) where T <: Arg
     n_arg = length(args)
     if n_arg == 0
         if summary
-            println(n_arg, "-element Vector{Arg}.")
+            println(io, n_arg, "-element Vector{Arg}.")
         else
-            println("<Arg empty>")
+            println(io, "<Arg empty>")
         end
         return
     end
@@ -52,44 +67,71 @@ function Base.display(args::Vector{Arg}; indent::Int = 2, summary::Bool = true)
             sout = @eval @sprintf($s, $(a.name), $(a.type))
         else
             if a.independent
-                s = "$space%-$(n_name)s :: %-$(n_type)s (default = %s, independent)"
+                s = "$space%-$(n_name)s :: %-$(n_type)s (independent, default = %s)"
             else
                 s = "$space%-$(n_name)s :: %-$(n_type)s (default = %s)"
             end
             sout = @eval @sprintf($s, $(a.name), $(a.type), $(string(a.default)))
         end
-        println(sout)
+        println(io, sout)
+    end
+end
+function show_vector(io::IO, ::MIME"text/plain", args::Vector{T}; indent::Int = 2, summary::Bool = true) where T
+    n_arg = length(args)
+    if n_arg == 0
+        if summary
+            println(io, n_arg, "-element Vector{$T}.")
+        else
+            println(io, "<empty>")
+        end
+        return
+    end
+    summary && println(length(args), "-element Vector{$T}:")
+    indent_str = " " ^ indent
+    for (i, a) in enumerate(args)
+        space = (!summary && i == 1) ? "" : indent_str
+        println(io, space, a)
     end
 end
 
-@eval function Base.display(p::CmdProgram)
+@eval function Base.show(io::IO, mime::MIME"text/plain", p::CmdProgram)
     fs = $(fieldnames(CmdProgram))
     fs_string = $(map(string, fieldnames(CmdProgram)))
     max_byte = $(maximum(length, map(string, fieldnames(CmdProgram))))
-    println("CmdProgram:")
+    println(io, "CmdProgram:")
     for (i,f) in enumerate(fs)
-        print("  ", f, " " ^ (max_byte - length(fs_string[i])), " → ")
+        print(io, "  ", f, " " ^ (max_byte - length(fs_string[i])), " → ")
         if f === :arg_inputs || f === :arg_outputs
-            display(getfield(p, f); indent = max_byte + 5, summary = false)
+            show(io, mime, getfield(p, f); indent = max_byte + 5, summary = false)
+        elseif f in (:cmd_dependencies, :arg_forward)
+            show_vector(io, mime, getfield(p, f); indent = max_byte + 5, summary = false)
         else
-            println(getfield(p, f))
+            println(io, getfield(p, f))
+        end
+    end
+end
+@eval function Base.show(io::IO, mime::MIME"text/plain", p::JuliaProgram)
+    fs = $(fieldnames(JuliaProgram))
+    fs_string = $(map(string, fieldnames(JuliaProgram)))
+    max_byte = $(maximum(length, map(string, fieldnames(JuliaProgram))))
+    println(io, "JuliaProgram:")
+    for (i,f) in enumerate(fs)
+        print(io, "  ", f, " " ^ (max_byte - length(fs_string[i])), " → ")
+        if f === :arg_inputs || f === :arg_outputs
+            show(io, mime, getfield(p, f); indent = max_byte + 5, summary = false)
+        elseif f in (:cmd_dependencies, :arg_forward)
+            show_vector(io, mime, getfield(p, f); indent = max_byte + 5, summary = false)
+        else
+            println(io, getfield(p, f))
         end
     end
 end
 
-@eval function Base.display(p::JuliaProgram)
-    fs = $(fieldnames(JuliaProgram))
-    fs_string = $(map(string, fieldnames(JuliaProgram)))
-    max_byte = $(maximum(length, map(string, fieldnames(JuliaProgram))))
-    println("JuliaProgram:")
-    for (i,f) in enumerate(fs)
-        print("  ", f, " " ^ (max_byte - length(fs_string[i])), " → ")
-        if f === :arg_inputs || f === :arg_outputs
-            display(getfield(p, f); indent = max_byte + 5, summary = false)
-        else
-            println(getfield(p, f))
-        end
-    end
+function Base.show(io::IO, p::CmdProgram)
+    print(io, "CmdProgram($(p.name), $(p.cmd))")
+end
+function Base.show(io::IO, p::JuliaProgram)
+    print(io, "JuliaProgram($(p.name), inputs = $(p.inputs), outputs = $(p.outputs))")
 end
 
 function display_xxputs(max_bype::Int, xxputs::Vector{String}, xxput_types::Vector{Type}, default_xxputs::Vector)

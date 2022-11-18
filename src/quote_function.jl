@@ -49,7 +49,7 @@ run(prog; A = 3, B = 5, touch_run_id_file = false)
 ```
 
 !!! warning "`quote` variables in other scopes"
-    1. A local variable in other scopes should be referenced using `\$` in `expr`ession. (No need to use `\$` for global variables.)
+    1. A local variable (include function) should be referenced using `\$` in `expr`ession. (No need to use `\$` for global variables.)
 
     2. A local `::Symbol` variable (`sym`) should be referenced using `\$(QuoteNode(sym))` in `expr`ession.
 
