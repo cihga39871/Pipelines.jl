@@ -34,6 +34,9 @@ export Program, prog_run,
 infer_outputs,
 status_dependency
 
+include("run_id_file.jl")
+
+
 include("CmdProgram.jl")
 export CmdProgram,
 prepare_cmd

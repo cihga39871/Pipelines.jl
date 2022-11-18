@@ -1,5 +1,10 @@
 # Change log
 
+## v0.9.0
+
+- Feature: run id file contain file information to guess whether files are updated and better decide rerun.
+- Fix: quote_function: func(a; b = b): if b is one of inputs or outputs, the first b does not change.
+
 ## v0.8.6
 
 - Feature: If any file (not dir) paths of the inputs are newer than the run id file, the program will run again to update the outputs, even if the run id file exists. (#4)

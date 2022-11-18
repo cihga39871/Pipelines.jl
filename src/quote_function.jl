@@ -181,8 +181,14 @@ function dictreplace!(ex::AbstractString, s::Symbol, v::Expr)
     end
 end
 function dictreplace!(ex::Expr, s::Symbol, v::Expr)
-    for i in 1:length(ex.args)
-        ex.args[i] = dictreplace!(ex.args[i], s, v)
+    if ex.head == :kw
+        for i in 2:length(ex.args)
+            ex.args[i] = dictreplace!(ex.args[i], s, v)
+        end
+    else
+        for i in 1:length(ex.args)
+            ex.args[i] = dictreplace!(ex.args[i], s, v)
+        end
     end
     ex
 end

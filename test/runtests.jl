@@ -316,6 +316,8 @@ using Test
 
     include("test_v0.8.jl")
 
+    include("test_v0.9.jl")
+
     # clean up
     cd(homedir())
     rm(tmp, recursive=true)

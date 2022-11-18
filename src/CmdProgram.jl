@@ -191,7 +191,7 @@ function _run(
 
     # run id based on inputs and outputs
     run_id = generate_run_uuid(p, inputs, outputs)
-    run_id_file = joinpath(dir, getfield(p, :id_file) * "." * string(run_id))
+    run_id_file = run_id_file_path(p, dir, run_id)
 
     # whether dry run
     if dry_run
@@ -215,7 +215,7 @@ function _run(
     end
 
     # skip when done
-    if skip_when_done && isfile(run_id_file) && isok(getfield(p, :validate_outputs)(outputs)) && !isinputnewer(inputs, run_id_file)
+    if skip_when_done && !need_rerun(p, run_id_file, inputs, outputs)
         if verbose_level == :all
             @warn timestamp() * "Skipped finished program: $(getfield(p, :name))" command_template=getfield(p, :cmd) run_id inputs outputs
         else
@@ -287,7 +287,7 @@ function _run(
     end
 
     # touch the run_id_file
-    touch_run_id_file && touch(run_id_file)
+    touch_run_id_file && create_run_id_file(run_id_file, inputs, outputs)
 
     if verbose_level == :all
         if getfield(p, :info_after) == "auto" || getfield(p, :info_after) == ""
