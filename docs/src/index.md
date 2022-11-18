@@ -65,9 +65,9 @@ run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = 
 ```
 
 !!! note "Program will not run twice by default!"
-    The program will generate a file (run id file) in the working directory indicating the program has been run.
+    The program will generate a file (run id file) in the working directory with information of input/output files.
 
-    If you run a program with the same inputs again, and any file (not dir) paths of the inputs are not newer than the run id file, the program will just return the same result, display a warning message without running the program twice.
+    If you run a program with the same inputs again, and any file (not dir) in inputs/outputs is not modified, the program will just return the same result, without running the program twice.
 
     ```julia
     input_args = (REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)

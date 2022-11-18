@@ -336,7 +336,7 @@ The explanation of arguments is in the next section.
 
     > It is the last code to do after-command jobs. For example, you can delete intermediate files if necessary.
 
-13. Create run id file if `run(..., touch_run_id_file=true)`. Read Step 3 for details.
+13. Create run id file if `run(..., touch_run_id_file=true)`. Read Step 4 for details.
 
 14. Print info about finishing program.
 
