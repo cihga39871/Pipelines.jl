@@ -88,9 +88,9 @@ In this way, the name of a run id file will not change if running a program in t
 
 However, this is not enough for determine whether a job needs re-run. Consider this situation:
 
-> (1) Run prog with arg = 1, output "out.txt" and "run_id_file_with_arg1"
-> (2) Run prog with arg = 2, output "out.txt" and "run_id_file_with_arg2"
-> (3) Run prog with arg = 1 again, no re-run because "out.txt" and "run_id_file_with_arg1" all exist!
+> (1) Run prog with arg = 1, output `"out.txt"` and `"run_id_file_with_arg1"`
+> (2) Run prog with arg = 2, output `"out.txt"` and `"run_id_file_with_arg2"`
+> (3) Run prog with arg = 1 again, no re-run because `"out.txt"` and `"run_id_file_with_arg1"` all exist!
 
 To solve the issue, we need to store the states of inputs and outputs arguments.
 
