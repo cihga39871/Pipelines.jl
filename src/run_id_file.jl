@@ -160,7 +160,7 @@ function parse_run_id_file(run_id_file::AbstractString)
 end
 
 """
-any_file_differ(run_id_file::AbstractString, inputs::Dict, outputs::Dict)
+    any_file_differ(run_id_file::AbstractString, inputs::Dict, outputs::Dict)
 
 Check whether any existing file (not dir) path of `AbstractString` or `AbstractPath` differ from records in `run_id_file`.
 """

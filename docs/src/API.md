@@ -27,7 +27,7 @@ quote_function
 ```@docs
 Arg
 Pipelines.RESERVED_KEY_SET
-Pipeliens.FORWARD_KEY_SET
+Pipelines.FORWARD_KEY_SET
 ```
 
 ## Run Program
