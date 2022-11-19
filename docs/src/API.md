@@ -77,6 +77,8 @@ Pipelines.xxputs_completion_and_check
 Pipelines.parse_program_args
 Pipelines.RUN_ID_LINE_SKIP_EXTENSION
 Pipelines.create_run_id_file
+Pipelines.CMD_FILE_SPLITER
+Pipelines.cmd_to_run_id_lines
 Pipelines.need_rerun
 Pipelines.any_file_differ
 ```

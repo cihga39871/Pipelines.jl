@@ -259,7 +259,7 @@ success, outputs = run(
     ```
 
 !!! warning "Argument mod::Module"
-    `Expr`ressions will evaluated to functions in `mod`. Please use `mod = @__MODULE__` to prevent precompilation fail when defining the program within a package.
+    `Expr`ressions will be evaluated to functions in `mod`. Please use `mod = @__MODULE__` to prevent precompilation fail when defining the program within a package.
 
 !!! warning
     Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different `Tasks` or multi-thread mode.
@@ -272,7 +272,7 @@ success, outputs = run(
 
     `run(::Program, ...)` can be replaced by `JobSchedulers.Job(::Program, ...)`. The latter creates a `Job`, and you can submit the job to queue by using `submit!(::Job)`.
 
-    `arg_forward` is used to forward user-defined inputs/outputs to specific keyword arguments of `JobSchedulers.Job(::Program, ...)`, including `name::String`, `user::String`, `ncpu::Int`, `mem::Int`.
+    `arg_forward` (an argument of [`CmdProgram`](@ref)) is used to forward user-defined inputs/outputs to specific keyword arguments of `JobSchedulers.Job(::Program, ...)`, including `name::String`, `user::String`, `ncpu::Int`, `mem::Int`.
 
 The explanation of arguments is in the next section.
 
@@ -306,7 +306,7 @@ The explanation of arguments is in the next section.
    >
    > a. `run(..., skip_when_done=true)` skip running the program if it has been done before.
    >
-   > b. Run id file is generated. The prefix of run id file is set by `p.id_file`. After given inputs and outputs, a unique ID will be appended to the prefix. You can use `run(..., touch_run_id_file=false)` to skip creating the run id file.
+   > b. Run id file stores files information. File will be compared to determine re-run or not. You can use `run(..., touch_run_id_file=false)` to skip creating the run id file. Details of run id file can be found at [`create_run_id_file`](@ref)
    >
    > c. `p.validate_outputs(outputs)` run successfully without returning `false`.
 

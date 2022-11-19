@@ -68,13 +68,60 @@ end
 
 Create run id file.
 
-Line format of run id file (tab delimited):
+## What is run id file
 
+The run id file stores information of arguments and files related to a successful run of `Program`.
+
+By comparing the run id file, we can determine whether we need to re-run a finished program.
+
+## File Name
+
+The name of a run id file is `<dir>/<program_id_prefix>.<argument_UUID>`.
+
+- `dir`: working directory to run the program, which can be defined in `run(::Program; dir = "")`
+
+- `program_id_prefix`: the prefix of run ID file, which can be defined in `CmdProgram(id_file = "")` and `JuliaProgram(id_file = "")`
+
+- `argument_UUID`: a unique ID generated from string representations of inputs and outputs arguments using the internal function `generate_run_uuid`.
+
+In this way, the name of a run id file will not change if running a program in the same directory with same inputs and outputs.
+
+However, this is not enough for determine whether a job needs re-run. Consider this situation:
+
+> (1) Run prog with arg = 1, output "out.txt" and "run_id_file_with_arg1"
+> (2) Run prog with arg = 2, output "out.txt" and "run_id_file_with_arg2"
+> (3) Run prog with arg = 1 again, no re-run because "out.txt" and "run_id_file_with_arg1" all exist!
+
+To solve the issue, we need to store the states of inputs and outputs arguments.
+
+Here, we guess file names from inputs and outputs. 
+
+- If an argument is `AbstractString` or `AbstractPath`, and `isfile()` returns true, we store the file information. (We ignore directories because their contents are easy to change.)
+
+- If an argument is `Base.AbstractCmd`, we decompose the command into pieces, and check whether each piece is a file path. The rules of file guessing are complicated and mentioned in [`cmd_to_run_id_lines`](@ref) and [`CMD_FILE_SPLITER`](@ref).
+
+- If a file name is found, and its extension is not one of [`RUN_ID_LINE_SKIP_EXTENSION`](@ref), it will write to run id file.
+
+!!! note "Control file name guessing"
+    Pipeline developers usually know what file extension should be ignored, and whether they have an argument joining two files with a splitter. In this way, we can use IN-PLACE methods to change [`RUN_ID_LINE_SKIP_EXTENSION`](@ref) and [`CMD_FILE_SPLITER`](@ref). IN-PLACE methods are usually functions ending with `!`, such as `empty!`, `push!`, `deleteat!`
+
+## Contents of run id file
+
+- Tab delimited, no header.
 - Column 1: `i` or `o` stands for inputs or outputs.
-- Column 2: file modified time in Float64.
-- Column 3: file size.
-- Column 3: key name.
-- Column 4: file path.
+- Column 2: unix timestamp of when the file was last modified in Float64.
+- Column 3: The size (in bytes) of the file.
+- Column 3: key name of inputs or outputs. It may have duplication.
+- Column 4: file path. It may have duplication.
+
+## Limitation
+
+We cannot store states of all arguments. If we have a pure JuliaProgram without reading and writing files, we cannot guarantee the state of the arguments.
+
+A work-around is to intentionally create a file with a fixed name, and the file name is defined in Program's outputs.
+
+## See also
+[`cmd_to_run_id_lines`](@ref), [`RUN_ID_LINE_SKIP_EXTENSION`](@ref), [`CMD_FILE_SPLITER`](@ref)
 """
 function create_run_id_file(run_id_file::AbstractString, inputs::Dict, outputs::Dict)
     tmp_file = tmpname()
@@ -177,8 +224,20 @@ end
     RUN_ID_LINE_SKIP_EXTENSION = $RUN_ID_LINE_SKIP_EXTENSION
 
 If a file with a extension listed, infomation of this file will not write to `run_id_file`.
+
+See also: [`create_run_id_file`](@ref), [`cmd_to_run_id_lines`](@ref), [`CMD_FILE_SPLITER`](@ref)
+
 """
-const RUN_ID_LINE_SKIP_EXTENSION = [".so", ".dylib", ".dll"]
+const RUN_ID_LINE_SKIP_EXTENSION = String[".so", ".dylib", ".dll"]
+
+"""
+    CMD_FILE_SPLITER = $CMD_FILE_SPLITER
+
+It is aimed to guess whether an argument of a command contain multiple file names joined using file splitters. 
+
+See also: [`create_run_id_file`](@ref), [`cmd_to_run_id_lines`](@ref), [`RUN_ID_LINE_SKIP_EXTENSION`](@ref)
+"""
+const CMD_FILE_SPLITER = Char[',', ';', ':']
 
 function write_run_id_line(io, arg_name::AbstractString, file::AbstractString, first_char::String; skip_ext::Vector = RUN_ID_LINE_SKIP_EXTENSION)
     ext = splitext(file)[2]
@@ -191,7 +250,22 @@ function write_run_id_line(io, arg_name::AbstractString, file::AbstractString, f
 end
 write_run_id_line(io, arg_name::AbstractPath, file::AbstractString, first_char::String; skip_ext::Vector = RUN_ID_LINE_SKIP_EXTENSION) = write_run_id_line(io, string(arg_name), file, first_char; skip_ext = skip_ext)
 
+"""
+    cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Base.AbstractCmd, first_char::String)
 
+
+Rules to guess file names from command:
+
+- The first argument is ignored because usually it is a script.
+
+- Numbers are ignored.
+
+- If an argument starts with `-`, matching `r"^-[A-Za-z0-9\\-\\_]+(/.+)"` and `r"^-[A-Za-z0-9\\-\\_]+=(.+)"` only. If matched, go to the next rule.
+
+- Check whether an arg is a file. If not, try to use `Pipelines.CMD_FILE_SPLITER` to split the argument, and check each part. If found a file, go to the next rule.
+
+- If a file name is found, and its extension is not one of `Pipelines.RUN_ID_LINE_SKIP_EXTENSION`, it will write to run id file.
+"""
 function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Cmd, first_char::String)
     for (i, arg) in enumerate(cmd.exec)
         i == 1 && continue  # the first argument is software, skip
@@ -214,7 +288,7 @@ function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Cmd, first_c
                 write_run_id_line(io, arg_name, f, first_char)
             else
                 # check whether it is file1,file2 or file1;file2
-                splited = split(f, r"[,;:]")
+                splited = split(f, CMD_FILE_SPLITER)
                 length(splited) == 1 && continue
                 for s in splited
                     if isfile(s)
@@ -229,7 +303,7 @@ function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Cmd, first_c
             write_run_id_line(io, arg_name, arg, first_char)
         else
             # check whether it is file1,file2 or file1;file2
-            splited = split(arg, r"[,;:]")
+            splited = split(arg, CMD_FILE_SPLITER)
             length(splited) == 1 && continue
             for f in splited
                 if isfile(f)
