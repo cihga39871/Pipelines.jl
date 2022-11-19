@@ -3,6 +3,9 @@ push!(LOAD_PATH,"../src/")
 
 using Documenter, Pipelines
 
+# include("../src/Pipelines.jl")
+# using .Pipelines
+
 makedocs(
     sitename="Pipelines.jl",
     pages = [

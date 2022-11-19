@@ -98,12 +98,12 @@ Here, we guess file names from inputs and outputs.
 
 - If an argument is `AbstractString` or `AbstractPath`, and `isfile()` returns true, we store the file information. (We ignore directories because their contents are easy to change.)
 
-- If an argument is `Base.AbstractCmd`, we decompose the command into pieces, and check whether each piece is a file path. The rules of file guessing are complicated and mentioned in [`cmd_to_run_id_lines`](@ref) and [`CMD_FILE_SPLITER`](@ref).
+- If an argument is `Base.AbstractCmd`, we decompose the command into pieces, and check whether each piece is a file path. The rules of file guessing are complicated and mentioned in [`Pipelines.cmd_to_run_id_lines`](@ref) and [`Pipelines.CMD_FILE_SPLITER`](@ref).
 
-- If a file name is found, and its extension is not one of [`RUN_ID_LINE_SKIP_EXTENSION`](@ref), it will write to run id file.
+- If a file name is found, and its extension is not one of [`Pipelines.RUN_ID_LINE_SKIP_EXTENSION`](@ref), it will write to run id file.
 
 !!! note "Control file name guessing"
-    Pipeline developers usually know what file extension should be ignored, and whether they have an argument joining two files with a splitter. In this way, we can use IN-PLACE methods to change [`RUN_ID_LINE_SKIP_EXTENSION`](@ref) and [`CMD_FILE_SPLITER`](@ref). IN-PLACE methods are usually functions ending with `!`, such as `empty!`, `push!`, `deleteat!`
+    Pipeline developers usually know what file extension should be ignored, and whether they have an argument joining two files with a splitter. In this way, we can use IN-PLACE methods to change [`Pipelines.RUN_ID_LINE_SKIP_EXTENSION`](@ref) and [`Pipelines.CMD_FILE_SPLITER`](@ref). IN-PLACE methods are usually functions ending with `!`, such as `empty!`, `push!`, `deleteat!`
 
 ## Contents of run id file
 
@@ -121,7 +121,7 @@ We cannot store states of all arguments. If we have a pure JuliaProgram without 
 A work-around is to intentionally create a file with a fixed name, and the file name is defined in Program's outputs.
 
 ## See also
-[`cmd_to_run_id_lines`](@ref), [`RUN_ID_LINE_SKIP_EXTENSION`](@ref), [`CMD_FILE_SPLITER`](@ref)
+[`Pipelines.cmd_to_run_id_lines`](@ref), [`Pipelines.RUN_ID_LINE_SKIP_EXTENSION`](@ref), [`Pipelines.CMD_FILE_SPLITER`](@ref)
 """
 function create_run_id_file(run_id_file::AbstractString, inputs::Dict, outputs::Dict)
     tmp_file = tmpname()
@@ -225,7 +225,7 @@ end
 
 If a file with a extension listed, infomation of this file will not write to `run_id_file`.
 
-See also: [`create_run_id_file`](@ref), [`cmd_to_run_id_lines`](@ref), [`CMD_FILE_SPLITER`](@ref)
+See also: [`Pipelines.create_run_id_file`](@ref), [`Pipelines.cmd_to_run_id_lines`](@ref), [`Pipelines.CMD_FILE_SPLITER`](@ref)
 
 """
 const RUN_ID_LINE_SKIP_EXTENSION = String[".so", ".dylib", ".dll"]
@@ -235,7 +235,7 @@ const RUN_ID_LINE_SKIP_EXTENSION = String[".so", ".dylib", ".dll"]
 
 It is aimed to guess whether an argument of a command contain multiple file names joined using file splitters. 
 
-See also: [`create_run_id_file`](@ref), [`cmd_to_run_id_lines`](@ref), [`RUN_ID_LINE_SKIP_EXTENSION`](@ref)
+See also: [`Pipelines.create_run_id_file`](@ref), [`Pipelines.cmd_to_run_id_lines`](@ref), [`Pipelines.RUN_ID_LINE_SKIP_EXTENSION`](@ref)
 """
 const CMD_FILE_SPLITER = Char[',', ';', ':']
 

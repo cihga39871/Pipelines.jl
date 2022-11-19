@@ -306,7 +306,7 @@ The explanation of arguments is in the next section.
    >
    > a. `run(..., skip_when_done=true)` skip running the program if it has been done before.
    >
-   > b. Run id file stores files information. File will be compared to determine re-run or not. You can use `run(..., touch_run_id_file=false)` to skip creating the run id file. Details of run id file can be found at [`create_run_id_file`](@ref)
+   > b. Run id file stores files information. File will be compared to determine re-run or not. You can use `run(..., touch_run_id_file=false)` to skip creating the run id file. Details of run id file can be found at [`Pipelines.create_run_id_file`](@ref)
    >
    > c. `p.validate_outputs(outputs)` run successfully without returning `false`.
 

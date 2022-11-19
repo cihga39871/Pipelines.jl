@@ -2,8 +2,8 @@
 
 ## v0.9.4
 
-- Docs: better documentation on run id file: [`create_run_id_file`](@ref).
-- Feature: [`CMD_FILE_SPLITER`](@ref).
+- Docs: better documentation on run id file: [`Pipelines.create_run_id_file`](@ref).
+- Feature: [`Pipelines.CMD_FILE_SPLITER`](@ref).
 
 ## v0.9.3
 - Feature: run id file also try to record all possible files from Base.AbstractCmd inputs/outputs.
