@@ -1,4 +1,8 @@
-# Change log
+# Change Log
+
+## v0.9.5
+
+- Docs: add new page: tips and trobleshoots.
 
 ## v0.9.4
 

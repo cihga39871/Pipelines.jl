@@ -1,10 +1,10 @@
 #!julia --color=yes
 push!(LOAD_PATH,"../src/")
 
-using Documenter, Pipelines
+using Documenter
 
-# include("../src/Pipelines.jl")
-# using .Pipelines
+include("../src/Pipelines.jl")
+using .Pipelines
 
 makedocs(
     sitename="Pipelines.jl",
@@ -19,9 +19,4 @@ makedocs(
         "Tips & Troubleshoots" => "tips_and_troubleshoots.md",
         "Change Log" => "changelog.md"
     ]
-)
-
-deploydocs(
-    repo = "github.com/cihga39871/Pipelines.jl.git",
-    devbranch = "main"
 )

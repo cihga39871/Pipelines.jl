@@ -58,9 +58,10 @@ run(prog; A = 3, B = 5, touch_run_id_file = false)
     inputs = ["A", "B"]
     g_var = 3
     g_sym = :globalsymbol
-
+    
     function gen_expr()
         l_var = 5
+        l_func() = @info("Use local function")
         l_sym = :abc
         expr = quote
             @show inputs
@@ -68,11 +69,16 @@ run(prog; A = 3, B = 5, touch_run_id_file = false)
             @show g_sym
             @show \$(QuoteNode(l_sym))
             @show \$l_var + 2
+            \$l_func()
             A + B
         end
     end
-
+    
     expr = gen_expr()
+    func = Pipelines.quote_function(expr, inputs; mod = @__MODULE__)
+    
+    in_dict = Dict("A" => 5, "B" => 50)
+    func(in_dict)
     ```
 
 !!! compat "Compatibility of Pipelines < v0.8"
