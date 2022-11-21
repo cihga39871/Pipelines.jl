@@ -89,7 +89,9 @@ In this way, the name of a run id file will not change if running a program in t
 However, this is not enough for determine whether a job needs re-run. Consider this situation:
 
 > (1) Run prog with arg = 1, output `"out.txt"` and `"run_id_file_with_arg1"`  
+>
 > (2) Run prog with arg = 2, output `"out.txt"` and `"run_id_file_with_arg2"`  
+>
 > (3) Run prog with arg = 1 again, no re-run because `"out.txt"` and `"run_id_file_with_arg1"` all exist!  
 
 To solve the issue, we need to store the states of inputs and outputs arguments.
@@ -110,7 +112,7 @@ Here, we guess file names from inputs and outputs.
 - Tab delimited, no header.
 - Column 1: `i` or `o` stands for inputs or outputs.
 - Column 2: unix timestamp of when the file was last modified in Float64.
-- Column 3: The size (in bytes) of the file.
+- Column 3: the size (in bytes) of the file.
 - Column 3: key name of inputs or outputs. It may have duplication.
 - Column 4: file path. It may have duplication.
 
