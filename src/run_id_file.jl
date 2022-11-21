@@ -210,7 +210,15 @@ end
 """
     need_rerun(p::Program, run_id_file::AbstractString, inputs::Dict, outputs::Dict) -> Bool
 
-Check whether re-run the program. Return `true` means need re-run.
+Check whether re-run the program `p`. Return `true` means it need re-run.
+
+## Decision details
+
+1. Is `run_id_file` a file? If not, re-run.
+
+2. Run `p.validate_outputs(outputs)`. If fail, re-run.
+
+3. Comparing status of files in `run_id_file` using [`Pipelines.any_file_differ`](@ref). If yes, re-run.
 """
 function need_rerun(p::Program, run_id_file::AbstractString, inputs::Dict, outputs::Dict)
     isfile(run_id_file) || (return true)
@@ -225,7 +233,7 @@ end
 """
     RUN_ID_LINE_SKIP_EXTENSION = $RUN_ID_LINE_SKIP_EXTENSION
 
-If a file with a extension listed, infomation of this file will not write to `run_id_file`.
+If a file with an extension listed, `run_id_file` skip storing information of this file. It means whether to re-run a program, the state of the file will be ignored.
 
 See also: [`Pipelines.create_run_id_file`](@ref), [`Pipelines.cmd_to_run_id_lines`](@ref), [`Pipelines.CMD_FILE_SPLITER`](@ref)
 
@@ -255,8 +263,12 @@ write_run_id_line(io, arg_name::AbstractPath, file::AbstractString, first_char::
 """
     cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Base.AbstractCmd, first_char::String)
 
+- `io`: IO of run id file.
+- `arg_name`: name of the inputs/outputs argument.
+- `cmd`: Subtypes of Base.AbstractCmd.
+- `first_char`: `"i"` or `"o"`, stands for inputs or outputs.
 
-Rules to guess file names from command:
+## Rules to guess file names from command:
 
 - The first argument is ignored because usually it is a script.
 
