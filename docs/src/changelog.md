@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.9.6
+
+- Fix: not showing warning when Base.stdout or Base.stderr is system file redirection (IOStream, fd) when initiating Pipelines.jl
+
 ## v0.9.5
 
 - Docs: add new page: tips and trobleshoots.
@@ -10,12 +14,14 @@
 - Feature: [`Pipelines.CMD_FILE_SPLITER`](@ref).
 
 ## v0.9.3
+
 - Feature: run id file also try to record all possible files from Base.AbstractCmd inputs/outputs.
 
 ## v0.9.2
 
 - Feature: If skipping program, not showing `@info` of start.
 - Feature: `@logmsg` does not show module, file, line etc.
+
 ## v0.9.1
 
 - Fix: pretty print of Pipelines types.
