@@ -54,14 +54,22 @@ function __init__()
     global stderr_origin
 
     if isnothing(stdout_origin)
-        if !(Base.stdout isa Base.TTY) || !( Base.stdout isa IOStream && occursin(r"^<fd .*>$", Base.stdout.name) )
+        if Base.stdout isa Base.TTY
+            nothing
+        elseif Base.stdout isa IOStream && occursin(r"^<fd .*>$", Base.stdout.name)
+            nothing
+        else
             # Not Terminal (TTY), nor linux file redirection (fd)
             @warn "Base.stdout was changed when initiating Pipelines.jl. `restore_stdout()` can only restore to the current one." Base.stdout
         end
         stdout_origin = Base.stdout
     end
     if isnothing(stderr_origin)
-        if !(Base.stderr isa Base.TTY) || !( Base.stderr isa IOStream && occursin(r"^<fd .*>$", Base.stderr.name) )
+        if Base.stderr isa Base.TTY
+           nothing 
+        elseif Base.stderr isa IOStream && occursin(r"^<fd .*>$", Base.stderr.name)
+            nothing
+        else
             # Not Terminal (TTY), nor linux file redirection (fd)
             @warn "Base.stderr was changed when initiating Pipelines.jl. `restore_stderr()` can only restore to the current one." Base.stderr
         end
