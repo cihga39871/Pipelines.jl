@@ -325,7 +325,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - `dry_run::Bool = false`: do not run the program, return `(command::AbstractCmd, run_id_file::String)` for CmdProgram, or `(inferred_outputs::Dict{String}, run_id_file::String)` for JuliaProgram.
 
-- `stdout`, `stderr`, `stdlog` and `append`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If `p isa CmdProgram` and the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
+- `stdout`, `stderr`, `stdlog` and `append::Bool = false`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If `p isa CmdProgram` and the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
 
 !!! warning "Thread safety"
     Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
