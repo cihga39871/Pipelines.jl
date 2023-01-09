@@ -239,9 +239,9 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
         end
     end
 
-    outfile isa IO || close(out)
-    errfile isa IO || close(err)
-    logfile isa IO || close(log)
+    outfile isa IO ? flush(outfile) : close(out)
+    errfile isa IO ? flush(errfile) : close(err)
+    logfile isa IO ? flush(logfile) : close(log)
     if res isa StackTraceVector && show_error
         show(res)
     end

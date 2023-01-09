@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.9.8
+
+- Feature: flush ios after task finished (`redirect_to_files`).
+
 ## v0.9.6 - v0.9.7
 
 - Fix: not showing warning when Base.stdout or Base.stderr is system file redirection (IOStream, fd) when initiating Pipelines.jl
