@@ -210,6 +210,7 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
             redirect_stdout(out)
         catch
         end
+    end
     if !isnothing(err)
         try
             redirect_stderr(err)
@@ -228,7 +229,10 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
                 # it is not atomic, so use try
                 redirect_stdout(old_stdout)
             catch
-                redirect_stdout(stdout_origin)
+                try
+                    redirect_stdout(stdout_origin)
+                catch
+                end
             end
         else
             try
@@ -244,7 +248,10 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
                 # it is not atomic, so use try
                 redirect_stderr(old_stderr)
             catch
-                redirect_stderr(stderr_origin)
+                try
+                    redirect_stderr(stderr_origin)
+                catch
+                end
             end
         else
             try
