@@ -205,8 +205,17 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
     old_stdout = Base.stdout
     old_stderr = Base.stderr
 
-    isnothing(out) || redirect_stdout(out)
-    isnothing(err) || redirect_stderr(err)
+    if !isnothing(out)
+        try
+            redirect_stdout(out)
+        catch
+        end
+    if !isnothing(err)
+        try
+            redirect_stderr(err)
+        catch
+        end
+    end
 
     show_error = Base.stderr !== stderr_origin
 
@@ -222,7 +231,10 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
                 redirect_stdout(stdout_origin)
             end
         else
-            redirect_stdout(stdout_origin)
+            try
+                redirect_stdout(stdout_origin)
+            catch
+            end
         end
     end
 
@@ -235,7 +247,10 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
                 redirect_stderr(stderr_origin)
             end
         else
-            redirect_stderr(stderr_origin)
+            try
+                redirect_stderr(stderr_origin)
+            catch
+            end
         end
     end
 

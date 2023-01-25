@@ -1,5 +1,10 @@
 # Change Log
 
+
+## v0.9.9
+
+- Fix: redirection.jl: wrap all `redirect_stdXXX` in the try-catch block.
+
 ## v0.9.8
 
 - Feature: flush ios after task finished (`redirect_to_files`).
