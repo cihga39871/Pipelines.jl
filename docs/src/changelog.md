@@ -1,5 +1,8 @@
 # Change Log
 
+## v0.9.10
+
+- Fix: `run`: wrap `cd(dir_backup)` in try-catch block in case the dir no longer exists. happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail.
 
 ## v0.9.9
 

@@ -282,7 +282,11 @@ function Base.run(p::Program;
     end
 
     if dir != ""
-        cd(dir_backup)
+        try
+            # in case the dir no longer exists. happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail.
+            cd(dir_backup)
+        catch
+        end
     end
     res
 end
