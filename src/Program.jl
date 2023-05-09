@@ -179,27 +179,28 @@ function keyword_interpolation(allputs::Dict{String})
     allputs
 end
 function keyword_interpolation(allputs::Dict{String}, key::String, n_recursion::Int)
-    value = allputs[key]
-    keywords = find_keywords(value)
-    isempty(keywords) && return allputs # no need to interpolate
-    for keyword in keywords
-        keyword_value = get(allputs, keyword, nothing)
-        isnothing(keyword_value) && continue # keyword not match, ignore
-        if isempty(find_keywords(keyword_value))
+    keywords = find_keywords(allputs, allputs[key])
+    while length(keywords) > 0
+        for keyword in keywords
+            if keyword == key
+                throw(ErrorException("ProgramArgumentError: too many recursion occurs in keyword interpolation."))
+            end
+            keyword_value = get(allputs, keyword, nothing)
             allputs[key] = replace(allputs[key], "<$keyword>" => str(keyword_value))
-        else
-            n_recursion > 20 && throw(ErrorException("ProgramArgumentError: too many recursion occurs in keyword interpolation."))
-            keyword_interpolation(allputs::Dict{String}, keyword::String, n_recursion + 1)
         end
+        keywords = find_keywords(allputs, allputs[key])
+        n_recursion += 1
+        n_recursion > 20 && throw(ErrorException("ProgramArgumentError: too many recursion occurs in keyword interpolation."))
     end
     allputs
 end
 
-function find_keywords(value::T) where T <: AbstractString
+function find_keywords(allputs::Dict{String}, value::T) where T <: AbstractString
     m = eachmatch(r"<([^<>]+)>", value)
-    String[i.captures[1] for i in m]
+    keywords = String[i.captures[1] for i in m]
+    filter!(keyword -> haskey(allputs, keyword), keywords)
 end
-find_keywords(not_string) = []
+find_keywords(allputs::Dict{String}, not_string) = String[]
 
 """
     xxputs_completion_and_check(p::Program, inputs, outputs)

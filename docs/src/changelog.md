@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.10.1
+
+- Fix: the flaw of recursion of `keyword_interpolation`.
+
 ## v0.10.0
 
 - Feature: remove reexport of FilePathsBase package to suppress warning 'Both Dates and FilePathsBase exports canonicalize'.
