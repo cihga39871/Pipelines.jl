@@ -6,7 +6,7 @@ using Printf
 using UUIDs
 using Logging
 using OrderedCollections  # sorting dict in generate_run_uuid
-using FilePathsBase  # isinputnewer in Program.jl
+import FilePathsBase:AbstractPath  # isinputnewer in Program.jl
 
 include("quote_function.jl")
 export quote_function, quote_expr
@@ -56,7 +56,7 @@ function __init__()
     if isnothing(stdout_origin)
         if Base.stdout isa Base.TTY
             nothing
-        elseif Base.stdout isa IOStream && occursin(r"^<fd .*>$", Base.stdout.name)
+        elseif occursin(r"<fd .*>", string(Base.stdout))
             nothing
         else
             # Not Terminal (TTY), nor linux file redirection (fd)
@@ -67,7 +67,7 @@ function __init__()
     if isnothing(stderr_origin)
         if Base.stderr isa Base.TTY
            nothing 
-        elseif Base.stderr isa IOStream && occursin(r"^<fd .*>$", Base.stderr.name)
+        elseif occursin(r"<fd .*>", string(Base.stderr))
             nothing
         else
             # Not Terminal (TTY), nor linux file redirection (fd)

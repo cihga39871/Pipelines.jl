@@ -126,7 +126,7 @@ A work-around is to intentionally create a file with a fixed name, and the file 
 [`Pipelines.cmd_to_run_id_lines`](@ref), [`Pipelines.RUN_ID_LINE_SKIP_EXTENSION`](@ref), [`Pipelines.CMD_FILE_SPLITER`](@ref)
 """
 function create_run_id_file(run_id_file::AbstractString, inputs::Dict, outputs::Dict)
-    tmp_file = tmpname()
+    tmp_file = tempname()
     open(tmp_file, "w+") do io
         for (k,v) in inputs
             if v isa AbstractString || v isa AbstractPath
@@ -148,7 +148,7 @@ function create_run_id_file(run_id_file::AbstractString, inputs::Dict, outputs::
             end
         end
     end
-    mv(string(tmp_file), run_id_file; force=true)
+    mv(tmp_file, run_id_file; force=true)
 end
 
 function parse_run_id_file(run_id_file::AbstractString)
