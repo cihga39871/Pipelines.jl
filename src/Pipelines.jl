@@ -56,7 +56,7 @@ function __init__()
     if isnothing(stdout_origin)
         if Base.stdout isa Base.TTY
             nothing
-        elseif occursin(r"<fd .*>|RawFD\(\d+\)", string(Base.stdout))
+        elseif occursin(r"<fd .*>|RawFD\(\d+\)|WindowsRawSocket\(", string(Base.stdout))
             nothing
         else
             # Not Terminal (TTY), nor linux file redirection (fd)
@@ -66,8 +66,8 @@ function __init__()
     end
     if isnothing(stderr_origin)
         if Base.stderr isa Base.TTY
-           nothing 
-        elseif occursin(r"<fd .*>|RawFD\(\d+\)", string(Base.stderr))
+           nothing
+        elseif occursin(r"<fd .*>|RawFD\(\d+\)|WindowsRawSocket\(", string(Base.stderr))
             nothing
         else
             # Not Terminal (TTY), nor linux file redirection (fd)

@@ -1,8 +1,13 @@
 # Change Log
 
+## v0.10.4
+
+- Compat: Julia v1.9: init(): change the if statement of printing Base.stdxxx was changed when initiating Pipelines.jl: now detects WindowsRawSocket.
+
 ## v0.10.3
 
 - Compat: Julia v1.9: init(): change the if statement of printing Base.stdxxx was changed when initiating Pipelines.jl: now detects RawFD.
+
 ## v0.10.2
 
 - Compat: Julia v1.9: init(): change the if statement of printing Base.stdxxx was changed when initiating Pipelines.jl: now detects `<fd>`
