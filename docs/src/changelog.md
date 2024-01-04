@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.10.5
+
+- Compat: Julia v1.10: `hasmethod(f, t)` in Julia v1.10 changed its behavior. It affects Program function check. Use `length(methods(f, t))` instead.
+
 ## v0.10.4
 
 - Compat: Julia v1.9: init(): change the if statement of printing Base.stdxxx was changed when initiating Pipelines.jl: now detects WindowsRawSocket.

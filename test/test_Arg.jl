@@ -34,7 +34,7 @@
 end
 
 @testset "Arg forward" begin
-    @test_throws ErrorException JuliaProgram(
+    @test_throws "cannot use the reserved name" JuliaProgram(
         id_file = "id_file",
         inputs = [
             "a",
@@ -45,7 +45,7 @@ end
             "c" => "<a>.<b>"
         ],
         main = quote
-            c = "$a.$b.$name.$thread"
+            c = "$a.$b.$NAME.$thread"
         end,
         arg_forward = "NAME" => "name"
     )
@@ -60,7 +60,7 @@ end
             "c" => "<a>.<b>"
         ],
         main = quote
-            c = "$a.$b.$name.$thread"
+            c = "$a.$b.$NAME.$thread"
         end,
         arg_forward = "NAME" => "name"
     )
@@ -77,7 +77,7 @@ end
             "c" => "<a>.<b>"
         ],
         main = quote
-            c = "$a.$b.$name.$thread"
+            c = "$a.$b.$NAME.$thread"
         end,
         arg_forward = ["NAME" => "name", :thread => :ncpu]
     )
@@ -93,7 +93,7 @@ end
             "c" => "<a>.<b>"
         ],
         main = quote
-            c = "$a.$b.$name.$thread"
+            c = "$a.$b.$NAME.$thread"
         end,
         arg_forward = Dict("NAME" => "name", :thread => :ncpu)
     )

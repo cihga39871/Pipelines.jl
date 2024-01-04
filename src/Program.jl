@@ -31,7 +31,8 @@ end
 
 
 function check_function_methods(f::Function, t::Tuple, name = string(f))
-    if !hasmethod(f, t)
+    if length(methods(f, t)) == 0
+    # if !hasmethod(f, t)  # cannot be used in julia v1.10. Behavior changed.
         error("Program: function `$name` does not have the required method: $t. See more at the documents of `JuliaProgram` or `CmdProgram`.")
     end
 end

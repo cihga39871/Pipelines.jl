@@ -144,12 +144,12 @@ end
 function quote_function(expr::Expr, inputs::Vector{String}; specific_return = nothing, mod::Module = @__MODULE__)
     expr = dictreplace_all!(expr, inputs, :inputs)
     if isnothing(specific_return)
-        @eval mod function(inputs)
+        @eval mod function(inputs::Dict{String})
             $expr
         end
     else
         specific_return = dictreplace_all!(specific_return, inputs, :inputs)
-        @eval mod function(inputs)
+        @eval mod function(inputs::Dict{String})
             $expr
             $specific_return
         end
@@ -159,13 +159,13 @@ function quote_function(expr::Expr, inputs::Vector{String}, outputs::Vector{Stri
     expr = dictreplace_all!(expr, inputs, :inputs)
     expr = dictreplace_all!(expr, outputs, :outputs)
     if isnothing(specific_return)
-        @eval mod function(inputs, outputs)
+        @eval mod function(inputs::Dict{String}, outputs::Dict{String})
             $expr
         end
     else
         specific_return = dictreplace_all!(specific_return, inputs, :inputs)
         specific_return = dictreplace_all!(specific_return, outputs, :outputs)
-        @eval mod function(inputs, outputs)
+        @eval mod function(inputs::Dict{String}, outputs::Dict{String})
             $expr
             $specific_return
         end

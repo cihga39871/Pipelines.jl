@@ -16,11 +16,11 @@ mutable struct CmdProgram <: Program
 
     function CmdProgram(name, id_file, info_before, info_after, cmd_dependencies, arg_inputs, validate_inputs, prerequisites, cmd, infer_outputs, arg_outputs, validate_outputs, wrap_up, arg_forward)
 
-        check_function_methods(validate_inputs, (Dict, ), "validate_inputs")
-        check_function_methods(prerequisites, (Dict, Dict), "prerequisites")
-        check_function_methods(infer_outputs, (Dict, ), "infer_outputs")
-        check_function_methods(validate_outputs, (Dict, ), "validate_outputs")
-        check_function_methods(wrap_up, (Dict, Dict), "wrap_up")
+        check_function_methods(validate_inputs, (Dict{String}, ), "validate_inputs")
+        check_function_methods(prerequisites, (Dict{String}, Dict{String}), "prerequisites")
+        check_function_methods(infer_outputs, (Dict{String}, ), "infer_outputs")
+        check_function_methods(validate_outputs, (Dict{String}, ), "validate_outputs")
+        check_function_methods(wrap_up, (Dict{String}, Dict{String}), "wrap_up")
 
         arg_forward = parse_arg_forward(arg_forward)
         check_arg_forward(arg_forward, arg_inputs, arg_outputs)

@@ -16,12 +16,12 @@ mutable struct JuliaProgram <: Program
 
     function JuliaProgram(name, id_file, info_before, info_after, cmd_dependencies, arg_inputs, validate_inputs, prerequisites, main, infer_outputs, arg_outputs, validate_outputs, wrap_up, arg_forward)
 
-        check_function_methods(validate_inputs, (Dict, ), "validate_inputs")
-        check_function_methods(prerequisites, (Dict, Dict), "prerequisites")
-        check_function_methods(main, (Dict, Dict), "main")
-        check_function_methods(infer_outputs, (Dict, ), "infer_outputs")
-        check_function_methods(validate_outputs, (Dict, ), "validate_outputs")
-        check_function_methods(wrap_up, (Dict, Dict), "wrap_up")
+        check_function_methods(validate_inputs, (Dict{String}, ), "validate_inputs")
+        check_function_methods(prerequisites, (Dict{String}, Dict{String}), "prerequisites")
+        check_function_methods(main, (Dict{String}, Dict{String}), "main")
+        check_function_methods(infer_outputs, (Dict{String}, ), "infer_outputs")
+        check_function_methods(validate_outputs, (Dict{String}, ), "validate_outputs")
+        check_function_methods(wrap_up, (Dict{String}, Dict{String}), "wrap_up")
         
         arg_forward = parse_arg_forward(arg_forward)
         check_arg_forward(arg_forward, arg_inputs, arg_outputs)
@@ -143,10 +143,10 @@ function JuliaProgram(;
 )
     # inputs, input_types, default_inputs = parse_default(inputs)
     # outputs, output_types, default_outputs = parse_default(outputs)
-    arg_inputs = parse_arg(inputs)
-    arg_outputs = parse_arg(outputs)
-    inputs = String[arg.name for arg in arg_inputs]
-    outputs = String[arg.name for arg in arg_outputs]
+    arg_inputs = parse_arg(inputs)::Vector{Arg}
+    arg_outputs = parse_arg(outputs)::Vector{Arg}
+    inputs = String[arg.name for arg in arg_inputs]::Vector{String}
+    outputs = String[arg.name for arg in arg_outputs]::Vector{String}
 
     validate_inputs = quote_function(validate_inputs, inputs; mod = mod)
     infer_outputs = quote_function(infer_outputs, inputs; mod = mod)
@@ -154,7 +154,7 @@ function JuliaProgram(;
     validate_outputs = quote_function(validate_outputs, outputs; mod = mod)
     wrap_up = quote_function(wrap_up, inputs, outputs; mod = mod)
 
-    main = quote_function(main, inputs, outputs; specific_return = :(outputs), mod = mod)
+    main_func = quote_function(main, inputs, outputs; specific_return = :(outputs), mod = mod)
 
     JuliaProgram(
         name,
@@ -165,7 +165,7 @@ function JuliaProgram(;
         arg_inputs,
         validate_inputs,
         prerequisites,
-        main,
+        main_func,
         infer_outputs,
         arg_outputs,
         validate_outputs,
