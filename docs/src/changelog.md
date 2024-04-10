@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.10.6
+
+- Fix: `run(::Program)`: wrap `pwd()` in try-catch block in case the dir no longer exists. It happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail. 
+
 ## v0.10.5
 
 - Compat: Julia v1.10: `hasmethod(f, t)` in Julia v1.10 changed its behavior. It affects Program function check. Use `length(methods(f, t))` instead.

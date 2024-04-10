@@ -257,7 +257,12 @@ function Base.run(p::Program;
     stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false, _do_parse_program_args::Bool = true, kwarg...
 )
     if dir != ""
-        dir_backup = pwd()
+        dir_backup = try
+            # in case the dir no longer exists. happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail.
+            pwd()
+        catch
+            ""
+        end
         dir = abspath(dir)
         cd(dir) # go to working directory
     end
