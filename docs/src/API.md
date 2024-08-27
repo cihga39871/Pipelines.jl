@@ -61,6 +61,7 @@ isok
 
 ## Redirection
 ```@docs
+Pipelines.auto_change_directory
 redirect_to_files
 restore_stdout
 restore_stderr

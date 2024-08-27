@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.11.0
+
+- Feat/**Breaking**: new method `auto_change_directory(b::Bool)`. It is necessary because changing directory is not thread-safe in Julia. It was set to `false` in v0.11.0. To make your code compatible with previous version, you can add `Pipelines.auto_change_directory(true)` at the beginning of your code, or use full paths through out your code (recommended).
+
 ## v0.10.6
 
 - Fix: `run(::Program)`: wrap `pwd()` in try-catch block in case the dir no longer exists. It happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail. 

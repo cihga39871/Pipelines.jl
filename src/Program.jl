@@ -252,19 +252,39 @@ function Base.run(p::Program, inputs; kwarg...)
     run(p; inputs=inputs, kwarg...)
 end
 
+AUTO_CHANGE_DIRECTORY::Bool = false
+
+"""
+    auto_change_directory(b::Bool)
+
+When running a `Program`, whether automatically change to the directory. 
+
+Default is false since Pipelines v0.11.
+
+Changing directory is not thread-safe in Julia.
+
+Cannot set it in versions <= v0.10.6.
+"""
+function auto_change_directory(b::Bool)
+    global AUTO_CHANGE_DIRECTORY = b
+end
+
 function Base.run(p::Program;
     dir::AbstractString = "", retry::Int = 0,
     stdout = nothing, stderr = nothing, stdlog = stderr, append::Bool = false, _do_parse_program_args::Bool = true, kwarg...
-)
-    if dir != ""
-        dir_backup = try
-            # in case the dir no longer exists. happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail.
-            pwd()
-        catch
-            ""
+)   
+
+    if AUTO_CHANGE_DIRECTORY
+        if dir != ""
+            dir_backup = try
+                # in case the dir no longer exists. happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail.
+                pwd()
+            catch
+                ""
+            end
+            dir = abspath(dir)
+            cd(dir) # go to working directory
         end
-        dir = abspath(dir)
-        cd(dir) # go to working directory
     end
 
     if _do_parse_program_args
@@ -288,11 +308,13 @@ function Base.run(p::Program;
         n_try += 1
     end
 
-    if dir != ""
-        try
-            # in case the dir no longer exists. happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail.
-            cd(dir_backup)
-        catch
+    if AUTO_CHANGE_DIRECTORY
+        if dir != ""
+            try
+                # in case the dir no longer exists. happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail.
+                cd(dir_backup)
+            catch
+            end
         end
     end
     res
@@ -322,7 +344,7 @@ Return `(success::Bool, outputs::Dict{String})`
 
 - elements in `p.arg_inputs` and `p.arg_outputs`. They will merge to positional arguments `inputs` and `outputs`.
 
-- `dir::AbstractString = ""`: working directory to run the program and store `run_id_file`.
+- `dir::AbstractString = ""`: directory to store `run_id_file`. If set `Pipelines.auto_change_directory(true)`, Program will change to this directory before running. However, changing directory is not thread safe, so it is not recommended.
 
 - `check_dependencies::Bool = true`: check dependencies for `p` (`p.cmd_dependencies`).
 
