@@ -258,12 +258,15 @@ using Test
     @test read("out.txt", String) == "stdout> 10.6\n"
     @test length(read("log.txt", String)) > 500
 
+    Pipelines.auto_change_directory(true)
     @test run(p, "a" => 6.6, touch_run_id_file=false, stderr = "err.txt", dir=working_dir)[1]
 
     # redirect files at working dir
     @test !isfile("err.txt")
     @test isfile(joinpath(working_dir, "err.txt"))
     @test length(read(joinpath(working_dir, "err.txt"), String)) > 500
+
+    Pipelines.auto_change_directory(false)
 
     ## cmd program
     p = CmdProgram(
