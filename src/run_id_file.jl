@@ -148,7 +148,12 @@ function create_run_id_file(run_id_file::AbstractString, inputs::Dict, outputs::
             end
         end
     end
-    mv(tmp_file, run_id_file; force=true)
+    try
+        mv(tmp_file, run_id_file; force=true)
+    catch
+        @warn "Cannot create run id file at $run_id_file. Skip creating."
+        isfile(tmp_file) && rm(tmp_file)
+    end
 end
 
 function parse_run_id_file(run_id_file::AbstractString)
