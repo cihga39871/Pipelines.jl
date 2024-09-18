@@ -266,6 +266,18 @@ end
 write_run_id_line(io, arg_name::AbstractPath, file::AbstractString, first_char::String; skip_ext::Vector = RUN_ID_LINE_SKIP_EXTENSION) = write_run_id_line(io, string(arg_name), file, first_char; skip_ext = skip_ext)
 
 """
+    tryisfile(f)
+if name too long
+"""
+function tryisfile(f)
+    try
+        isfile(f)
+    catch
+        false
+    end
+end
+
+"""
     cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Base.AbstractCmd, first_char::String)
 
 - `io`: IO of run id file.
@@ -303,14 +315,14 @@ function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Cmd, first_c
             end
 
             f = m.captures[1]
-            if isfile(f)
+            if tryisfile(f)
                 write_run_id_line(io, arg_name, f, first_char)
             else
                 # check whether it is file1,file2 or file1;file2
                 splited = split(f, CMD_FILE_SPLITER)
                 length(splited) == 1 && continue
                 for s in splited
-                    if isfile(s)
+                    if tryisfile(s)
                         write_run_id_line(io, arg_name, s, first_char)
                     end
                 end
@@ -318,14 +330,14 @@ function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, cmd::Cmd, first_c
             continue
         end
 
-        if isfile(arg)
+        if tryisfile(arg)
             write_run_id_line(io, arg_name, arg, first_char)
         else
             # check whether it is file1,file2 or file1;file2
             splited = split(arg, CMD_FILE_SPLITER)
             length(splited) == 1 && continue
             for f in splited
-                if isfile(f)
+                if tryisfile(f)
                     write_run_id_line(io, arg_name, f, first_char)
                 end
             end
@@ -345,7 +357,7 @@ function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, h::Base.TTY, firs
     nothing
 end
 function cmd_to_run_id_lines(io::IO, arg_name::AbstractString, h::Base.FileRedirect, first_char::String)   # h: handle property of CmdRedirect
-    if isfile(h.filename)
+    if tryisfile(h.filename)
         write_run_id_line(io, arg_name, h.filename, first_char)
     end
 end

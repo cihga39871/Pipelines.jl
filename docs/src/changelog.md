@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.11.1
+
+- Fix: use `tryisfile(f)` instead of `isfile(f)` in `cmd_to_run_id_lines` because the latter might cause name too long error.
+
 ## v0.11.0
 
 - Feat/**Breaking**: new method `auto_change_directory(b::Bool)`. It is necessary because changing directory is not thread-safe in Julia. It was set to `false` in v0.11.0. To make your code compatible with previous version, you can add `Pipelines.auto_change_directory(true)` at the beginning of your code, or use full paths through out your code (recommended).
