@@ -4,9 +4,9 @@
 
 Building reusable pipelines and workflows is easier than you have ever thought.
 
-| **Documentation**                                                               |
-|:-------------------------------------------------------------------------------:|
-| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://cihga39871.github.io/Pipelines.jl/stable) [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://cihga39871.github.io/Pipelines.jl/dev) |
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://cihga39871.github.io/Pipelines.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://cihga39871.github.io/Pipelines.jl/dev)
+[![codecov](https://codecov.io/github/cihga39871/Pipelines.jl/branch/main/graph/badge.svg)](https://app.codecov.io/github/cihga39871/Pipelines)
 
 ## Package Features
 
