@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.11.2
+
+- Deps: from newer Julia, `redirect_to_files` do not need to show error because Julia handle it automatically.
+
 ## v0.11.1
 
 - Fix: use `tryisfile(f)` instead of `isfile(f)` in `cmd_to_run_id_lines` because the latter might cause name too long error.
@@ -7,12 +11,11 @@
 ## v0.11.0
 
 - Feat/**Breaking**: new method `auto_change_directory(b::Bool)`. It is necessary because changing directory is not thread-safe in Julia. It was set to `false` in v0.11.0. To make your code compatible with previous version, you can add `Pipelines.auto_change_directory(true)` at the beginning of your code, or use full paths through out your code (recommended).
-
 - Fix: creating run id file under try catch block.
 
 ## v0.10.6
 
-- Fix: `run(::Program)`: wrap `pwd()` in try-catch block in case the dir no longer exists. It happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail. 
+- Fix: `run(::Program)`: wrap `pwd()` in try-catch block in case the dir no longer exists. It happens because workding dir is not thread safe in Julia. If other program delete the directory, it will fail.
 
 ## v0.10.5
 
@@ -30,6 +33,7 @@
 
 - Compat: Julia v1.9: init(): change the if statement of printing Base.stdxxx was changed when initiating Pipelines.jl: now detects `<fd>`
 - Change `using FilePathsBase` to `import FilePathsBase:AbstractPath` to avoid variable conflict.
+
 ## v0.10.1
 
 - Fix: the flaw of recursion of `keyword_interpolation`.
@@ -96,17 +100,13 @@
 ## v0.8.2-3
 
 - Feature: New `Arg` data type for storing inputs and outputs information in `Program`. `arg_inputs::Vector{Arg}` and `arg_outputs::Vector{Arg}` are new fields of `Program`.
-
 - Feature: If a `Arg` name of inputs/outputs is a Symbol, run id will not generate using this Arg, which is useful for args do not affect the results, such as nthread, ncpu. (#8)
-
 - Fix other issues.
-
 - Docs: better documentation for v0.8 features.
 
 ## v0.8.1
 
 - Optimize: `dictreplace!(ex::AbstractString, s::Symbol, v::Expr)` is now several times faster.
-
 - Docs: better documentation for v0.8 features.
 
 ## v0.8.0
@@ -120,9 +120,7 @@
 ## v0.7.7
 
 - Feature: now `run(p; kwargs...)` works like `prog_run(p::Program; kwargs...)`. If original `inputs, outputs` are given, and same keys in `kwargs...` are found, the latter will override the former. If program args are conflict with other arguments, an error will throw.
-
 - Feature: `infer_outputs(prog; INPUT1 = 5)` now supports `run`-like kwargs.
-
 - Feature: Before creating new Program, `check_reserved_xxputs` and `check_function_methods`.
 
 ## v0.7.6
@@ -133,17 +131,13 @@
 ## v0.7.5
 
 - Feature (removed in v0.7.6): Simplify: new macro `@run program key_value_args... run_args...`: Run `program` without creating `inputs::Dict` and `outputs::Dict`. The inputs and outputs are provided in the form of `key = value`, rather than `Dict`.
-
 - Feature (removed in v0.7.6): Simplify: new macro `@vars program::Program key_value_args...`: Return run-able `(inputs::Dict, outputs::Dict)` for `program` using `key_value_args` in the form of `key = value`.
 
 ## v0.7.4
 
 - Fix: `check_dependency(p::Program)` return `::Bool` now.
-
 - Feature: `check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail)`: new argument `exit_when_fail` to override `p.exit_when_fail`.
-
 - Feature: new function to check all `CmdDependency` and `Program` under `m::Module`: `check_dependency(m::Module = @__MODULE__; exit_when_fail = true, verbose = true)`
-
 - Feature: new function to display dependency status: `status_dependency(m::Module = @__MODULE__; exit_when_fail = false, verbose = true)`.
 
 ## v0.7.3
@@ -157,9 +151,7 @@
 ## v0.7.1
 
 - Optimize: the returned value of the main function of `JuliaProgram` does not required to be a `Dict`. If it is not a `Dict` or the returned Dict fails to pass keyword check, a warn message will be displayed and the inferred `outputs` will be used.
-
 - Fix: MethodError: no method matching sort(::Dict{String, Any}) in `generate_run_uuid(...)`: import `OrderedCollections.jl`.
-
 - Optimize: do not show the error messages twice when `stderr` is not redirected.
 
 ## v0.7.0
@@ -171,17 +163,13 @@
 ## v0.6.1
 
 - Fix: `to_xxput_dict(d::Dict)`: `v` not defined: change `v` to `d`.
-
 - Fix: `xxputs_completion_and_check(p, inputs, outputs)`: Now, if `outputs` are not empty and `p.infer_outputs` is defined, the function will first run `p.infer_outputs` and then merge the result and `outputs` (user-input keys are kept).
-
 - Optimize: function `infer_outputs(p::Program, inputs)` now works like `xxputs_completion_and_check` but only return `outputs::Dict{String}`. It does not affect user-defined function `p.infer_outputs`. In addition, `inputs` is no longer strict to `Dict{String}` because the it will convert to `Dict{String}` first.
 
 ## v0.6.0
 
 - Feature: allow retry for failed program: `run(p::Program, ...; retry = 1)`.
-
 - Fix: the run id file generated after a successful run is under the directory specified in `run(p::Program, ...; dir = "directory")`, if `p.id_file` is not an absolute path (default).
-
 - Feature: `verbose` in `run(p::Program, ...; verbose = :min)`: If `true` or `:all`, print all info and error messages. If `:min`, print minimum info and error messages. If `false` or `:none`, print error messages only.
 
 ## v0.5.2
@@ -195,9 +183,7 @@
 ## v0.5.0
 
 - Optimize: stack traces of failed results.
-
 - Fix: original stdout and stderr can be recovered by using `restore_stdout()` and `restore_stderr()`. Remove `set_default_stdout()` and `set_default_stderr()` because they cause confusion sometimes.
-
 - Optimize: default output of program info.
 
 ## v0.4.6
@@ -219,7 +205,6 @@
 ## v0.4.2
 
 - Better error stack trace after capturing.
-
 - Update file redirecting.
 
 ## v0.4.1
@@ -229,9 +214,7 @@
 ## v0.4.0
 
 - Feature: `run(p::Program, ...)` supports running at a specified directory (`dir`). Run ID files will also create at that directory.
-
 - Feature: `run(p::Program, ...)` supports redirecting `stdout`, `stderr` and `stdlog` (Julia log output, such as `@info`, `@warn`, `@error`).
-
 - Fix: `CmdProgram` supports commands such as `pipeline(cmd, stdout=stderr)`, which redirect stdout to stderr now because `prepare_cmd(h::Base.TTY, inputs, outputs)` method is added.
 
 ## v0.3.2
@@ -245,7 +228,6 @@
 ## v0.3.0
 
 - Feature: Building Program: Support type assertion and default arguments of `inputs` and `outputs`, such as `"arg" => 5`, `"arg" => Int`, `"arg" => 5 => Int`, `"arg" => Int => 5`.
-
 - Feature: `Program` and `run(::Program)` no longer require `inputs` and `outputs` to be `Vector` or `Dict`. They can be both `Vector` or `Dict`, or even an element of `Vector` or `Dict`, as long as they can be converted. Eg:
 
   ```julia
@@ -278,7 +260,6 @@
       touch_run_id_file = false
   )
   ```
-
 - Feature: Pretty print of `Program`. Eg:
 
   ```julia
@@ -325,7 +306,5 @@
   # now
   `$dep --args`
   ```
-
 - New `JuliaProgram` for pure Julia implementation.
-
 - `Program` is the Abstract type containing `CmdProgram` and `JuliaProgram` substypes.

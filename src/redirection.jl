@@ -140,9 +140,9 @@ else
             try
                 f()
             catch
-                exps = StackTraceVector(Base.current_exceptions()) # show(exps)
-                show(io, exps)
-                exps
+                StackTraceVector(Base.current_exceptions()) # show(exps)
+                # show(io, exps)
+                # exps
             end
         end
     end
@@ -150,9 +150,9 @@ else
         res = try
             f()
         catch
-            exps = StackTraceVector(Base.current_exceptions()) # show(exps)
-            show(exps)
-            exps
+            StackTraceVector(Base.current_exceptions()) # show(exps)
+            # show(exps)
+            # exps
         end
     end
 end
@@ -218,7 +218,7 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
         end
     end
 
-    show_error = Base.stderr !== stderr_origin
+    # show_error = Base.stderr !== stderr_origin
 
     res = try_function(f, log)
 
@@ -264,9 +264,9 @@ function redirect_to_files(f::Function, outfile, errfile, logfile; mode="a+")
     outfile isa IO ? flush(outfile) : close(out)
     errfile isa IO ? flush(errfile) : close(err)
     logfile isa IO ? flush(logfile) : close(log)
-    if res isa StackTraceVector && show_error
-        show(res)
-    end
+    # if res isa StackTraceVector && show_error
+    #     show(res)
+    # end
     return res
 end
 
