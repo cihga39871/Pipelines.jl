@@ -1,5 +1,7 @@
 
 using Test
+using ScopedStreams
+
 using Pipelines
 
 @testset begin
@@ -76,6 +78,17 @@ using Pipelines
 
     ### cmd dependency
 
+    never_dep = CmdDependency(
+        exec = `CmdDependencyExpectedNotToExist`,
+        test_args = `--version`,
+        validate_success = true,
+        validate_stdout = x -> occursin(r"^ABCDEFG", x),
+        validate_stderr = do_nothing,
+        exit_when_fail = true
+    )
+    @test_throws ErrorException check_dependency(never_dep; exit_when_fail=true)
+    @test !check_dependency(never_dep; exit_when_fail=false)
+
     julia = CmdDependency(
         exec = Base.julia_cmd(),
         test_args = `--version`,
@@ -93,8 +106,8 @@ using Pipelines
 
     @test `$julia` == Base.julia_cmd()
 
-    ### cmd program
-
+    ### cmd program    
+    
     p = CmdProgram(
         cmd_dependencies = [julia],
         id_file = "id_file",
@@ -115,25 +128,17 @@ using Pipelines
     check_dependency(@__MODULE__)
     check_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
     status_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
+
+    never_dep=nothing
+    check_dependency(@__MODULE__)
+    check_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
+    status_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
     
     @test p.inputs == ["input", "input2", "optional_arg", "optional_arg2"]
     @test p.default_inputs == [nothing, nothing, 5, 0.5]
     @test p.outputs == ["output"]
     @test p.default_outputs == ["<input>.output"]
     @test p.output_types == [Any]
-
-
-    never_dep = CmdDependency(
-        exec = Base.julia_cmd(),
-        test_args = `--version`,
-        validate_success = true,
-        validate_stdout = x -> occursin(r"^ABCDEFG", x),
-        validate_stderr = do_nothing,
-        exit_when_fail = true
-    )
-    @test_throws ErrorException check_dependency(never_dep; exit_when_fail=true)
-    @test !check_dependency(never_dep; exit_when_fail=false)
-
 
     inputs = Dict(
         "input" => `in1`,
@@ -150,8 +155,8 @@ using Pipelines
         "output" => "out"
     )
 
-    @test Pipelines.prepare_cmd(p, inputs, outputs) == `echo in1 2 optional_arg optional_arg2 out`
-    @test Pipelines.prepare_cmd(p, inputs, "output" => "out") == `echo in1 2 optional_arg optional_arg2 out`
+    @test Pipelines.prepare_cmd(p, inputs, outputs) == `echo in1 2 5 0.5 out`
+    @test Pipelines.prepare_cmd(p, inputs, "output" => "out") == `echo in1 2 5 0.5 out`
 
     @test run(p,
         inputs = inputs,
@@ -401,7 +406,7 @@ using Pipelines
         cmd = pipeline(`echo 123`, "out2.txt")
     )
     @test run(p2, touch_run_id_file=false, stdout=stdout)[1]  # stdout=stdout will not take effect because redirection was done in out2.txt
-    @test read("out2.txt", String) == "123\n"
+    @test isfile("out2.txt") && read("out2.txt", String) == "123\n"
     rm("out2.txt", force=true)
 
 
@@ -438,4 +443,6 @@ using Pipelines
     cd(homedir())
     rm(tmp, recursive=true)
     rm(working_dir, recursive=true)
+    @test stdout isa ScopedStreams.ScopedStream
+    @test stderr isa ScopedStreams.ScopedStream
 end

@@ -6,7 +6,12 @@ mutable struct CmdDependency
     validate_stdout::Function
     validate_stderr::Function
     exit_when_fail::Bool
+    status::UInt8
 end
+
+const NOT_CHECKED = 0b00
+const OK = 0b01
+const FAILED = 0b10
 
 """
 # Struct
@@ -18,6 +23,7 @@ end
         validate_stdout::Function
         validate_stderr::Function
         exit_when_fail::Bool
+        status::UInt8
     end
 
 # Methods
@@ -69,7 +75,7 @@ function CmdDependency(;
     validate_stderr::Function=do_nothing,
     exit_when_fail::Bool=true
     )
-    CmdDependency(exec, test_args, validate_success, validate_stdout, validate_stderr, exit_when_fail)
+    CmdDependency(exec, test_args, validate_success, validate_stdout, validate_stderr, exit_when_fail, NOT_CHECKED)
 end
 
 """
@@ -80,16 +86,21 @@ function readall(cmd::Base.AbstractCmd)
     err = Pipe()
 
     process = try
-        run(pipeline(cmd, stdout=out, stderr=err))
+        run(cmd, devnull, out, err)
     catch
         nothing
     end
     close(out.in)
     close(err.in)
 
+    standard_out = read(out, String)
+    standard_err = read(err, String)
+    close(out.out)
+    close(err.out)
+
     return (
-        read(out, String),
-        read(err, String),
+        standard_out,
+        standard_err,
         !isnothing(process)
     )
 end
@@ -106,24 +117,40 @@ If success, return `true`.
 If fail, return `false`, or throw DependencyError when `exit_when_fail` set to `true`.
 """
 function check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail)
+
+    if p.status == OK
+        return true
+    elseif p.status == FAILED
+        @goto quick_fail # COV_EXCL_LINE
+    end
+
     out, err, success = readall(`$p $(p.test_args)`)
 
     if p.validate_success && !success
-        @goto dependency_error  # COV_EXCL_LINE
+        p.status = FAILED
+        @label quick_fail # COV_EXCL_LINE
+        if exit_when_fail
+            error("CmdDependencyError: invalid: $p with $(p.test_args)")
+        else
+            @error timestamp() * "CmdDependencyError: invalid: $p $(p.test_args)" _module=nothing _group=nothing _id=nothing _file=nothing
+        end
+        return false
     end
 
     res1 = isok(p.validate_stdout(out))
     res2 = isok(p.validate_stderr(err))
 
     if res1 == res2 == true
+        p.status = OK
         return true
     end
 
-    @label dependency_error  # COV_EXCL_LINE
-    @error timestamp() * "DependencyError: invalid: $p" CHECK_ARGS=p.test_args _module=nothing _group=nothing _id=nothing _file=nothing
-    println(stderr, "Dependency check stdout: $out\nDependency check stderr: $err")
+    p.status = FAILED
+    error_msg = replace("CmdDependencyError: invalid: $p with $(p.test_args)\n   stdout: $out\n   stderr: $err", r"\n+" => "\n")
     if exit_when_fail
-        error("DependencyError: invalid: $p")
+        error(error_msg)
+    else
+        @error timestamp() * error_msg CHECK_ARGS=p.test_args _module=nothing _group=nothing _id=nothing _file=nothing
     end
     return false
 end
