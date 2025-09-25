@@ -11,15 +11,11 @@ Building reusable pipelines and workflows is easier than you have ever thought.
 ## Package Features
 
 - Easy to build both simple and complex tasks.
-
 - Supports external command lines and pure Julia functions.
-
 - Supports **resuming** interrupted tasks, **retrying** failed tasks, and **skipping** finished tasks.
-
+- Supports **thread-safe redirection** to stdout and stderr.
 - Supports dependency check.
-
 - Supports inputs, outputs validation, and so on.
-
 - Supports program queuing and workload management with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl)
 
 ## Installation
@@ -37,7 +33,6 @@ using Pipelines
 ```
 
 ## Documentation
-
 
 - [**STABLE**](https://cihga39871.github.io/Pipelines.jl/stable) &mdash; **documentation of the most recently tagged version.**
 - [**DEVEL**](https://cihga39871.github.io/Pipelines.jl/dev) &mdash; *documentation of the in-development version.*

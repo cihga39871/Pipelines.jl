@@ -1,8 +1,6 @@
 
-include("../src/Pipelines.jl")
-
-using .Pipelines
 using Test
+using Pipelines
 
 @testset begin
 
@@ -93,13 +91,12 @@ using Test
         cmd = `echo input input2`
     )
 
-    @warn "A stack trace will show:"
-    @test run(p_nooutput,
+    @test_throws ErrorException run(p_nooutput,
         inputs;
         skip_when_done = false,
         verbose = false,
         touch_run_id_file = false
-    ) isa Main.Pipelines.StackTraceVector
+    )
 
     cmd, run_id_file = run(p,
         inputs = Dict(
@@ -293,6 +290,23 @@ using Test
     @test read("err.txt", String) == "[ Info: this is stderr\n"
     @test !occursin("[ Info: this is stderr", read("log.txt", String))
 
+    rm("out.txt", force=true)
+    rm("err.txt", force=true)
+    rm("log.txt", force=true)
+
+    p2 = CmdProgram(
+        id_file = "id_file",
+        inputs = [
+            :a => 10.6 => Float64,
+            :b =>  5 => Int
+        ],
+        outputs = "c" => "<a>.<b>",
+        cmd = pipeline(`echo 123`, "out2.txt")
+    )
+    @test run(p2, touch_run_id_file=false, stdout=stdout)[1]  # stdout=stdout will not take effect because redirection was done in out2.txt
+    @test read("out2.txt", String) == "123\n"
+    rm("out2.txt", force=true)
+
 
     ## version 0.6
 
@@ -301,11 +315,8 @@ using Test
         id_file = "id_file",
         cmd = `julia --abcdefg`
     )
-    @warn "A ProgramRunningError should show below"
-    p_error_res = run(p_error, retry=1, verbose=:min)
-    @test p_error_res isa Pipelines.StackTraceVector
+    @test_throws ProcessFailedException run(p_error, retry=1, verbose=:min)
 
-    @warn "A ProgramRunningError should show below"
     pj_error = JuliaProgram(
         id_file = "id_file",
         main = (x, y) -> begin
@@ -317,9 +328,9 @@ using Test
         end
     )
     rm("x", force=true)
-    pj_error_res = run(pj_error, retry=1, verbose=:min)
+    res = @test_warn "failed but will retry." run(pj_error, retry=1, verbose=:min, touch_run_id_file=false)
+    @test isfile("x")
     rm("x", force=true)
-    @test pj_error_res[1]
 
 
     include("test_v0.8.jl")

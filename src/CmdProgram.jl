@@ -261,7 +261,9 @@ function _run(
 
     # run the main command
     try
-        run(cmd)
+        # redirect_stream(stdout, stderr; mode=append ? "a+" : "w+") do
+        run(cmd, devnull, deref(Base.stdout), deref(Base.stderr))
+        # end
         # run(pipeline(cmd, stdout=stdout, stderr=stderr, append=append))
     catch e
         @error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main command." prerequisites=getfield(p, :prerequisites) command_running=cmd run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing _line=nothing

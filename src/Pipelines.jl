@@ -8,6 +8,11 @@ using Logging
 using OrderedCollections  # sorting dict in generate_run_uuid
 import FilePathsBase:AbstractPath  # isinputnewer in Program.jl
 
+@reexport using ScopedStreams
+
+const redirect_to_files = ScopedStreams.redirect_stream
+export redirect_to_files
+
 include("quote_function.jl")
 export quote_function, quote_expr
 
@@ -15,10 +20,6 @@ include("utils.jl")
 export do_nothing, isok,
 str, to_str, to_cmd,
 replaceext, removeext
-
-include("redirection.jl")
-export restore_stdout, restore_stderr,
-redirect_to_files
 
 include("CmdDependency.jl")
 export CmdDependency,
@@ -49,32 +50,6 @@ include("pretty_print.jl")
 # binding documentations
 @doc (@doc prog_run) run
 
-function __init__()
-    global stdout_origin
-    global stderr_origin
-
-    if isnothing(stdout_origin)
-        if Base.stdout isa Base.TTY
-            nothing
-        elseif occursin(r"<fd .*>|RawFD\(\d+\)|WindowsRawSocket\(", string(Base.stdout))
-            nothing
-        else
-            # Not Terminal (TTY), nor linux file redirection (fd)
-            @warn "Base.stdout was changed when initiating Pipelines.jl. `restore_stdout()` can only restore to the current one." Base.stdout
-        end
-        stdout_origin = Base.stdout
-    end
-    if isnothing(stderr_origin)
-        if Base.stderr isa Base.TTY
-           nothing
-        elseif occursin(r"<fd .*>|RawFD\(\d+\)|WindowsRawSocket\(", string(Base.stderr))
-            nothing
-        else
-            # Not Terminal (TTY), nor linux file redirection (fd)
-            @warn "Base.stderr was changed when initiating Pipelines.jl. `restore_stderr()` can only restore to the current one." Base.stderr
-        end
-        stderr_origin = Base.stderr
-    end
-end
+ScopedStreams.@gen_scoped_stream_methods true
 
 end # module

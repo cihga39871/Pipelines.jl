@@ -2,8 +2,11 @@
 @testset "Arg" begin
 
     @test Arg("argname", 5) == Arg("argname", Any, 5, false, false)
+    Arg(SubString("argname"), 5) == Arg("argname", Any, 5, false, false)
+    Arg(SubString("argname"), Int, 5) == Arg("argname", Int, 5, false, false)
     @test Arg("argname", Real) == Arg("argname", Real, nothing, true, false)
     @test Arg(:argname, Real, 2.5) == Arg("argname", Real, 2.5, false, true)
+    @test Arg(:argname, 2.5) == Arg("argname", Any, 2.5, false, true)
     @test_throws ErrorException Arg("argname", Int, 0.6)
     @test_throws ErrorException Arg("name", Int, 0.6)
 

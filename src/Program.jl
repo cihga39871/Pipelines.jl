@@ -294,17 +294,25 @@ function Base.run(p::Program;
     n_try = 0
     local res
     while n_try <= retry
-        res = redirect_to_files(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
-            if n_try > 0
-                @warn "Retry $(p.name) ($n_try/$retry)"
+        try
+            res = redirect_stream(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
+                if n_try > 0
+                    @warn "Retry $(p.name) ($n_try/$retry)"
+                end
+                if _do_parse_program_args
+                    _run(p; dir = dir, inputs = inputs, outputs = outputs, kws...)
+                else
+                    _run(p; dir = dir, kwarg...)
+                end
             end
-            if _do_parse_program_args
-                _run(p; dir = dir, inputs = inputs, outputs = outputs, kws...)
+            break
+        catch ex
+            if n_try == retry
+                rethrow(ex)
             else
-                _run(p; dir = dir, kwarg...)
+                @error "Program $(p.name) failed but will retry." exception=(ex, catch_backtrace())
             end
         end
-        res isa StackTraceVector || break  # res isa StackTraceVector means failed, need retry.
         n_try += 1
     end
 
@@ -361,7 +369,8 @@ Return `(success::Bool, outputs::Dict{String})`
 - `stdout`, `stderr`, `stdlog` and `append::Bool = false`: Redirect the program outputs to files. `stdlog` is the Julia logging of `@info`, `@warn`, `@error`, etc. Caution: If `p isa CmdProgram` and the original command (`p.cmd`) has redirection, arguments defined here might not be effective for the command.
 
 !!! warning "Thread safety"
-    Redirecting in Julia are not thread safe, so unexpected redirection might be happen if you are running programs in different `Tasks` or multi-thread mode.
+    1. Stdout/stderr redirection is thread-safe by using `ScopedStreams.jl` from v0.12.0. See details at [`redirect_stream`](@ref). If you found an error related to `ScopedStream`, please use `ScopedStreams.@gen_scoped_stream_methods` after loading all modules. See details at [ScopedStreams.jl](https://github.com/cihga39871/ScopedStreams.jl).
+    2. Changing directory is not thread-safe in Julia. 
 
 ### Workflow
 

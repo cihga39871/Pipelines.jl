@@ -261,9 +261,9 @@ success, outputs = run(
 !!! warning "Argument mod::Module"
     `Expr`ressions will be evaluated to functions in `mod`. Please use `mod = @__MODULE__` to prevent precompilation fail when defining the program within a package.
 
-!!! warning
-    Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different `Tasks` or multi-thread mode.
-
+!!! warning "Thread safety"
+    1. Stdout/stderr redirection is thread-safe by using `ScopedStreams.jl` from v0.12.0. See details at [`redirect_stream`](@ref). If you found an error related to `ScopedStream`, please use `ScopedStreams.@gen_scoped_stream_methods` after loading all modules. See details at [ScopedStreams.jl](https://github.com/cihga39871/ScopedStreams.jl).
+    2. Changing directory is not thread-safe in Julia. 
 
 
 !!! compat "Compatibility with JobSchedulers.jl"

@@ -11,15 +11,11 @@ Building reusable pipelines and workflows is easier than you have ever thought.
 ## Package Features
 
 - Easy to build both simple and complex tasks.
-
 - Supports external command lines and pure Julia functions.
-
 - Supports **resuming** interrupted tasks, **skipping** finished tasks.
-
+- Supports **thread-safe redirection** to stdout and stderr.
 - Supports dependency check.
-
 - Supports inputs, outputs validation, and so on.
-
 - Supports program queuing and workload management with [JobSchedulers.jl](https://github.com/cihga39871/JobSchedulers.jl)
 
 ## Installation
@@ -69,21 +65,18 @@ run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = 
 
     If you run a program with the same inputs again, and any file (not dir) in inputs/outputs is not modified, the program will just return the same result, without running the program twice.
 
-    ```julia
-    input_args = (REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
-    run(echo; input_args...)
-    ```
-    
+    ``julia     input_args = (REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)     run(echo; input_args...)     ``
+
     Several methods can be used to re-run a program:
-    
+
     ```julia
     # Method 1: stop checking finished program using skip_when_done = false
     run(echo; input_args..., skip_when_done = false)
-    
+
     # Method 2: delete the run_id_file before running again
     cmd, run_id_file = run(echo; input_args..., dry_run = true) # Dry-run returns the command and run id file without running it.
     rm(run_id_file)  # remove the run_id_file
-    
+
     # Method 3: Do not generate run_id_file after a successful run
     run(echo; input_args..., touch_run_id_file=false)
     ```

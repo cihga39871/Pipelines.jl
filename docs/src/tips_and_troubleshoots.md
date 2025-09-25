@@ -134,6 +134,10 @@ func(in_dict)
 
 See also: [`quote_expr`](@ref)
 
+## Thread safety
+
+Stdout/stderr redirection is thread-safe by using `ScopedStreams.jl` from v0.12.0. See details at [`redirect_stream`](@ref). If you found an error related to `ScopedStream`, please use `ScopedStreams.@gen_scoped_stream_methods` after loading all modules. See details at [ScopedStreams.jl](https://github.com/cihga39871/ScopedStreams.jl).
+
 ## Fail to Precompile a module containing a `Program`
 
 It is because you pass `quote ... end` to a Program, but forget to add `mod = @__MODULE__` to it.
@@ -156,3 +160,4 @@ If we have a pure Program without reading and writing files, we cannot guarantee
 A work-around is to intentionally create a file with a fixed name, and the file name is defined in Program's outputs.
 
 See [`Pipelines.create_run_id_file`](@ref) to learn how Pipelines.jl decides whether a program needs re-run, and its limitation.
+

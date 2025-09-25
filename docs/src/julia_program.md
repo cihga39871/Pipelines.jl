@@ -65,10 +65,9 @@ success, outputs = run(
 - Other keyword arguments are related to run. Details can be found at [`run`](@ref).
 
 
-
 !!! warning "Thread safety"
-    Redirecting and directory change in Julia are not thread safe, so unexpected redirection and directory change might be happen if you are running programs in different `Tasks` or multi-thread mode.
-
+    1. Stdout/stderr redirection is thread-safe by using `ScopedStreams.jl` from v0.12.0. See details at [`redirect_stream`](@ref). If you found an error related to `ScopedStream`, please use `ScopedStreams.@gen_scoped_stream_methods` after loading all modules. See details at [ScopedStreams.jl](https://github.com/cihga39871/ScopedStreams.jl).
+    2. Changing directory is not thread-safe in Julia. 
 
 
 !!! compat "Compatibility with JobSchedulers.jl"

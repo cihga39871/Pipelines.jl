@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.12.0
+
+- Feat: `run(::CmdProgram; stdout, stderr)` now the command line will be redirected by stdout and stderr. Of course, if the command is a pipeline and has its own redirection, it use its own.
+- Feat/breaking: Stdout/stderr redirection is thread-safe by using `ScopedStreams.jl` from v0.12.0. See details at [`redirect_stream`](@ref). If you found an error related to `ScopedStream`, please use `ScopedStreams.@gen_scoped_stream_methods` after loading all modules. See details at [ScopedStreams.jl](https://github.com/cihga39871/ScopedStreams.jl).
+- Change/breaking: If a program fails, it directly throw an error now.
+- Breaking: Remove `try_function` and `StackTraceVector`.
+
 ## v0.11.2
 
 - Deps: from newer Julia, `redirect_to_files` do not need to show error because Julia handle it automatically.
