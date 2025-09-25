@@ -25,6 +25,55 @@ using Pipelines
     )
     @test_throws ErrorException Pipelines.keyword_interpolation(allputs)
 
+    @test_throws ErrorException Pipelines.check_function_methods(+, (Int, String))
+
+    @test Pipelines.parse_verbose("minimum") === :min
+    @test Pipelines.parse_verbose(:max) === :all
+    @test Pipelines.parse_verbose(:maximum) === :all
+    @test Pipelines.parse_verbose(:full) === :all
+    @test Pipelines.parse_verbose(:yes) === :all
+    @test Pipelines.parse_verbose(:true) === :all
+    @test Pipelines.parse_verbose(:no) === :none
+    @test Pipelines.parse_verbose(:nothing) === :none
+    @test Pipelines.parse_verbose(:null) === :none
+    @test Pipelines.parse_verbose(:false) === :none
+    @test Pipelines.parse_verbose(nothing) === :none
+    @test @test_warn "Cannot determine" Pipelines.parse_verbose(:unkown) === :all
+
+    @test do_nothing() === nothing
+    @test Pipelines.isok(nothing) === true
+    @test Pipelines.isok("ok") === true
+    @test Pipelines.isok("TRUE") === true
+    @test Pipelines.isok("True") === true
+    @test Pipelines.isok("") === false
+    @test Pipelines.isok("n") === false
+    @test Pipelines.isok("false") === false
+    @test Pipelines.isok("False") === false
+    @test Pipelines.isok("F") === false
+    @test Pipelines.isok("FALSE") === false
+    @test Pipelines.isok(1234) === true
+
+    @test Pipelines.to_xxput_dict(["A" => 123]) == Pipelines.to_xxput_dict(Dict("A" => 123))
+    @test_throws ErrorException Pipelines.to_xxput_dict(33)
+
+    @test Pipelines.str(nothing) == ""
+    @test Pipelines.str([23,4]) == "23_4"
+    @test Pipelines.str(r"abc") == "abc"
+
+    @test Pipelines.to_cmd(r"abc") == `abc`
+    @test Pipelines.to_cmd([r"abc"]) == `abc`
+    @test Pipelines.to_cmd(["abc"]) == `abc`
+
+    @test split(`abc def`) == ["abc", "def"]
+
+    @test replaceext("abc.def", ".xyz") == "abc.xyz"
+    @test replaceext("abc", ".xyz") == "abc.xyz"
+    @test replaceext(r"abc.def.ghi", ".xyz") == "abc.def.xyz"
+
+    @test removeext("abc.def") == "abc"
+    @test removeext("abc") == "abc"
+    @test removeext(r"abc") == "abc"
+
     ### cmd dependency
 
     julia = CmdDependency(
@@ -36,6 +85,9 @@ using Pipelines
         exit_when_fail = true
     )
     @test_nowarn display(julia)
+    @test_nowarn Base.show(julia)
+    @test_nowarn Base.show(deref(stdout), julia)
+    @test_nowarn Base.show(deref(stdout), MIME("text/plain"), julia)
 
     check_dependency(julia)
 
@@ -59,14 +111,47 @@ using Pipelines
     )
     @test_nowarn display(p)
 
+    @test check_dependency(p)
+    check_dependency(@__MODULE__)
+    check_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
+    status_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
+    
+    @test p.inputs == ["input", "input2", "optional_arg", "optional_arg2"]
+    @test p.default_inputs == [nothing, nothing, 5, 0.5]
+    @test p.outputs == ["output"]
+    @test p.default_outputs == ["<input>.output"]
+    @test p.output_types == [Any]
+
+
+    never_dep = CmdDependency(
+        exec = Base.julia_cmd(),
+        test_args = `--version`,
+        validate_success = true,
+        validate_stdout = x -> occursin(r"^ABCDEFG", x),
+        validate_stderr = do_nothing,
+        exit_when_fail = true
+    )
+    @test_throws ErrorException check_dependency(never_dep; exit_when_fail=true)
+    @test !check_dependency(never_dep; exit_when_fail=false)
+
+
     inputs = Dict(
         "input" => `in1`,
         "input2" => 2
+    )
+    @test Pipelines.infer_outputs(p, inputs) == Dict(
+        "output" => "in1.output"
+    )
+    @test Pipelines.infer_outputs(p, ["input"=>"in1", "input2"=>4]) == Dict(
+        "output" => "in1.output"
     )
 
     outputs = Dict(
         "output" => "out"
     )
+
+    @test Pipelines.prepare_cmd(p, inputs, outputs) == `echo in1 2 optional_arg optional_arg2 out`
+    @test Pipelines.prepare_cmd(p, inputs, "output" => "out") == `echo in1 2 optional_arg optional_arg2 out`
 
     @test run(p,
         inputs = inputs,
@@ -76,7 +161,7 @@ using Pipelines
         touch_run_id_file = false
     )[1]
 
-    @test run(p,
+    @test prog_run(p,
         inputs,
         outputs;
         skip_when_done = false,
@@ -158,6 +243,12 @@ using Pipelines
             return Dict{String,Any}("c" => b^2)
         end
     )
+
+    @test_nowarn display(p)
+    @test_nowarn Base.show(p)
+    @test_nowarn Base.show(deref(stdout), p)
+    @test_nowarn Base.show(deref(stdout), MIME("text/plain"), p)
+
 
     inputs = Dict(
         "a" => `in1`,
@@ -269,6 +360,12 @@ using Pipelines
     @test length(read(joinpath(working_dir, "err.txt"), String)) > 500
 
     Pipelines.auto_change_directory(false)
+
+    # skip when done
+    run(p; skip_when_done=true)[1]
+    @test_warn "Skipped finished program" run(p; skip_when_done=true)[1]
+    @test_warn "Skipped finished program" run(p; skip_when_done=true, verbose=:min)[1]
+
 
     ## cmd program
     p = CmdProgram(

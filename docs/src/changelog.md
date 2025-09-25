@@ -6,6 +6,8 @@
 - Feat/breaking: Stdout/stderr redirection is thread-safe by using `ScopedStreams.jl` from v0.12.0. See details at [`redirect_stream`](@ref). If you found an error related to `ScopedStream`, please use `ScopedStreams.@gen_scoped_stream_methods` after loading all modules. See details at [ScopedStreams.jl](https://github.com/cihga39871/ScopedStreams.jl).
 - Change/breaking: If a program fails, it directly throw an error now.
 - Breaking: Remove `try_function` and `StackTraceVector`.
+- Fix: `check_dependency` now check `exit_when_fail=false` to determine throw errors or not.
+- More code coveage.
 
 ## v0.11.2
 

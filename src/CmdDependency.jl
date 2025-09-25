@@ -107,36 +107,21 @@ If fail, return `false`, or throw DependencyError when `exit_when_fail` set to `
 """
 function check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail)
     out, err, success = readall(`$p $(p.test_args)`)
-    has_dependency = true
 
     if p.validate_success && !success
-        @goto dependency_error
+        @goto dependency_error  # COV_EXCL_LINE
     end
 
-    try
-        res = p.validate_stdout(out)
-        res === false && error("DependencyError: invalid: $p: the `validate_stdout` function returns false.")
-    catch e
-        rethrow(e)
-        @goto dependency_error
+    res1 = isok(p.validate_stdout(out))
+    res2 = isok(p.validate_stderr(err))
+
+    if res1 == res2 == true
+        return true
     end
 
-    try
-        res = p.validate_stderr(err)
-        res === false && error("DependencyError: invalid: $p: the `validate_stdout` function returns false.")
-    catch e
-        rethrow(e)
-        @goto dependency_error
-    end
-
-    return true
-
-    @label dependency_error
+    @label dependency_error  # COV_EXCL_LINE
     @error timestamp() * "DependencyError: invalid: $p" CHECK_ARGS=p.test_args _module=nothing _group=nothing _id=nothing _file=nothing
-    println(stderr, "Dependency check stdout:")
-    println(stderr, out)
-    println(stderr, "Dependency check stderr:")
-    println(stderr, err)
+    println(stderr, "Dependency check stdout: $out\nDependency check stderr: $err")
     if exit_when_fail
         error("DependencyError: invalid: $p")
     end

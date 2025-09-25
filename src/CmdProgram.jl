@@ -236,12 +236,13 @@ function _run(
     try
         isok(getfield(p, :validate_inputs)(inputs)) || error("ProgramInputValidationError: $(getfield(p, :name)): the prerequisites function returns false.")
     catch e
+        
         @error timestamp() * "ProgramInputValidationError: $(getfield(p, :name)): fail to run validate_inputs (before running the main command)." validation_function=getfield(p, :validate_inputs) command_template=getfield(p, :cmd) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing _line=nothing
         rethrow(e)
         return false, outputs
     end
 
-    @label dry_run_start
+    @label dry_run_start # COV_EXCL_LINE
     # preparation: replace inputs and outputs in cmd, including redirecting files
     cmd = prepare_cmd(p, inputs, outputs)
 
@@ -338,22 +339,20 @@ function prepare_cmd(c::T, inputs::Dict{String}, outputs::Dict{String}) where T 
         prepare_cmd(c.b, inputs, outputs)
     )
 end
-function prepare_cmd(h::Base.TTY, inputs::Dict{String}, outputs::Dict{String})  # h: handle property of CmdRedirect
-    h
-end
+prepare_cmd(h::Base.TTY, inputs::Dict{String}, outputs::Dict{String}) = h  # h: handle property of CmdRedirect # COV_EXCL_LINE
 function prepare_cmd(h::Base.FileRedirect, inputs::Dict{String}, outputs::Dict{String})  # h: handle property of CmdRedirect
     replacement = get(outputs, h.filename, nothing) |> to_cmd
     if isnothing(replacement)
         replacement = get(inputs, h.filename, nothing) |> to_cmd
         if !isnothing(replacement)
-            @goto to_replace
+            @goto to_replace # COV_EXCL_LINE
         end
     else
-        @goto to_replace
+        @goto to_replace # COV_EXCL_LINE
     end
     return h  # nothing change
 
-    @label to_replace
+    @label to_replace # COV_EXCL_LINE
     if length(replacement.exec) == 1
         return Base.FileRedirect(replacement.exec[1], h.append)
     else

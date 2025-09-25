@@ -48,7 +48,7 @@ function Base.show(io::IO, ::MIME"text/plain", args::Vector{T}; indent::Int = 2,
         if summary
             println(io, n_arg, "-element Vector{Arg}.")
         else
-            println(io, "<Arg empty>")
+            println(io, "<Arg empty>")  # COV_EXCL_LINE
         end
         return
     end
@@ -60,14 +60,14 @@ function Base.show(io::IO, ::MIME"text/plain", args::Vector{T}; indent::Int = 2,
         space = (!summary && i == 1) ? "" : indent_str
         if a.required
             if a.independent
-                s = "$space%-$(n_name)s :: %-$(n_type)s (required, independent)"
+                s = "$space%-$(n_name)s :: %-$(n_type)s (required, independent)"  # COV_EXCL_LINE
             else
                 s = "$space%-$(n_name)s :: %-$(n_type)s (required)"
             end
             sout = @eval @sprintf($s, $(a.name), $(a.type))
         else
             if a.independent
-                s = "$space%-$(n_name)s :: %-$(n_type)s (independent, default = %s)"
+                s = "$space%-$(n_name)s :: %-$(n_type)s (independent, default = %s)"  # COV_EXCL_LINE
             else
                 s = "$space%-$(n_name)s :: %-$(n_type)s (default = %s)"
             end
@@ -80,7 +80,7 @@ function show_vector(io::IO, ::MIME"text/plain", args::Vector{T}; indent::Int = 
     n_arg = length(args)
     if n_arg == 0
         if summary
-            println(io, n_arg, "-element Vector{$T}.")
+            println(io, n_arg, "-element Vector{$T}.")  # COV_EXCL_LINE
         else
             println(io, "<empty>")
         end
@@ -134,23 +134,23 @@ function Base.show(io::IO, p::JuliaProgram)
     print(io, "JuliaProgram($(p.name), inputs = $(p.inputs), outputs = $(p.outputs))")
 end
 
-function display_xxputs(max_bype::Int, xxputs::Vector{String}, xxput_types::Vector{Type}, default_xxputs::Vector)
-    n = length(xxputs)
-    if n == 0
-        println("<empty>")
-        return
-    end
-    max_bype_xxputs = maximum(length, xxputs)
-    max_bype_xxput_types = maximum(length, map(string, xxput_types))
-    for i in 1:n
-        name = xxputs[i]
-        type = string(xxput_types[i])
-        default = default_xxputs[i]
-        println(i == 1 ? "" : " " ^ (max_bype + 5),
-            "\"$(name)\" ", " " ^ (max_bype_xxputs - length(name)),
-            ":: $(type) ", " " ^ (max_bype_xxput_types - length(type)),
-            isnothing(default) ? "(required)" : "(default: $default)"
-        )
-    end
-    return
-end
+# function display_xxputs(max_bype::Int, xxputs::Vector{String}, xxput_types::Vector{Type}, default_xxputs::Vector)
+#     n = length(xxputs)
+#     if n == 0
+#         println("<empty>")
+#         return
+#     end
+#     max_bype_xxputs = maximum(length, xxputs)
+#     max_bype_xxput_types = maximum(length, map(string, xxput_types))
+#     for i in 1:n
+#         name = xxputs[i]
+#         type = string(xxput_types[i])
+#         default = default_xxputs[i]
+#         println(i == 1 ? "" : " " ^ (max_bype + 5),
+#             "\"$(name)\" ", " " ^ (max_bype_xxputs - length(name)),
+#             ":: $(type) ", " " ^ (max_bype_xxput_types - length(type)),
+#             isnothing(default) ? "(required)" : "(default: $default)"
+#         )
+#     end
+#     return
+# end

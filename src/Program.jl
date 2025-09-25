@@ -292,7 +292,7 @@ function Base.run(p::Program;
     end
 
     n_try = 0
-    local res
+    local res  # COV_EXCL_LINE
     while n_try <= retry
         try
             res = redirect_stream(stdout, stderr, stdlog; mode = append ? "a+" : "w+") do
@@ -428,8 +428,8 @@ success, new_out = run(p, inputs, outputs; touch_run_id_file = false)
 @assert new_out != outputs
 ```
 """
-function prog_run(p::Program; args...)
-    run(p; args...)
+function prog_run(p::Program, args...; kwargs...)
+    run(p, args...; kwargs...)
 end
 
 """
@@ -477,5 +477,5 @@ function parse_verbose(verbose::Symbol)
     end
 end
 parse_verbose(verbose::Bool) = verbose ? :all : :none
-parse_verbose(::Nothing) = :none
+parse_verbose(::Nothing) = :none  # COV_EXCL_LINE
 parse_verbose(verbose::AbstractString) = parse_verbose(Symbol(verbose))

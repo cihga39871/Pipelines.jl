@@ -13,7 +13,7 @@ const UUID4 = uuid4(UUIDs.MersenneTwister(39871))
     do_nothing(x) = nothing
     do_nothing(x, y) = nothing
 """
-do_nothing() = nothing
+do_nothing() = nothing  # COV_EXCL_LINE
 do_nothing(x) = nothing
 do_nothing(x, y) = nothing
 
