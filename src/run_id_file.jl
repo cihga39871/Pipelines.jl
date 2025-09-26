@@ -46,8 +46,8 @@ end
 function RunIDLine(line::AbstractString)
     vals = split(chomp(line), '\t')
     if length(vals) != 5
-        @error "Cannot parse this line of run id file: $line"
-        return nothing
+        @error "Cannot parse this line of run id file: $line"  # COV_EXCL_LINE
+        return nothing  # COV_EXCL_LINE
     end
     try
         RunIDLine(
@@ -58,8 +58,8 @@ function RunIDLine(line::AbstractString)
             vals[5]
         )
     catch e
-        @error "Cannot parse this line of run id file: $line"
-        return nothing
+        @error "Cannot parse this line of run id file: $line"  # COV_EXCL_LINE
+        return nothing  # COV_EXCL_LINE
     end
 end
 
@@ -151,8 +151,8 @@ function create_run_id_file(run_id_file::AbstractString, inputs::Dict, outputs::
     try
         mv(tmp_file, run_id_file; force=true)
     catch
-        @warn "Cannot create run id file at $run_id_file. Skip creating."
-        isfile(tmp_file) && rm(tmp_file)
+        @warn "Cannot create run id file at $run_id_file. Skip creating."  # COV_EXCL_LINE
+        isfile(tmp_file) && rm(tmp_file)  # COV_EXCL_LINE
     end
 end
 
@@ -175,7 +175,7 @@ function any_file_differ(run_id_file::AbstractString, inputs::Dict, outputs::Dic
     file_info = parse_run_id_file(run_id_file)
     any_file_differ(file_info, inputs) && (return true)
     any_file_differ(file_info, outputs) && (return true)
-    false
+    return false # all files are the same   # COV_EXCL_LINE
 end
 
 function any_file_differ(file_info::Dict{String, RunIDLine}, xxputs::Dict)
@@ -209,7 +209,7 @@ function any_file_differ(file_info::Dict{String, RunIDLine}, xxputs::Dict)
             end
         end
     end
-    false
+    return false  # COV_EXCL_LINE
 end
 
 """

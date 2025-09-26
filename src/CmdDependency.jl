@@ -187,4 +187,4 @@ function check_dependency_dir(path::AbstractString; exit_when_false=true)
     end
     has_dependency
 end
-check_dependency_dir(path::Cmd; exit_when_false=true) = check_dependency_file(str(path); exit_when_false=exit_when_false)
+check_dependency_dir(path::Cmd; exit_when_false=true) = check_dependency_dir(str(path); exit_when_false=exit_when_false)

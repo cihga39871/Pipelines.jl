@@ -7,6 +7,8 @@
 - Change/breaking: If a program fails, it directly throw an error now.
 - Breaking: Remove `try_function` and `StackTraceVector`.
 - Fix: `check_dependency` now check `exit_when_fail=false` to determine throw errors or not.
+- Fix: `check_dependency_dir` has a typo.
+- Change: `arg_completion`: use `error` instead of `throw(ErrorException(...))`, because the later performs different in test and normal julia environment.
 - More code coveage.
 
 ## v0.11.2

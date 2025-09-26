@@ -5,6 +5,7 @@ using ScopedStreams
 using Pipelines
 
 @testset begin
+    @show stdout stderr
 
     include("test_Arg.jl")
 
@@ -76,6 +77,14 @@ using Pipelines
     @test removeext("abc") == "abc"
     @test removeext(r"abc") == "abc"
 
+    # run id files
+    io = IOBuffer()
+    Pipelines.cmd_to_run_id_lines(io, "file", `echo 123` & `echo 456`, "i")
+    @test Pipelines.cmd_to_run_id_lines(io, "file", Base.TTY(RawFD(1)), "i") === nothing
+    close(io)
+
+
+
     ### cmd dependency
 
     never_dep = CmdDependency(
@@ -125,13 +134,11 @@ using Pipelines
     @test_nowarn display(p)
 
     @test check_dependency(p)
-    check_dependency(@__MODULE__)
-    check_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
+    check_dependency(@__MODULE__; verbose=true, exit_when_fail=false)
     status_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
 
     never_dep=nothing
-    check_dependency(@__MODULE__)
-    check_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
+    check_dependency(@__MODULE__; verbose=true, exit_when_fail=false)
     status_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
     
     @test p.inputs == ["input", "input2", "optional_arg", "optional_arg2"]
@@ -162,7 +169,7 @@ using Pipelines
         inputs = inputs,
         outputs = outputs,
         skip_when_done = false,
-        verbose = true,
+        verbose = :min,
         touch_run_id_file = false
     )[1]
 
@@ -170,7 +177,7 @@ using Pipelines
         inputs,
         outputs;
         skip_when_done = false,
-        verbose = false,
+        verbose = :min,
         touch_run_id_file = false
     )[1]
 
@@ -181,12 +188,14 @@ using Pipelines
         cmd = `echo input input2`
     )
 
-    @test_throws ErrorException run(p_nooutput,
-        inputs;
-        skip_when_done = false,
-        verbose = false,
-        touch_run_id_file = false
-    )
+    @test_throws ErrorException begin 
+        run(p_nooutput;
+            skip_when_done = false,
+            verbose = false,
+            touch_run_id_file = false
+        )
+        println(ScopedStreams.stdout_origin, "Within @test_throws: stdout=", stdout, "\n stderr=", stderr)
+    end
 
     cmd, run_id_file = run(p,
         inputs = Dict(
@@ -265,7 +274,8 @@ using Pipelines
     )
 
     success, outputs = run(p, inputs, outputs;
-        touch_run_id_file = false
+        touch_run_id_file = false,
+        verbose = :min
     ) # outputs will be refreshed
     @test success
 
@@ -360,56 +370,34 @@ using Pipelines
     @test run(p, "a" => 6.6, touch_run_id_file=false, stderr = "err.txt", dir=working_dir)[1]
 
     # redirect files at working dir
+    expect_file = joinpath(working_dir, "err.txt")
     @test !isfile("err.txt")
-    @test isfile(joinpath(working_dir, "err.txt"))
-    @test length(read(joinpath(working_dir, "err.txt"), String)) > 500
+    @test isfile(expect_file)
+    @test length(read(expect_file, String)) > 500
 
     Pipelines.auto_change_directory(false)
+
+    # check dependency file
+    @test check_dependency_file(expect_file)
+    @test !check_dependency_file("not_exist_file"; exit_when_false=false)
+    @test_throws ErrorException check_dependency_file("not_exist_file"; exit_when_false=true)
+
+    # check dependency dir
+    @test check_dependency_dir(pwd())
+    @test check_dependency_dir(`$(pwd())`)
+    @test !check_dependency_dir("not_exist_dir"; exit_when_false=false)
+    @test_throws ErrorException check_dependency_dir("not_exist_dir"; exit_when_false=true)
+
 
     # skip when done
     run(p; skip_when_done=true)[1]
     @test_warn "Skipped finished program" run(p; skip_when_done=true)[1]
     @test_warn "Skipped finished program" run(p; skip_when_done=true, verbose=:min)[1]
 
-
-    ## cmd program
-    p = CmdProgram(
-        id_file = "id_file",
-        inputs = [
-            :a => 10.6 => Float64,
-            :b =>  5 => Int
-        ],
-        outputs = "c" => "<a>.<b>",
-        cmd = `echo this is stdout a b` & pipeline(`julia -e '@info "this is stderr"'`)
-    )
-    out_io = open("out.txt", "w+")
-
-    @test run(p, touch_run_id_file=false, stdout=out_io, stderr="err.txt", stdlog="log.txt")[1]
-
-    close(out_io)
-
-    @test read("out.txt", String) == "this is stdout 10.6 5\n"
-    @test read("err.txt", String) == "[ Info: this is stderr\n"
-    @test !occursin("[ Info: this is stderr", read("log.txt", String))
-
-    rm("out.txt", force=true)
-    rm("err.txt", force=true)
-    rm("log.txt", force=true)
-
-    p2 = CmdProgram(
-        id_file = "id_file",
-        inputs = [
-            :a => 10.6 => Float64,
-            :b =>  5 => Int
-        ],
-        outputs = "c" => "<a>.<b>",
-        cmd = pipeline(`echo 123`, "out2.txt")
-    )
-    @test run(p2, touch_run_id_file=false, stdout=stdout)[1]  # stdout=stdout will not take effect because redirection was done in out2.txt
-    @test isfile("out2.txt") && read("out2.txt", String) == "123\n"
-    rm("out2.txt", force=true)
-
-
+    @show stdout
+    @show stderr
+    @test stdout isa ScopedStreams.ScopedStream
+    @test stderr isa ScopedStreams.ScopedStream
     ## version 0.6
 
     # test retry
@@ -439,10 +427,13 @@ using Pipelines
 
     include("test_v0.9.jl")
 
+    include("test_redirect.jl")
+
     # clean up
     cd(homedir())
     rm(tmp, recursive=true)
     rm(working_dir, recursive=true)
     @test stdout isa ScopedStreams.ScopedStream
     @test stderr isa ScopedStreams.ScopedStream
+    @show stdout stderr
 end

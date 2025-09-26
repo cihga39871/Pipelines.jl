@@ -240,7 +240,7 @@ function _run(
     catch e
         @error timestamp() * "ProgramInputValidationError: $(getfield(p, :name)): fail to run validate_inputs (before running the main command)." validation_function=getfield(p, :validate_inputs) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing _line=nothing
         rethrow(e)
-        return false, outputs
+        # return false, outputs
     end
 
     @label dry_run_start
@@ -256,7 +256,7 @@ function _run(
     catch e
         @error timestamp() * "ProgramPrerequisitesError: $(getfield(p, :name)): fail to run prerequisites (before running the main command)." prerequisites=getfield(p, :prerequisites) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing _line=nothing
         rethrow(e)
-        return false, outputs
+        # return false, outputs
     end
 
     # run the main command
@@ -265,7 +265,7 @@ function _run(
     catch e
         @error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main function." run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing _line=nothing
         rethrow(e)
-        return false, outputs
+        # return false, outputs
     end
 
     # check type of outputs
@@ -291,7 +291,7 @@ function _run(
     catch e
         @error timestamp() * "ProgramOutputValidationError: $(getfield(p, :name)): fail to run validate_outputs (after running the main command)." validation_function=getfield(p, :validate_outputs) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing _line=nothing
         rethrow(e)
-        return false, outputs
+        # return false, outputs
     end
 
     try
@@ -299,7 +299,7 @@ function _run(
     catch e
         @error timestamp() * "ProgramWrapUpError: $(getfield(p, :name)): fail to run wrap_up." wrap_up=getfield(p, :wrap_up) run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing _line=nothing
         rethrow(e)
-        return false, outputs
+        # return false, outputs
     end
 
     # touch the run_id_file

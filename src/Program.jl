@@ -144,7 +144,7 @@ function arg_completion(args::Vector{Arg}, xxputs::Dict{String})
         else
             # not provided, check default
             if arg.required
-                throw(ErrorException("ArgumentError: Program requires '$keyword', but it is not provided."))
+                error("ArgumentError: Program requires '$keyword', but it is not provided.")
             else
                 default = arg.default
                 if !(default isa value_type)
