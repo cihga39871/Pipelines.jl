@@ -30,6 +30,32 @@ using Pipelines
 
     @test_throws ErrorException Pipelines.check_function_methods(+, (Int, String))
 
+    arg = Pipelines.parse_arg("str")[1]
+    @test arg.independent == false
+    @test Pipelines.parse_arg(SubString("str"))[1].default === nothing
+    arg_req = Pipelines.parse_arg("a" => "b")[1]
+    @test Pipelines.parse_arg("a" => "b") == Pipelines.parse_arg(Dict("a" => "b"))
+    arg_indep = Pipelines.parse_arg(:sym)[1]
+    arg_indep_req = Pipelines.parse_arg(:sym => "aaa")[1]
+    @test arg_indep.independent == true
+    @test_throws ErrorException Pipelines.parse_arg(123)
+    @test Pipelines.parse_arg(arg)[1] === arg
+
+    @test_throws ErrorException Pipelines.parse_arg_forward(123)
+    @test_throws ErrorException Pipelines.parse_arg_forward_element(123)
+
+    args_in = Pipelines.parse_arg(["str", :sym])
+    args_out = Pipelines.parse_arg(["out"])
+    @test Pipelines.namein("out", args_in, args_out)
+    @test !Pipelines.namein("not_in", args_in, args_out)
+
+    Base.show(deref(stdout), MIME("text/plain"), arg)
+    Base.show(deref(stdout), arg)
+    Base.show(deref(stdout), arg_req)
+    Base.show(deref(stdout), arg_indep)
+    Base.show(deref(stdout), arg_indep_req)
+
+
     @test Pipelines.parse_verbose("minimum") === :min
     @test Pipelines.parse_verbose(:max) === :all
     @test Pipelines.parse_verbose(:maximum) === :all
@@ -87,7 +113,7 @@ using Pipelines
 
     ### cmd dependency
 
-    never_dep = CmdDependency(
+    global never_dep = CmdDependency(
         exec = `CmdDependencyExpectedNotToExist`,
         test_args = `--version`,
         validate_success = true,
@@ -98,7 +124,7 @@ using Pipelines
     @test_throws ErrorException check_dependency(never_dep; exit_when_fail=true)
     @test !check_dependency(never_dep; exit_when_fail=false)
 
-    julia = CmdDependency(
+    global julia = CmdDependency(
         exec = Base.julia_cmd(),
         test_args = `--version`,
         validate_success = true,
@@ -117,7 +143,7 @@ using Pipelines
 
     ### cmd program    
     
-    p = CmdProgram(
+    global p = CmdProgram(
         cmd_dependencies = [julia],
         id_file = "id_file",
         inputs = [
@@ -137,12 +163,13 @@ using Pipelines
     check_dependency(@__MODULE__; verbose=true, exit_when_fail=false)
     status_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
 
-    never_dep=nothing
+    global never_dep=nothing
     check_dependency(@__MODULE__; verbose=true, exit_when_fail=false)
     status_dependency(@__MODULE__; verbose=false, exit_when_fail=false)
     
     @test p.inputs == ["input", "input2", "optional_arg", "optional_arg2"]
     @test p.default_inputs == [nothing, nothing, 5, 0.5]
+    @test p.input_types == [Any, Int, Any, Number]
     @test p.outputs == ["output"]
     @test p.default_outputs == ["<input>.output"]
     @test p.output_types == [Any]
@@ -236,6 +263,10 @@ using Pipelines
         wrap_up = (inputs, outputs) -> run(`samtools index $(outputs["BAM"])`)
     )
 
+    @test_nowarn display(program_bowtie2)
+    @test_nowarn Base.show(program_bowtie2)
+    @test_nowarn Base.show(deref(stdout), program_bowtie2)
+    @test_nowarn Base.show(deref(stdout), MIME("text/plain"), program_bowtie2)
 
     ### julia program
     p = JuliaProgram(
