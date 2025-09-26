@@ -23,5 +23,5 @@ test = ["Test"]
 FilePathsBase = "^0.9"
 OrderedCollections = "^1"
 Reexport = "^1"
-ScopedStreams = "^0.3.3"
+ScopedStreams = "^0.3.4"
 julia = "^1.8"
