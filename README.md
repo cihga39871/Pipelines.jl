@@ -1,3 +1,5 @@
+![logo](docs/src/assets/logo.png)
+
 # Pipelines.jl
 
 *A lightweight and powerful Julia package for computational pipelines.*
