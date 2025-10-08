@@ -18,7 +18,8 @@ makedocs(
         "API.md",
         "Tips & Troubleshoots" => "tips_and_troubleshoots.md",
         "Change Log" => "changelog.md"
-    ]
+    ],
+    format = Documenter.HTML(sidebar_sitename=false)
 )
 
 deploydocs(
