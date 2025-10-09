@@ -52,4 +52,12 @@ include("pretty_print.jl")
 
 ScopedStreams.@gen_scoped_stream_methods true
 
+stdout_origin = nothing
+stderr_origin = nothing
+function __init__()
+    # back compatibility
+    global stdout_origin = ScopedStreams.stdout_origin
+    global stderr_origin = ScopedStreams.stderr_origin
+end
+
 end # module

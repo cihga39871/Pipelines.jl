@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.12.1
+
+- Compat: bring back `stdout_origin` and `stderr_origin` that were removed in v0.12.0.
+- Feat: `check_dependency` now has a new keyword `force=true`, allowing force check no matter it is checked or not.
+
 ## v0.12.0
 
 - Feat: `run(::CmdProgram; stdout, stderr)` now the command line will be redirected by stdout and stderr. Of course, if the command is a pipeline and has its own redirection, it use its own.
@@ -7,8 +12,10 @@
 - Change/breaking: If a program fails, it directly throw an error now.
 - Breaking: Remove `try_function` and `StackTraceVector`.
 - Fix: `check_dependency` now check `exit_when_fail=false` to determine throw errors or not.
+- Feat: do not check dependency if it is checked when run programs.
 - Fix: `check_dependency_dir` has a typo.
 - Change: `arg_completion`: use `error` instead of `throw(ErrorException(...))`, because the later performs different in test and normal julia environment.
+- Change: remove `stdout_origin` and `stderr_origin`.
 - More code coveage.
 
 ## v0.11.2

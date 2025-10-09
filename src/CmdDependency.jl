@@ -106,22 +106,26 @@ function readall(cmd::Base.AbstractCmd)
 end
 
 """
-    check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail) -> Bool
+    check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail, force::Bool=true) -> Bool
 
 Check `CmdDependency` by evaluating:
 
     `\$(p.exec) \$(p.test_args)`
 
+- `force::Bool`: force to check dependency, no matter whether it is previously checked.
+
 If success, return `true`.
 
 If fail, return `false`, or throw DependencyError when `exit_when_fail` set to `true`.
 """
-function check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail)
+function check_dependency(p::CmdDependency; exit_when_fail::Bool = p.exit_when_fail, force::Bool=true)
 
-    if p.status == OK
-        return true
-    elseif p.status == FAILED
-        @goto quick_fail # COV_EXCL_LINE
+    if !force
+        if p.status == OK
+            return true
+        elseif p.status == FAILED
+            @goto quick_fail # COV_EXCL_LINE
+        end
     end
 
     out, err, success = readall(`$p $(p.test_args)`)

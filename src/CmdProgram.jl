@@ -226,7 +226,9 @@ function _run(
 
     # check dependencies
     if check_dependencies
-        foreach(check_dependency, getfield(p, :cmd_dependencies))
+        for dep in getfield(p, :cmd_dependencies)
+            check_dependency(dep; force=false)
+        end
     end
 
     # preparation: remove run id file
