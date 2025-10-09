@@ -1,10 +1,6 @@
-<div style="position: absolute;
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%);
-">
+<p align="center">
     <img src="docs/src/assets/logo.svg" alt="Pipelines.jl Logo" width="280" height="auto" >
-</div>
+</p>
 
 # Pipelines.jl
 
