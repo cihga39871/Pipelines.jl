@@ -1,4 +1,8 @@
-<div style="display:block;margin-left:auto;margin-right:auto">
+<div style="position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+">
     <img src="docs/src/assets/logo.svg" alt="Pipelines.jl Logo" width="280" height="auto" >
 </div>
 
