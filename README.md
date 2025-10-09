@@ -1,4 +1,4 @@
-<img src="docs/src/assets/logo.svg" alt="Pipelines.jl Logo" width="280" height="auto" style="margin-left:auto;margin-right:auto">
+<img src="docs/src/assets/logo.svg" alt="Pipelines.jl Logo" width="280" height="auto" style="display:block;margin-left:auto;margin-right:auto">
 
 # Pipelines.jl
 
