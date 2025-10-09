@@ -1,4 +1,4 @@
-![logo](docs/src/assets/logo.svg)
+<img src="docs/src/assets/logo.svg" alt="Pipelines.jl Logo" width="300" height="auto">
 
 # Pipelines.jl
 
