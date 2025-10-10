@@ -65,7 +65,10 @@ run(echo; REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = 
 
     If you run a program with the same inputs again, and any file (not dir) in inputs/outputs is not modified, the program will just return the same result, without running the program twice.
 
-    ``julia     input_args = (REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)     run(echo; input_args...)     ``
+    ```julia
+    input_args = (REQUIRED = "Pipelines", TYPED = "are", FULL = "to build.", OPTIONAL = :easy)
+    run(echo; input_args...)
+    ```
 
     Several methods can be used to re-run a program:
 
