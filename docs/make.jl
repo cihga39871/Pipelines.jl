@@ -1,5 +1,4 @@
 #!julia --color=yes
-push!(LOAD_PATH,"../src/")
 
 using Documenter, Pipelines
 
@@ -8,6 +7,7 @@ using Documenter, Pipelines
 
 makedocs(
     sitename="Pipelines.jl",
+    authors = "Dr. Jiacheng Chuan, and contributors.",
     pages = [
         "Home" => "index.md",
         "Manual" => [
@@ -19,10 +19,15 @@ makedocs(
         "Tips & Troubleshoots" => "tips_and_troubleshoots.md",
         "Change Log" => "changelog.md"
     ],
-    format = Documenter.HTML(sidebar_sitename=false)
+    format = Documenter.HTML(
+        sidebar_sitename=false,
+        assets = ["assets/favicon.ico"]
+    )
 )
 
-deploydocs(
-    repo = "github.com/cihga39871/Pipelines.jl.git",
-    devbranch = "main"
-)
+if haskey(ENV, "GITHUB_TOKEN")
+    deploydocs(
+        repo = "github.com/cihga39871/Pipelines.jl.git",
+        devbranch = "main"
+    )
+end
