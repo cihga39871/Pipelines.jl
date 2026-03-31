@@ -1,5 +1,14 @@
 # Change Log
 
+## v0.12.3
+
+- Feat: check whether stdout/stderr is open before running Cmd. Warn and fall back to default if one is closed.
+
+## v0.12.2
+
+- Docs: fix typo.
+- Favicon: new favicon.
+
 ## v0.12.1
 
 - Compat: bring back `stdout_origin` and `stderr_origin` that were removed in v0.12.0.

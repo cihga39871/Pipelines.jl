@@ -264,10 +264,19 @@ function _run(
 
     # run the main command
     try
-        # redirect_stream(stdout, stderr; mode=append ? "a+" : "w+") do
-        run(cmd, devnull, deref(Base.stdout), deref(Base.stderr))
-        # end
-        # run(pipeline(cmd, stdout=stdout, stderr=stderr, append=append))
+        err_io = deref(Base.stderr)
+        out_io = deref(Base.stdout)
+
+        if !isopen(err_io)
+            println(ScopedStreams.stderr_origin, "[ Warning: " * timestamp() * "Standard error is not open ($(err_io)). Fall back to default.")
+            err_io = ScopedStreams.stderr_origin
+        end
+        if !isopen(out_io)
+            println(err_io, "[ Warning: " * timestamp() * "Standard output is not open ($(out_io)). Fall back to default.")
+            out_io = ScopedStreams.stdout_origin
+        end
+
+        run(cmd, devnull, out_io, err_io)
     catch e
         @error timestamp() * "ProgramRunningError: $(getfield(p, :name)): fail to run the main command." prerequisites=getfield(p, :prerequisites) command_running=cmd run_id inputs outputs _module=nothing _group=nothing _id=nothing _file=nothing _line=nothing
         rethrow(e)
