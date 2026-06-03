@@ -268,12 +268,12 @@ function _run(
         out_io = deref(Base.stdout)
 
         if !isopen(err_io)
-            println(ScopedStreams.stderr_origin, "[ Warning: " * timestamp() * "Standard error is not open ($(err_io)). Fall back to default.")
-            err_io = ScopedStreams.stderr_origin
+            println(ScopedStreams.stderr_origin[], "[ Warning: " * timestamp() * "Standard error is not open ($(err_io)). Fall back to default.")
+            err_io = ScopedStreams.stderr_origin[]
         end
         if !isopen(out_io)
             println(err_io, "[ Warning: " * timestamp() * "Standard output is not open ($(out_io)). Fall back to default.")
-            out_io = ScopedStreams.stdout_origin
+            out_io = ScopedStreams.stdout_origin[]
         end
 
         run(cmd, devnull, out_io, err_io)

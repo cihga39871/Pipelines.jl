@@ -221,7 +221,7 @@ using Pipelines
             verbose = false,
             touch_run_id_file = false
         )
-        println(ScopedStreams.stdout_origin, "Within @test_throws: stdout=", stdout, "\n stderr=", stderr)
+        println(ScopedStreams.stdout_origin[], "Within @test_throws: stdout=", stdout, "\n stderr=", stderr)
     end
 
     cmd, run_id_file = run(p,

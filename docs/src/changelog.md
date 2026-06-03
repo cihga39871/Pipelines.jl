@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.12.4
+
+- Compat: update ScopedStreams to v1.0.0.
+
 ## v0.12.3
 
 - Feat: check whether stdout/stderr is open before running Cmd. Warn and fall back to default if one is closed.

@@ -56,8 +56,8 @@ stdout_origin = nothing
 stderr_origin = nothing
 function __init__()
     # back compatibility
-    global stdout_origin = ScopedStreams.stdout_origin
-    global stderr_origin = ScopedStreams.stderr_origin
+    global stdout_origin = ScopedStreams.stdout_origin[]
+    global stderr_origin = ScopedStreams.stderr_origin[]
 end
 
 end # module
