@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.12.5
+
+- Compat: CmdProgram does not deref stdout and stderr anymore. The old one is not a bug, but the new version is compatible with new feature of `ScopedStreams.(re)set_default_std(out/err)`, which is used in progress bar global redirection when showing progress meter in JobSchedulers.jl.
+
 ## v0.12.4
 
 - Compat: update ScopedStreams to v1.0.0.

@@ -264,8 +264,8 @@ function _run(
 
     # run the main command
     try
-        err_io = deref(Base.stderr)
-        out_io = deref(Base.stdout)
+        err_io = Base.stderr
+        out_io = Base.stdout
 
         if !isopen(err_io)
             println(ScopedStreams.stderr_origin[], "[ Warning: " * timestamp() * "Standard error is not open ($(err_io)). Fall back to default.")
